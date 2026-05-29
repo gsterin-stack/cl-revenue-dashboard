@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Joko ‚Äî CL Revenue Dashboard</title>
+  <title>Joko — CL Revenue Dashboard</title>
   <link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
   <style>
@@ -17,7 +17,7 @@
     }
     body { background: var(--bg); color: var(--text); font-family: var(--font); font-size: 13px; line-height: 1.5; }
 
-    /* ‚îÄ‚îÄ Header ‚îÄ‚îÄ */
+    /* ── Header ── */
     header { display:flex; align-items:center; justify-content:space-between; padding:0 24px; height:50px; border-bottom:1px solid var(--border); position:sticky; top:0; background:var(--bg); z-index:200; }
     .logo { font-weight:700; font-size:14px; color:var(--green); }
     .logo span { color:var(--text2); font-weight:400; margin-left:6px; font-size:12px; }
@@ -27,12 +27,12 @@
     .tab.active { color:var(--green); }
     .updated { font-size:12px; color:#fff; background:rgba(255,255,255,0.15); padding:4px 10px; border-radius:6px; border:1px solid rgba(255,255,255,0.35); font-weight:500; }
 
-    /* ‚îÄ‚îÄ Layout ‚îÄ‚îÄ */
+    /* ── Layout ── */
     main { padding:18px 24px; max-width:1700px; margin:0 auto; }
     .tab-content { display:none; flex-direction:column; gap:14px; }
     .tab-content.active { display:flex; }
 
-    /* ‚îÄ‚îÄ KPI Bar ‚îÄ‚îÄ */
+    /* ── KPI Bar ── */
     .kpi-bar    { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; }
     .am-kpi-bar { display:grid; grid-template-columns:repeat(4,1fr); gap:10px; margin-bottom:14px; }
     .kpi { background:var(--s1); border:1px solid var(--border); border-radius:var(--radius); padding:14px 16px; }
@@ -43,11 +43,11 @@
     .kpi-sub { font-size:11px; color:var(--text2); margin-top:3px; }
     .pos { color:var(--green); } .neg { color:var(--red); } .neu { color:var(--text2); }
 
-    /* ‚îÄ‚îÄ Cards ‚îÄ‚îÄ */
+    /* ── Cards ── */
     .card { background:var(--s1); border:1px solid var(--border); border-radius:var(--radius); padding:18px; }
     .card-title { font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:.6px; color:var(--text2); margin-bottom:14px; }
 
-    /* ‚îÄ‚îÄ Charts ‚îÄ‚îÄ */
+    /* ── Charts ── */
     .chart-full canvas { width:100%!important; height:300px!important; }
     .chart-legend { display:flex; gap:14px; flex-wrap:wrap; margin-bottom:10px; }
     .legend-item { display:flex; align-items:center; gap:5px; font-size:11px; color:var(--text2); }
@@ -59,7 +59,7 @@
     .q-chart-wrap { margin-bottom:16px; }
     .q-chart-wrap canvas { height:180px!important; width:100%!important; }
 
-    /* ‚îÄ‚îÄ Transposed performance table ‚îÄ‚îÄ */
+    /* ── Transposed performance table ── */
     .section-sep { height:1px; background:var(--border); margin:18px 0 16px; }
     .perf-table { width:100%; border-collapse:collapse; font-size:11px; table-layout:auto; }
     .perf-table thead th { padding:6px 8px; font-size:10px; font-weight:600; text-transform:uppercase; letter-spacing:.4px; color:var(--text2); border-bottom:1px solid var(--border); text-align:right; white-space:nowrap; }
@@ -68,15 +68,15 @@
     .perf-table tbody td.row-label { text-align:left; font-weight:600; font-size:11px; white-space:nowrap; position:sticky; left:0; background:var(--s1); z-index:2; padding-right:14px; }
     .perf-table tbody tr:last-child td { border-top:1px solid var(--border); border-bottom:none; font-weight:700; }
 
-    /* ‚îÄ‚îÄ Merchant Table ‚îÄ‚îÄ */
+    /* ── Merchant Table ── */
     .table-wrap { overflow-x:auto; }
     table { width:100%; border-collapse:collapse; font-size:12px; }
     thead th { text-align:left; padding:7px 10px; font-size:10px; font-weight:600; text-transform:uppercase; letter-spacing:.5px; color:var(--text2); border-bottom:1px solid var(--border); white-space:nowrap; }
     thead th.num { text-align:right; }
     thead th.sortable { cursor:pointer; user-select:none; transition:color .1s; }
     thead th.sortable:hover { color:var(--text); }
-    thead th.sort-asc::after  { content:' ‚Üë'; color:var(--green); }
-    thead th.sort-desc::after { content:' ‚Üì'; color:var(--green); }
+    thead th.sort-asc::after  { content:' ↑'; color:var(--green); }
+    thead th.sort-desc::after { content:' ↓'; color:var(--green); }
     tbody tr { border-bottom:1px solid #161616; cursor:pointer; transition:background .1s; }
     tbody tr:hover { background:var(--s2); }
     tbody td { padding:8px 10px; vertical-align:middle; }
@@ -87,22 +87,22 @@
     .dim { color:var(--muted); font-size:11px; }
     .yoy-pos { color:var(--green); font-weight:500; } .yoy-neg { color:var(--red); font-weight:500; }
 
-    /* ‚îÄ‚îÄ Budget Gauge ‚îÄ‚îÄ */
+    /* ── Budget Gauge ── */
     .gauge-wrap { display:flex; align-items:center; gap:6px; justify-content:flex-end; }
     .gauge-bar { width:54px; height:4px; background:var(--border); border-radius:2px; overflow:hidden; flex-shrink:0; }
     .gauge-fill { height:100%; border-radius:2px; }
     .gauge-pct { font-size:11px; min-width:28px; text-align:right; font-variant-numeric:tabular-nums; }
 
-    /* ‚îÄ‚îÄ Type badge ‚îÄ‚îÄ */
+    /* ── Type badge ── */
     .type-capped   { font-size:10px; font-weight:600; color:var(--purple); background:rgba(146,84,227,.12); border:1px solid rgba(146,84,227,.3); border-radius:4px; padding:2px 6px; white-space:nowrap; }
     .type-uncapped { font-size:10px; font-weight:600; color:var(--yellow); background:rgba(228,250,98,.08); border:1px solid rgba(228,250,98,.25); border-radius:4px; padding:2px 6px; white-space:nowrap; }
 
-    /* ‚îÄ‚îÄ AM View ‚îÄ‚îÄ */
+    /* ── AM View ── */
     .am-filter { display:flex; gap:8px; margin-bottom:14px; }
     .am-btn { padding:6px 16px; border-radius:8px; font-size:12px; font-weight:600; cursor:pointer; border:1px solid var(--border); background:var(--s2); color:var(--text2); transition:all .15s; }
     .am-btn.active { background:var(--green); color:#000; border-color:var(--green); }
 
-    /* ‚îÄ‚îÄ Modal ‚îÄ‚îÄ */
+    /* ── Modal ── */
     .modal-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,.75); z-index:500; align-items:center; justify-content:center; }
     .modal-overlay.open { display:flex; }
     .modal { background:var(--s1); border:1px solid var(--border); border-radius:16px; width:min(900px,96vw); max-height:90vh; overflow-y:auto; padding:24px; position:relative; }
@@ -137,18 +137,18 @@
     <button class="tab" onclick="switchTab('am',this)">AM View</button>
     <button class="tab" onclick="switchTab('merchants',this)">Merchants</button>
   </nav>
-  <div class="updated" id="updated-at">‚Äî</div>
+  <div class="updated" id="updated-at">—</div>
 </header>
 
 <main>
-  <!-- ‚ïê‚ïê‚ïê MANAGEMENT ‚ïê‚ïê‚ïê -->
+  <!-- ═══ MANAGEMENT ═══ -->
   <div id="tab-management" class="tab-content active">
     <div class="kpi-bar" id="kpi-bar"></div>
 
     <div class="card chart-full">
       <div class="section-header">
         <span class="section-title">Monthly Card-Linked Revenue</span>
-        <span class="section-sub">2024 ¬∑ 2025 ¬∑ 2026 actual + projection vs OKR</span>
+        <span class="section-sub">2024 · 2025 · 2026 actual + projection vs OKR</span>
       </div>
       <div class="chart-legend">
         <div class="legend-item"><div class="legend-dot" style="background:rgba(90,90,90,.8)"></div>2024</div>
@@ -173,13 +173,13 @@
     </div>
   </div>
 
-  <!-- ‚ïê‚ïê‚ïê AM VIEW ‚ïê‚ïê‚ïê -->
+  <!-- ═══ AM VIEW ═══ -->
   <div id="tab-am" class="tab-content">
     <div class="am-filter">
       <button class="am-btn active" onclick="filterAM('all',this)">All</button>
       <button class="am-btn" onclick="filterAM('Eva',this)">Eva</button>
-      <button class="am-btn" onclick="filterAM('Elo√Øse',this)">Elo√Øse</button>
-      <button class="am-btn" onclick="filterAM('Rapha√´lle',this)">Rapha√´lle</button>
+      <button class="am-btn" onclick="filterAM('Eloïse',this)">Eloïse</button>
+      <button class="am-btn" onclick="filterAM('Raphaëlle',this)">Raphaëlle</button>
     </div>
     <div class="am-kpi-bar" id="am-kpi-bar"></div>
     <div class="card">
@@ -187,30 +187,30 @@
     </div>
   </div>
 
-  <!-- ‚ïê‚ïê‚ïê MERCHANTS ‚ïê‚ïê‚ïê -->
+  <!-- ═══ MERCHANTS ═══ -->
   <div id="tab-merchants" class="tab-content">
     <div class="card">
       <div class="section-header">
         <span class="section-title">All Merchants</span>
-        <span class="section-sub" id="merchants-count">‚Äî</span>
+        <span class="section-sub" id="merchants-count">—</span>
       </div>
       <div class="table-wrap" id="merchants-table-wrap"></div>
     </div>
   </div>
 </main>
 
-<!-- ‚ïê‚ïê‚ïê MERCHANT MODAL ‚ïê‚ïê‚ïê -->
+<!-- ═══ MERCHANT MODAL ═══ -->
 <div class="modal-overlay" id="modal-overlay" onclick="closeModal(event)">
   <div class="modal">
     <div class="modal-header">
       <div>
-        <div class="modal-title" id="modal-title">‚Äî</div>
+        <div class="modal-title" id="modal-title">—</div>
         <div class="modal-sub" id="modal-sub"></div>
       </div>
-      <button class="modal-close" onclick="closeModalDirect()">‚úï</button>
+      <button class="modal-close" onclick="closeModalDirect()">✕</button>
     </div>
     <div class="modal-kpis" id="modal-kpis"></div>
-    <div class="modal-chart-title">Monthly Revenue 2025 ¬∑ 2026</div>
+    <div class="modal-chart-title">Monthly Revenue 2025 · 2026</div>
     <div class="modal-chart-legend" id="modal-chart-legend"></div>
     <div class="modal-chart-wrap"><canvas id="modal-chart"></canvas></div>
     <table class="modal-table" id="modal-table"></table>
@@ -218,7 +218,7 @@
   </div>
 </div>
 
-<!-- ‚ïê‚ïê‚ïê NEW CLIENTS MODAL ‚ïê‚ïê‚ïê -->
+<!-- ═══ NEW CLIENTS MODAL ═══ -->
 <div class="modal-overlay" id="nc-modal-overlay" onclick="if(event.target===this)closeNewClientsModal()">
   <div class="modal" style="width:min(640px,96vw)">
     <div class="modal-header">
@@ -226,7 +226,7 @@
         <div class="modal-title">New Clients 2026</div>
         <div class="modal-sub" id="nc-modal-sub">Revenue breakdown</div>
       </div>
-      <button class="modal-close" onclick="closeNewClientsModal()">‚úï</button>
+      <button class="modal-close" onclick="closeNewClientsModal()">✕</button>
     </div>
     <div id="nc-modal-body"></div>
   </div>
@@ -240,57 +240,58 @@ let modalChart = null;
 let sortCol  = 'signed';
 let sortDir  = -1;
 
-/* ‚îÄ‚îÄ Merchant display names ‚îÄ‚îÄ */
+/* ── Merchant display names ── */
 const MERCHANT_LABELS = {
   'leroy-merlin':'Leroy Merlin','uber-eats':'Uber Eats','uber':'Uber',
   'carrefour':'Carrefour','hellofresh':'HelloFresh','kiabi':'Kiabi',
-  'castorama':'Castorama','vente-privee':'Vente-Priv√©e','boulanger':'Boulanger',
-  'sephora':'Sephora','nocibe':'Nocib√©','etam':'Etam','kfc':'KFC',
-  'maisons-du-monde':'Maisons du Monde','adopt':'Adopt','showroomprive':'Showroompriv√©',
-  'chaussea':'Chaussea','bricomarche':'Bricomarch√©','monoprix':'Monoprix',
+  'castorama':'Castorama','vente-privee':'Vente-Privée','boulanger':'Boulanger',
+  'sephora':'Sephora','nocibe':'Nocibé','etam':'Etam','kfc':'KFC',
+  'maisons-du-monde':'Maisons du Monde','adopt':'Adopt','showroomprive':'Showroomprivé',
+  'chaussea':'Chaussea','bricomarche':'Bricomarché','monoprix':'Monoprix',
   'vertbaudet':'Vertbaudet','the-bradery':'The Bradery','b-and-m':'B&M',
-  'but':'But','blablacar':'BlaBlaCar','alinea':'Alin√©a','printemps':'Printemps',
+  'but':'But','blablacar':'BlaBlaCar','alinea':'Alinéa','printemps':'Printemps',
   'ultra-premium-direct':'Ultra Premium Direct','chronodrive':'Chronodrive',
   'galeries-lafayette':'Galeries Lafayette','subway':'Subway','decathlon':'Decathlon',
-  'brico-depot':'Brico D√©p√¥t','certideal':'Certideal','jules':'Jules',
-  'pokawa':'Pokawa','nespresso':'Nespresso','leon-de-bruxelles':'L√©on de Bruxelles',
-  'celio':'Celio','dominos-pizza':"Domino's Pizza",'beauteprivee':'Beaut√© Priv√©e',
+  'brico-depot':'Brico Dépôt','certideal':'Certideal','jules':'Jules',
+  'pokawa':'Pokawa','nespresso':'Nespresso','leon-de-bruxelles':'Léon de Bruxelles',
+  'celio':'Celio','dominos-pizza':"Domino's Pizza",'beauteprivee':'Beauté Privée',
   'hema':'Hema','rougegorge':'RougeGorge','zoomalia':'Zoomalia','damart':'Damart',
   'heetch':'Heetch','krys':'Krys','horace':'Horace','beauty-success':'Beauty Success',
-  'gaumont-pathe':'Gaumont Path√©','hippopotamus':'Hippopotamus','kiko':'Kiko',
+  'gaumont-pathe':'Gaumont Pathé','hippopotamus':'Hippopotamus','kiko':'Kiko',
   'zadig-et-voltaire':'Zadig & Voltaire','instant-gaming':'Instant Gaming',
   'flunch':'Flunch','allopneus':'Allopneus','quitoque':'Quitoque','lalalab':'Lalalab',
   'stych':'Stych','privatesportshop':'Private Sport Shop','aroma-zone':'Aroma-Zone',
   'ulysse':'Ulysse','prismashop':'Prismashop','le-closet':'Le Closet',
   'gambettes-box':'Gambettes Box','les-raffineurs':'Les Raffineurs','promod':'Promod',
-  'feed':'Feed.','natura-force':'Natura Force','gemo':'G√©mo',
+  'feed':'Feed.','natura-force':'Natura Force','gemo':'Gémo',
   'jules-et-jenn':'Jules & Jenn','darjeeling':'Darjeeling','bizzbee':'Bizzbee',
 };
 function merchantLabel(id) {
   return MERCHANT_LABELS[id] || id.split('-').map(w=>w.charAt(0).toUpperCase()+w.slice(1)).join(' ');
 }
 
-/* ‚îÄ‚îÄ Number helpers ‚îÄ‚îÄ */
-function fmt(n, d=0) {
-  if (n==null||isNaN(n)) return '‚Äî';
-  if (Math.abs(n)>=1e6) return '‚Ç¨'+(n/1e6).toFixed(d||2)+'M';
-  if (Math.abs(n)>=1e3) return '‚Ç¨'+Math.round(n/1e3)+'K';
-  return '‚Ç¨'+Math.round(n);
+/* ── Number helpers ── */
+function fmt(n, d=1) {
+  if (n==null||isNaN(n)) return '—';
+  const abs = Math.abs(n);
+  if (abs>=1e6) return '€'+(n/1e6).toFixed(d)+'M';
+  if (abs>=1e3) return '€'+(n/1e3).toFixed(abs>=100e3?0:1)+'K';
+  return '€'+Math.round(n);
 }
 function pct(v,b) { return b ? Math.round((v-b)/b*100) : null; }
 function pctStr(v,b) {
   const p = pct(v,b);
-  if (p==null) return '<span class="neu">‚Äî</span>';
+  if (p==null) return '<span class="neu">—</span>';
   return p>=0 ? `<span class="yoy-pos">+${p}%</span>` : `<span class="yoy-neg">${p}%</span>`;
 }
 
-/* ‚îÄ‚îÄ Signed 2026 ‚îÄ‚îÄ */
+/* ── Signed 2026 ── */
 function signed26(m) {
   if (m.signed_26 != null) return m.signed_26;
   if (m.remaining_budget != null) return (m.actual_26||0) + m.remaining_budget;
   return (m.actual_26||0) + (m.proj_26||0);
 }
-/* ‚îÄ‚îÄ Budget consumed % (actual / signed contract) ‚îÄ‚îÄ */
+/* ── Budget consumed % (actual / signed contract) ── */
 function budgetPct(m) {
   if (m.signed_26 == null && m.remaining_budget == null) return null;
   const s = signed26(m);
@@ -298,7 +299,7 @@ function budgetPct(m) {
   const p = Math.round((m.actual_26||0) / s * 100);
   return p > 110 ? null : p;
 }
-/* ‚îÄ‚îÄ Actual vs currently-open budget : actual / (actual + remaining) ‚îÄ‚îÄ */
+/* ── Actual vs currently-open budget : actual / (actual + remaining) ── */
 function actualVsOpenBudget(m) {
   if (m.remaining_budget == null) return null;
   const opened = (m.actual_26||0) + m.remaining_budget;
@@ -306,7 +307,7 @@ function actualVsOpenBudget(m) {
   return Math.round((m.actual_26||0) / opened * 100);
 }
 function budgetGauge(p, color) {
-  if (p == null) return '<span class="neu">‚Äî</span>';
+  if (p == null) return '<span class="neu">—</span>';
   const c = color || (p>=80 ? 'var(--red)' : p>=50 ? 'var(--yellow)' : 'var(--green)');
   return `<div class="gauge-wrap">
     <div class="gauge-bar"><div class="gauge-fill" style="width:${Math.min(p,100)}%;background:${c}"></div></div>
@@ -314,15 +315,15 @@ function budgetGauge(p, color) {
   </div>`;
 }
 
-/* ‚îÄ‚îÄ vs OKR color cell ‚îÄ‚îÄ */
+/* ── vs OKR color cell ── */
 function vsOkrCell(total, okr) {
-  if (!okr || !total) return `<td style="text-align:right;color:var(--muted)">‚Äî</td>`;
+  if (!okr || !total) return `<td style="text-align:right;color:var(--muted)">—</td>`;
   const v = Math.round(total / okr * 100);
   const c = v>=90?'var(--green)':v>=70?'var(--yellow)':'var(--red)';
   return `<td style="text-align:right;color:${c};font-weight:700">${v}%</td>`;
 }
 
-/* ‚îÄ‚îÄ Chart helpers ‚îÄ‚îÄ */
+/* ── Chart helpers ── */
 function ttip() {
   return { backgroundColor:'#1a1a1a', borderColor:'#333', borderWidth:1,
     titleColor:'#fff', bodyColor:'#999', padding:10,
@@ -332,11 +333,11 @@ function scalesXY(stacked=false) {
   return {
     x: { stacked, grid:{color:'transparent'}, ticks:{color:'#555',font:{size:10}} },
     y: { stacked:false, grid:{color:'rgba(255,255,255,0.04)'}, ticks:{color:'#555',font:{size:10},
-      callback:v=>Math.abs(v)>=1e6?'‚Ç¨'+(v/1e6).toFixed(1)+'M':'‚Ç¨'+Math.round(v/1e3)+'K' }}
+      callback:v=>Math.abs(v)>=1e6?'€'+(v/1e6).toFixed(1)+'M':'€'+Math.round(v/1e3)+'K' }}
   };
 }
 
-/* ‚îÄ‚îÄ Tab switching ‚îÄ‚îÄ */
+/* ── Tab switching ── */
 function switchTab(id, btn) {
   document.querySelectorAll('.tab-content').forEach(t=>t.classList.remove('active'));
   document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
@@ -344,7 +345,7 @@ function switchTab(id, btn) {
   btn.classList.add('active');
 }
 
-/* ‚îÄ‚îÄ Main render ‚îÄ‚îÄ */
+/* ── Main render ── */
 function renderAll(data) {
   GDATA = data;
   document.getElementById('updated-at').textContent = 'Updated: '+data.updated_at;
@@ -357,7 +358,7 @@ function renderAll(data) {
   renderAMView(data.merchants, data.summary);
 }
 
-/* ‚îÄ‚îÄ KPI Bar (3 cards, no month range in label) ‚îÄ‚îÄ */
+/* ── KPI Bar (3 cards, no month range in label) ── */
 function renderKPIs(s) {
   const ytdYoyHtml = s.ytd_yoy!=null
     ? (s.ytd_yoy>=0
@@ -365,13 +366,13 @@ function renderKPIs(s) {
         : `<span class="neg">${s.ytd_yoy}% vs LY</span>`)
     : '';
   const ytdRange = s.ytd_months > 0
-    ? `Jan‚Äì${MONTHS[s.ytd_months-1]} 2026`
+    ? `Jan–${MONTHS[s.ytd_months-1]} 2026`
     : '2026 YTD';
 
   const kpis = [
     { label:'YTD Actual',
       value: fmt(s.ytd_actual),
-      sub: (ytdYoyHtml ? ytdYoyHtml + ' ¬∑ ' : '') + `<span class="neu">${ytdRange}</span>`,
+      sub: (ytdYoyHtml ? ytdYoyHtml + ' · ' : '') + `<span class="neu">${ytdRange}</span>`,
       clickable: false },
     { label:'New Client Revenue',
       value: fmt(s.ytd_new_clients_revenue),
@@ -384,13 +385,13 @@ function renderKPIs(s) {
   ];
   document.getElementById('kpi-bar').innerHTML = kpis.map(k=>`
     <div class="kpi${k.clickable?' clickable':''}"${k.onclick?` onclick="${k.onclick}"`:''}>
-      <div class="kpi-label">${k.label}${k.clickable?' <span style="opacity:.45;font-size:9px">‚Üó</span>':''}</div>
+      <div class="kpi-label">${k.label}${k.clickable?' <span style="opacity:.45;font-size:9px">↗</span>':''}</div>
       <div class="kpi-value">${k.value}</div>
       <div class="kpi-sub">${k.sub}</div>
     </div>`).join('');
 }
 
-/* ‚îÄ‚îÄ Main chart ‚îÄ‚îÄ */
+/* ── Main chart ── */
 function renderMainChart(ca) {
   new Chart(document.getElementById('main-chart').getContext('2d'),{
     type:'bar',
@@ -409,7 +410,7 @@ function renderMainChart(ca) {
   });
 }
 
-/* ‚îÄ‚îÄ Monthly Performance Table (transposed: months = columns) ‚îÄ‚îÄ */
+/* ── Monthly Performance Table (transposed: months = columns) ── */
 function renderMonthlyTable(ca, ytdMonths) {
   // Fix: no projection for past months
   const actuals = ca.R26A.map(v => v || 0);
@@ -429,7 +430,7 @@ function renderMonthlyTable(ca, ytdMonths) {
   const totRow   = aRow.map((a,i) => a + pRow[i]);
 
   function fmtCell(v, style) {
-    return `<td style="text-align:right;${style}">${v>0?fmt(v):'‚Äî'}</td>`;
+    return `<td style="text-align:right;${style}">${v>0?fmt(v):'—'}</td>`;
   }
 
   document.getElementById('monthly-table-wrap').innerHTML = `
@@ -443,28 +444,28 @@ function renderMonthlyTable(ca, ytdMonths) {
           <td class="row-label" style="color:var(--green)">Actual</td>
           ${aRow.map((v,i) => {
             const sep = i===12 ? 'border-left:1px solid var(--border);' : '';
-            return `<td style="text-align:right;${sep}color:${v>0?'var(--green)':'var(--muted)'}">${v>0?fmt(v):'‚Äî'}</td>`;
+            return `<td style="text-align:right;${sep}color:${v>0?'var(--green)':'var(--muted)'}">${v>0?fmt(v):'—'}</td>`;
           }).join('')}
         </tr>
         <tr>
           <td class="row-label" style="color:rgba(100,231,106,.55)">Projection</td>
           ${pRow.map((v,i) => {
             const sep = i===12 ? 'border-left:1px solid var(--border);' : '';
-            return `<td style="text-align:right;${sep}color:${v>0?'rgba(100,231,106,.55)':'var(--muted)'}">${v>0?fmt(v):'‚Äî'}</td>`;
+            return `<td style="text-align:right;${sep}color:${v>0?'rgba(100,231,106,.55)':'var(--muted)'}">${v>0?fmt(v):'—'}</td>`;
           }).join('')}
         </tr>
         <tr>
           <td class="row-label" style="color:var(--muted)">OKR</td>
           ${oRow.map((v,i) => {
             const sep = i===12 ? 'border-left:1px solid var(--border);' : '';
-            return `<td style="text-align:right;${sep}color:var(--muted)">${v>0?fmt(v):'‚Äî'}</td>`;
+            return `<td style="text-align:right;${sep}color:var(--muted)">${v>0?fmt(v):'—'}</td>`;
           }).join('')}
         </tr>
         <tr>
           <td class="row-label" style="color:var(--text2)">vs OKR</td>
           ${totRow.map((total,i) => {
             const sep = i===12 ? 'border-left:1px solid var(--border);' : '';
-            if (!oRow[i] || !total) return `<td style="text-align:right;${sep}color:var(--muted)">‚Äî</td>`;
+            if (!oRow[i] || !total) return `<td style="text-align:right;${sep}color:var(--muted)">—</td>`;
             const v = Math.round(total/oRow[i]*100);
             const c = v>=90?'var(--green)':v>=70?'var(--yellow)':'var(--red)';
             return `<td style="text-align:right;${sep}color:${c};font-weight:700">${v}%</td>`;
@@ -474,7 +475,7 @@ function renderMonthlyTable(ca, ytdMonths) {
     </table>`;
 }
 
-/* ‚îÄ‚îÄ Quarterly Performance (chart first, then transposed table) ‚îÄ‚îÄ */
+/* ── Quarterly Performance (chart first, then transposed table) ── */
 function renderQSection(q, r25) {
   const quarters = ['Q1','Q2','Q3','Q4'];
   const q25 = [
@@ -484,7 +485,7 @@ function renderQSection(q, r25) {
     r25.slice(9,12).reduce((a,b)=>a+b,0),
   ];
 
-  // ‚îÄ‚îÄ Chart ‚îÄ‚îÄ
+  // ── Chart ──
   new Chart(document.getElementById('q-chart').getContext('2d'),{
     type:'bar',
     data:{ labels:quarters, datasets:[
@@ -498,7 +499,7 @@ function renderQSection(q, r25) {
       scales:scalesXY(false) }
   });
 
-  // ‚îÄ‚îÄ Transposed table ‚îÄ‚îÄ
+  // ── Transposed table ──
   const total25     = q25.reduce((a,b)=>a+b,0);
   const totalActual = quarters.reduce((s,k)=>s+q[k].actual,0);
   const totalProj   = quarters.reduce((s,k)=>s+q[k].proj,0);
@@ -523,35 +524,35 @@ function renderQSection(q, r25) {
           <td class="row-label" style="color:var(--muted)">2025</td>
           ${a25Row.map((v,i) => {
             const sep = i===4?'border-left:1px solid var(--border);':'';
-            return `<td style="text-align:right;${sep}color:var(--muted)">${v>0?fmt(v):'‚Äî'}</td>`;
+            return `<td style="text-align:right;${sep}color:var(--muted)">${v>0?fmt(v):'—'}</td>`;
           }).join('')}
         </tr>
         <tr>
           <td class="row-label" style="color:var(--green)">Actual</td>
           ${aRow.map((v,i) => {
             const sep = i===4?'border-left:1px solid var(--border);':'';
-            return `<td style="text-align:right;${sep}color:${v>0?'var(--green)':'var(--muted)'}">${v>0?fmt(v):'‚Äî'}</td>`;
+            return `<td style="text-align:right;${sep}color:${v>0?'var(--green)':'var(--muted)'}">${v>0?fmt(v):'—'}</td>`;
           }).join('')}
         </tr>
         <tr>
           <td class="row-label" style="color:rgba(100,231,106,.55)">Projection</td>
           ${pRow.map((v,i) => {
             const sep = i===4?'border-left:1px solid var(--border);':'';
-            return `<td style="text-align:right;${sep}color:${v>0?'rgba(100,231,106,.55)':'var(--muted)'}">${v>0?fmt(v):'‚Äî'}</td>`;
+            return `<td style="text-align:right;${sep}color:${v>0?'rgba(100,231,106,.55)':'var(--muted)'}">${v>0?fmt(v):'—'}</td>`;
           }).join('')}
         </tr>
         <tr>
           <td class="row-label" style="color:var(--muted)">OKR</td>
           ${oRow.map((v,i) => {
             const sep = i===4?'border-left:1px solid var(--border);':'';
-            return `<td style="text-align:right;${sep}color:var(--muted)">${v>0?fmt(v):'‚Äî'}</td>`;
+            return `<td style="text-align:right;${sep}color:var(--muted)">${v>0?fmt(v):'—'}</td>`;
           }).join('')}
         </tr>
         <tr>
           <td class="row-label" style="color:var(--text2)">vs OKR</td>
           ${totRow.map((total,i) => {
             const sep = i===4?'border-left:1px solid var(--border);':'';
-            if (!oRow[i] || !total) return `<td style="text-align:right;${sep}color:var(--muted)">‚Äî</td>`;
+            if (!oRow[i] || !total) return `<td style="text-align:right;${sep}color:var(--muted)">—</td>`;
             const v = Math.round(total/oRow[i]*100);
             const c = v>=90?'var(--green)':v>=70?'var(--yellow)':'var(--red)';
             return `<td style="text-align:right;${sep}color:${c};font-weight:700">${v}%</td>`;
@@ -561,7 +562,7 @@ function renderQSection(q, r25) {
     </table>`;
 }
 
-/* ‚îÄ‚îÄ Sort state ‚îÄ‚îÄ */
+/* ── Sort state ── */
 function sortBy(col) {
   if (sortCol===col) sortDir = -sortDir;
   else { sortCol=col; sortDir = (col==='name'||col==='am') ? 1 : -1; }
@@ -573,11 +574,17 @@ function sortBy(col) {
   renderAMTable('am-table-wrap', GDATA.merchants, activeAM);
 }
 
-/* ‚îÄ‚îÄ Merchant rows (sorted) ‚îÄ‚îÄ */
+/* ── Normalize string for comparison (strips accents, lowercases) ── */
+function normStr(s) {
+  return (s||'').normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase().trim();
+}
+
+/* ── Merchant rows (sorted) ── */
 function merchantRows(merchants, amFilter) {
+  const normFilter = normStr(amFilter);
   return Object.entries(merchants)
     .map(([id,m])=>({ id, ...m, signed: signed26(m), bpct: budgetPct(m) }))
-    .filter(r=> amFilter==='all' || r.am===amFilter)
+    .filter(r=> amFilter==='all' || normStr(r.am)===normFilter)
     .sort((a,b) => {
       let av, bv;
       if (sortCol==='name') return sortDir * merchantLabel(a.id).localeCompare(merchantLabel(b.id));
@@ -599,7 +606,7 @@ function merchantRows(merchants, amFilter) {
     });
 }
 
-/* ‚îÄ‚îÄ Merchants tab table ‚îÄ‚îÄ */
+/* ── Merchants tab table ── */
 function renderMerchantTable(wrapId, merchants) {
   const rows = merchantRows(merchants, 'all');
   const cc = col => col===sortCol ? (sortDir>0?'sort-asc':'sort-desc') : '';
@@ -615,22 +622,22 @@ function renderMerchantTable(wrapId, merchants) {
       <th class="num sortable ${cc('mf_ly')}"  data-col="mf_ly"  onclick="sortBy('mf_ly')">Media Fees LY</th>
     </tr></thead>
     <tbody>${rows.map(r=>{
-      const yoy = r.actual_25>0 ? pctStr(r.signed, r.actual_25) : '<span class="neu">‚Äî</span>';
+      const yoy = r.actual_25>0 ? pctStr(r.signed, r.actual_25) : '<span class="neu">—</span>';
       return `<tr onclick="openModal('${r.id}')">
         <td class="merchant-name">${merchantLabel(r.id)}${r.is_new_client?'<span class="badge-new">new</span>':''}</td>
         <td><span class="am-pill">${r.am}</span></td>
-        <td class="num dim">${r.actual_25>0?fmt(r.actual_25):'‚Äî'}</td>
+        <td class="num dim">${r.actual_25>0?fmt(r.actual_25):'—'}</td>
         <td class="num"><strong>${fmt(r.signed)}</strong></td>
         <td class="num">${yoy}</td>
         <td class="num">${fmt(r.actual_26)}</td>
-        <td class="num">${r.media_fees_ytd>0?fmt(r.media_fees_ytd):'<span class="neu">‚Äî</span>'}</td>
-        <td class="num dim">${r.media_fees_ly>0?fmt(r.media_fees_ly):'‚Äî'}</td>
+        <td class="num">${r.media_fees_ytd>0?fmt(r.media_fees_ytd):'<span class="neu">—</span>'}</td>
+        <td class="num dim">${r.media_fees_ly>0?fmt(r.media_fees_ly):'—'}</td>
       </tr>`;
     }).join('')}</tbody>
   </table>`;
 }
 
-/* ‚îÄ‚îÄ AM View table ‚îÄ‚îÄ */
+/* ── AM View table ── */
 function renderAMTable(wrapId, merchants, amFilter='all') {
   const rows = merchantRows(merchants, amFilter);
   const cc = col => col===sortCol ? (sortDir>0?'sort-asc':'sort-desc') : '';
@@ -652,12 +659,12 @@ function renderAMTable(wrapId, merchants, amFilter='all') {
         : `<span class="type-uncapped">Uncapped</span>`;
       const openBudget = r.remaining_budget != null
         ? `<span style="color:var(--purple)">${fmt(r.remaining_budget)}</span>`
-        : '<span class="neu">‚Äî</span>';
+        : '<span class="neu">—</span>';
       const avb = actualVsOpenBudget(r);
       const avbColor = avb==null?'var(--muted)':avb>=80?'var(--red)':avb>=50?'var(--yellow)':'var(--green)';
       const avbHtml = avb!=null
         ? `<span style="color:${avbColor};font-weight:600">${avb}%</span>`
-        : '<span class="neu">‚Äî</span>';
+        : '<span class="neu">—</span>';
       return `<tr onclick="openModal('${r.id}')">
         <td class="merchant-name">${merchantLabel(r.id)}${r.is_new_client?'<span class="badge-new">new</span>':''}</td>
         <td><span class="am-pill">${r.am}</span></td>
@@ -671,7 +678,7 @@ function renderAMTable(wrapId, merchants, amFilter='all') {
   </table>`;
 }
 
-/* ‚îÄ‚îÄ AM View ‚îÄ‚îÄ */
+/* ── AM View ── */
 function renderAMView(merchants, summary) {
   renderAMKPIs(merchants, 'all', summary);
   renderAMTable('am-table-wrap', merchants, 'all');
@@ -690,9 +697,9 @@ function renderAMKPIs(merchants, am, summary) {
   const fy25     = rows.reduce((s,r)=>s+(r.actual_25||0), 0);
   const openBdg  = rows.reduce((s,r)=>s+(r.remaining_budget||0), 0);
   const label    = am==='all' ? 'All AMs' : am;
-  const ytdRange = summary.ytd_months > 0 ? `Jan‚Äì${MONTHS[summary.ytd_months-1]} 2026` : '2026 YTD';
+  const ytdRange = summary.ytd_months > 0 ? `Jan–${MONTHS[summary.ytd_months-1]} 2026` : '2026 YTD';
   document.getElementById('am-kpi-bar').innerHTML = `
-    <div class="kpi"><div class="kpi-label">${label} ‚Äî Merchants</div>
+    <div class="kpi"><div class="kpi-label">${label} — Merchants</div>
       <div class="kpi-value">${rows.length}</div>
       <div class="kpi-sub">${rows.filter(r=>r.is_new_client).length} new clients</div></div>
     <div class="kpi"><div class="kpi-label">YTD Actual</div>
@@ -706,7 +713,7 @@ function renderAMKPIs(merchants, am, summary) {
       <div class="kpi-sub" style="color:var(--text2)">currently open across portfolio</div></div>`;
 }
 
-/* ‚îÄ‚îÄ New Clients Modal ‚îÄ‚îÄ */
+/* ── New Clients Modal ── */
 function openNewClientsModal() {
   if (!GDATA) return;
   const newClients = Object.entries(GDATA.merchants)
@@ -715,10 +722,10 @@ function openNewClientsModal() {
     .sort((a,b) => (b.actual_26||0) - (a.actual_26||0));
   const totalRev = newClients.reduce((s,m) => s+(m.actual_26||0), 0);
   const ytdRange = GDATA.summary.ytd_months > 0
-    ? `Jan‚Äì${MONTHS[GDATA.summary.ytd_months-1]} 2026`
+    ? `Jan–${MONTHS[GDATA.summary.ytd_months-1]} 2026`
     : '2026 YTD';
   document.getElementById('nc-modal-sub').textContent =
-    `${newClients.length} new clients ¬∑ ${ytdRange}`;
+    `${newClients.length} new clients · ${ytdRange}`;
   document.getElementById('nc-modal-body').innerHTML = `
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:20px">
       <div class="modal-kpi">
@@ -756,7 +763,7 @@ function closeNewClientsModal() {
   document.getElementById('nc-modal-overlay').classList.remove('open');
 }
 
-/* ‚îÄ‚îÄ Merchant Modal ‚îÄ‚îÄ */
+/* ── Merchant Modal ── */
 function openModal(merchantId) {
   const m = GDATA.merchants[merchantId];
   if (!m) return;
@@ -765,7 +772,7 @@ function openModal(merchantId) {
   const yoy   = m.actual_25>0 ? pct(s26, m.actual_25) : null;
   const yoyHtml = yoy!=null
     ? (yoy>=0 ? `<span class="pos">+${yoy}%</span>` : `<span class="neg">${yoy}%</span>`)
-    : '<span class="neu">‚Äî</span>';
+    : '<span class="neu">—</span>';
   document.getElementById('modal-title').textContent = merchantLabel(merchantId);
   document.getElementById('modal-sub').innerHTML =
     `<span class="am-pill">${m.am}</span>${m.is_new_client?' <span class="badge-new">new</span>':''}`;
@@ -778,16 +785,16 @@ function openModal(merchantId) {
     <div class="modal-kpi">
       <div class="modal-kpi-label">YTD Actual</div>
       <div class="modal-kpi-value" style="color:var(--green)">${fmt(m.actual_26)}</div>
-      <div class="modal-kpi-sub">${GDATA.summary.ytd_months>0?`Jan‚Äì${MONTHS[GDATA.summary.ytd_months-1]} 2026`:'2026 YTD'}</div>
+      <div class="modal-kpi-sub">${GDATA.summary.ytd_months>0?`Jan–${MONTHS[GDATA.summary.ytd_months-1]} 2026`:'2026 YTD'}</div>
     </div>
     <div class="modal-kpi">
       <div class="modal-kpi-label">FY 2025</div>
-      <div class="modal-kpi-value" style="color:var(--text2)">${m.actual_25>0?fmt(m.actual_25):'‚Äî'}</div>
+      <div class="modal-kpi-value" style="color:var(--text2)">${m.actual_25>0?fmt(m.actual_25):'—'}</div>
       <div class="modal-kpi-sub">YoY: ${yoyHtml}</div>
     </div>
     <div class="modal-kpi">
       <div class="modal-kpi-label">Remaining Budget</div>
-      <div class="modal-kpi-value" style="color:var(--purple)">${m.remaining_budget!=null?fmt(m.remaining_budget):'‚Äî'}</div>
+      <div class="modal-kpi-value" style="color:var(--purple)">${m.remaining_budget!=null?fmt(m.remaining_budget):'—'}</div>
       <div class="modal-kpi-sub">${bpct!=null?`${bpct}% consumed`:'no contract data'}</div>
     </div>`;
   document.getElementById('modal-chart-legend').innerHTML = `
@@ -846,18 +853,18 @@ function openModal(merchantId) {
       const isAct = i < ytdM;
       return `<tr>
         <td style="text-align:left;color:var(--text2)">${mo}</td>
-        <td class="past">${a25>0?fmt(a25):'‚Äì'}</td>
-        <td class="${isAct?'act26':'neu'}">${a26>0?fmt(a26):'‚Äì'}</td>
-        <td class="${!isAct?'proj26':'neu'}">${p26>0?fmt(p26):'‚Äì'}</td>
-        <td>${vs!=null?(vs>=0?`<span class="yoy-pos">+${vs}%</span>`:`<span class="yoy-neg">${vs}%</span>`):'‚Äì'}</td>
+        <td class="past">${a25>0?fmt(a25):'–'}</td>
+        <td class="${isAct?'act26':'neu'}">${a26>0?fmt(a26):'–'}</td>
+        <td class="${!isAct?'proj26':'neu'}">${p26>0?fmt(p26):'–'}</td>
+        <td>${vs!=null?(vs>=0?`<span class="yoy-pos">+${vs}%</span>`:`<span class="yoy-neg">${vs}%</span>`):'–'}</td>
       </tr>`;
     }).join('')}
     <tr style="border-top:1px solid var(--border);font-weight:600">
       <td style="text-align:left">Total</td>
-      <td class="past">${m.actual_25>0?fmt(m.actual_25):'‚Äì'}</td>
+      <td class="past">${m.actual_25>0?fmt(m.actual_25):'–'}</td>
       <td class="act26">${fmt(m.actual_26)}</td>
       <td class="proj26">${fmt(m.proj_26)}</td>
-      <td>${m.actual_25>0?pctStr(s26,m.actual_25):'‚Äì'}</td>
+      <td>${m.actual_25>0?pctStr(s26,m.actual_25):'–'}</td>
     </tr></tbody>`;
   document.getElementById('modal-note').innerHTML = isEstimated
     ? `<span style="opacity:.5;font-size:10px">~ Monthly figures estimated from portfolio seasonality</span>`
@@ -870,8 +877,8 @@ function closeModalDirect() {
   if (modalChart) { modalChart.destroy(); modalChart=null; }
 }
 
-/* ‚îÄ‚îÄ Bootstrap ‚îÄ‚îÄ */
-const INLINE_DATA = {"updated_at":"28/05/2026","summary":{"ytd_actual":3980810,"ytd_months":5,"fy_projection":6759137,"fy_pct_okr":54.1,"okr_total":12494718,"active_merchants_26":78,"active_merchants_25_ytd":93,"new_clients_26":7,"new_clients_25_ytd":13,"ytd_new_clients_revenue":222775,"ytd_25":3369672,"ytd_yoy":18.1},"chart_arrays":{"R26A":[837165,832932,835205,793995,681513,50833,8333,0,5000,0,0,0],"R26P":[8000,13278,3748,0,5000,554267,521817,485893,381633,384432,386119,0],"R25":[706054,647622,561855,662158,646858,713546,758735,719176,671059,743472,1157111,1188831],"R24":[13800,28400,38200,204112,746599,804652,876982,709724,629343,690135,953395,1105978],"OKR":[779345,854922,839481,937582,997523,1105331,1066096,987765,1165013,1114888,1260476,1386296]},"quarterly":{"Q1":{"actual":2505302,"proj":0,"okr":2473748},"Q2":{"actual":1526341,"proj":554267,"okr":3040436},"Q3":{"actual":13333,"proj":1389343,"okr":3218874},"Q4":{"actual":0,"proj":770551,"okr":3761660}},"fy_card":{"capped_total":6090756,"capped_pct":48.7,"uncapped_total":698407,"uncapped_pct":5.6},"merchants":{"jules":{"am":"Eloïse","is_new_client":false,"signed_26":24000,"remaining_budget":16077.64,"actual_26":37181,"proj_26":4947,"actual_25":95135,"monthly_26":[10402,6178,5693,6561,8347,4947,0,0,0,0,0,0],"monthly_25":[9492,6096,10454,6014,7851,15261,8595,1062,4551,6187,8390,11182],"media_fees_ytd":3000,"media_fees_ly":3000},"uber":{"am":"Eva","is_new_client":false,"signed_26":85000,"remaining_budget":45606.19,"actual_26":319450,"proj_26":0,"actual_25":1081888,"monthly_26":[112745,94556,45966,25932,40251,0,0,0,0,0,0,0],"monthly_25":[58241,82645,88343,80388,88676,102045,111184,154470,38299,86098,83033,108466],"media_fees_ytd":0,"media_fees_ly":5000},"adopt":{"am":"Eva","is_new_client":false,"signed_26":84000,"remaining_budget":72437.45,"actual_26":91061,"proj_26":43887,"actual_25":14500,"monthly_26":[2540,18304,26156,22617,21444,32955,10932,0,0,0,0,0],"monthly_25":[3930,9970,600,0,0,0,0,0,0,0,0,0],"media_fees_ytd":8000,"media_fees_ly":0},"alinea":{"am":"Eloïse","is_new_client":false,"signed_26":null,"remaining_budget":null,"actual_26":39575,"proj_26":0,"actual_25":143626,"monthly_26":[14527,22048,3000,0,0,0,0,0,0,0,0,0],"monthly_25":[3116,9242,21105,4358,11086,9292,12045,10061,10482,22137,11726,18976],"media_fees_ytd":0,"media_fees_ly":4000},"allopneus":{"am":"Raphaëlle","is_new_client":false,"signed_26":null,"remaining_budget":null,"actual_26":5313,"proj_26":0,"actual_25":54561,"monthly_26":[4834,479,0,0,0,0,0,0,0,0,0,0],"monthly_25":[6031,4764,5085,5459,3909,5535,3815,0,7688,6525,3513,2237],"media_fees_ytd":0,"media_fees_ly":0},"aroma-zone":{"am":"Eva","is_new_client":true,"signed_26":40000,"remaining_budget":34804.17,"actual_26":9903,"proj_26":27255,"actual_25":0,"monthly_26":[0,0,0,5239,4664,6172,7200,7940,5943,0,0,0],"monthly_25":[0,0,0,0,0,0,0,0,0,0,0,0],"media_fees_ytd":0,"media_fees_ly":0},"b-and-m":{"am":"Raphaëlle","is_new_client":true,"signed_26":null,"remaining_budget":null,"actual_26":38814,"proj_26":0,"actual_25":0,"monthly_26":[18002,4836,15976,0,0,0,0,0,0,0,0,0],"monthly_25":[0,0,0,0,0,0,0,0,0,0,0,0],"media_fees_ytd":0,"media_fees_ly":0},"beauteprivee":{"am":"Eloïse","is_new_client":false,"signed_26":null,"remaining_budget":null,"actual_26":22408,"proj_26":25935,"actual_25":63696,"monthly_26":[5589,4243,5545,3841,3190,3849,3998,3517,3982,4742,5847,0],"monthly_25":[4760,3903,5885,4994,5425,4924,4476,4363,4175,5700,7860,7231],"media_fees_ytd":0,"media_fees_ly":0},"beauty-success":{"am":"Raphaëlle","is_new_client":true,"signed_26":35000,"remaining_budget":33371.78,"actual_26":10338,"proj_26":15657,"actual_25":0,"monthly_26":[0,5000,0,1640,3698,3333,3333,2303,2000,2109,2579,0],"monthly_25":[0,0,0,0,0,0,0,0,0,0,0,0],"media_fees_ytd":2000,"media_fees_ly":0},"bizzbee":{"am":"—","is_new_client":false,"signed_26":null,"remaining_budget":null,"actual_26":3000,"proj_26":0,"actual_25":37907,"monthly_26":[3000,0,0,0,0,0,0,0,0,0,0,0],"monthly_25":[2049,1832,2770,3260,3696,4488,3497,4160,4437,4042,798,2878],"media_fees_ytd":0,"media_fees_ly":0},"blablacar":{"am":"Raphaëlle","is_new_client":true,"signed_26":86000,"remaining_budget":77306.44,"actual_26":64810,"proj_26":52308,"actual_25":0,"monthly_26":[0,11370,14339,20614,18487,14714,18496,18441,657,0,0,0],"monthly_25":[0,0,0,0,0,0,0,0,0,0,0,0],"media_fees_ytd":5000,"media_fees_ly":0},"boulanger":{"am":"Eva","is_new_client":false,"signed_26":33362,"remaining_budget":6276,"actual_26":127853,"proj_26":0,"actual_25":126473,"monthly_26":[37476,25344,20277,26765,17991,0,0,0,0,0,0,0],"monthly_25":[0,0,0,0,0,54,9502,6507,5121,14724,42396,48169],"media_fees_ytd":8000,"media_fees_ly":0},"brico-depot":{"am":"Eloïse","is_new_client":false,"signed_26":25000,"remaining_budget":2278,"actual_26":67104,"proj_26":0,"actual_25":270481,"monthly_26":[5914,2278,9540,34142,15230,0,0,0,0,0,0,0],"monthly_25":[15470,37256,17862,19746,19710,22258,19569,27164,18762,27790,32372,12522],"media_fees_ytd":11000,"media_fees_ly":13000},"bricomarche":{"am":"Eva","is_new_client":false,"signed_26":null,"remaining_budget":null,"actual_26":48671,"proj_26":0,"actual_25":2094,"monthly_26":[16945,16750,14976,0,0,0,0,0,0,0,0,0],"monthly_25":[0,0,0,0,0,0,0,0,0,0,0,2094],"media_fees_ytd":0,"media_fees_ly":0},"but":{"am":"Eloïse","is_new_client":false,"signed_26":96000,"remaining_budget":417.81,"actual_26":37788,"proj_26":0,"actual_25":296174,"monthly_26":[25171,12617,0,0,0,0,0,0,0,0,0,0],"monthly_25":[145483,92928,0,0,0,0,0,0,4270,11633,26031,15829],"media_fees_ytd":5000,"media_fees_ly":0},"carrefour":{"am":"Eva","is_new_client":false,"signed_26":616163,"remaining_budget":432293.53,"actual_26":205775,"proj_26":171975,"actual_25":348087,"monthly_26":[44547,41272,42831,43034,34091,12000,33097,33100,32620,31020,30138,0],"monthly_25":[0,0,0,0,0,0,51988,47788,34751,38387,77436,97737],"media_fees_ytd":60000,"media_fees_ly":0},"castorama":{"am":"Eloïse","is_new_client":false,"signed_26":400000,"remaining_budget":290999.89,"actual_26":132937,"proj_26":226023,"actual_25":345281,"monthly_26":[0,29819,48886,31305,22927,41098,44219,45990,28528,34827,31361,0],"monthly_25":[65861,39184,35939,75705,18040,22435,48996,29060,10061,0,0,0],"media_fees_ytd":10000,"media_fees_ly":10000},"celio":{"am":"Eloïse","is_new_client":false,"signed_26":null,"remaining_budget":null,"actual_26":22969,"proj_26":5000,"actual_25":27015,"monthly_26":[13986,5537,3446,0,0,5000,0,0,0,0,0,0],"monthly_25":[0,0,0,0,0,0,0,0,0,0,7503,19512],"media_fees_ytd":3000,"media_fees_ly":0},"certideal":{"am":"Eloïse","is_new_client":false,"signed_26":null,"remaining_budget":null,"actual_26":38292,"proj_26":52587,"actual_25":99121,"monthly_26":[8832,6607,7111,6852,8890,5416,9490,9426,7415,4974,15866,0],"monthly_25":[7520,4215,5570,5437,5874,6444,7787,6399,10438,6141,18613,14683],"media_fees_ytd":3000,"media_fees_ly":0},"cetelem":{"am":"—","is_new_client":false,"signed_26":null,"remaining_budget":null,"actual_26":11,"proj_26":0,"actual_25":21,"monthly_26":[8,0,3,0,0,0,0,0,0,0,0,0],"monthly_25":[7,0,0,0,0,0,0,0,0,0,0,14],"media_fees_ytd":0,"media_fees_ly":0},"chaussea":{"am":"Eva","is_new_client":false,"signed_26":95000,"remaining_budget":53256.22,"actual_26":50151,"proj_26":5000,"actual_25":62123,"monthly_26":[0,0,44504,5647,0,5000,0,0,0,0,0,0],"monthly_25":[0,0,0,0,0,0,0,0,0,0,46671,15452],"media_fees_ytd":5000,"media_fees_ly":0},"chronodrive":{"am":"Eloïse","is_new_client":false,"signed_26":35000,"remaining_budget":4594.67,"actual_26":44375,"proj_26":0,"actual_25":62410,"monthly_26":[10635,8438,11447,9077,4778,0,0,0,0,0,0,0],"monthly_25":[7978,2052,0,0,7480,11229,502,0,13228,7819,8221,3901],"media_fees_ytd":0,"media_fees_ly":0},"cofidis":{"am":"—","is_new_client":false,"signed_26":null,"remaining_budget":null,"actual_26":9,"proj_26":0,"actual_25":0,"monthly_26":[0,9,0,0,0,0,0,0,0,0,0,0],"monthly_25":[0,0,0,0,0,0,0,0,0,0,0,0],"media_fees_ytd":0,"media_fees_ly":0},"damart":{"am":"Eloïse","is_new_client":false,"signed_26":null,"remaining_budget":null,"actual_26":14311,"proj_26":20641,"actual_25":50375,"monthly_26":[5852,3368,2304,1624,1163,1866,1924,1116,2142,4757,8836,0],"monthly_25":[4753,2850,1649,1342,1387,1307,1162,1230,2565,4902,16378,10850],"media_fees_ytd":0,"media_fees_ly":0},"darjeeling":{"am":"—","is_new_client":false,"signed_26":null,"remaining_budget":null,"actual_26":3000,"proj_26":0,"actual_25":16836,"monthly_26":[0,3000,0,0,0,0,0,0,0,0,0,0],"monthly_25":[3278,2842,426,0,0,1552,3714,1962,1498,1312,252,0],"media_fees_ytd":0,"media_fees_ly":0},"decathlon":{"am":"Eloïse","is_new_client":false,"signed_26":50264,"remaining_budget":23248.5,"actual_26":43588,"proj_26":2500,"actual_25":50266,"monthly_26":[5000,12519,7880,7689,10500,2500,0,0,0,0,0,0],"monthly_25":[0,0,371,9199,12417,12279,16000,0,0,0,0,0],"media_fees_ytd":5000,"media_fees_ly":0},"dominos-pizza":{"am":"Raphaëlle","is_new_client":true,"signed_26":36000,"remaining_budget":11743.34,"actual_26":35133,"proj_26":0,"actual_25":0,"monthly_26":[0,0,12050,12805,10278,0,0,0,0,0,0,0],"monthly_25":[0,0,0,0,0,0,0,0,0,0,0,0],"media_fees_ytd":0,"media_fees_ly":0},"electro-depot":{"am":"—","is_new_client":false,"signed_26":null,"remaining_budget":null,"actual_26":16,"proj_26":0,"actual_25":0,"monthly_26":[0,0,0,16,0,0,0,0,0,0,0,0],"monthly_25":[0,0,0,0,0,0,0,0,0,0,0,0],"media_fees_ytd":0,"media_fees_ly":0},"etam":{"am":"Eloïse","is_new_client":false,"signed_26":700000,"remaining_budget":39018.92,"actual_26":107530,"proj_26":0,"actual_25":342783,"monthly_26":[26349,16362,22961,25806,16052,0,0,0,0,0,0,0],"monthly_25":[27715,23185,19763,19019,24023,37638,32780,20533,20680,19785,51311,46351],"media_fees_ytd":10000,"media_fees_ly":5000},"feed":{"am":"Raphaëlle","is_new_client":false,"signed_26":null,"remaining_budget":null,"actual_26":700,"proj_26":2582,"actual_25":3520,"monthly_26":[80,150,250,120,100,550,352,340,486,544,310,0],"monthly_25":[360,340,520,270,180,340,220,300,350,330,190,120],"media_fees_ytd":0,"media_fees_ly":0},"flunch":{"am":"—","is_new_client":false,"signed_26":null,"remaining_budget":null,"actual_26":5380,"proj_26":0,"actual_25":40063,"monthly_26":[5380,0,0,0,0,0,0,0,0,0,0,0],"monthly_25":[17832,0,0,0,0,0,0,0,0,0,3407,18824],"media_fees_ytd":0,"media_fees_ly":0},"galeries-lafayette":{"am":"Eloïse","is_new_client":false,"signed_26":150000,"remaining_budget":124215,"actual_26":43230,"proj_26":57290,"actual_25":137807,"monthly_26":[12660,8580,7755,7485,6750,10217,13895,7776,6278,8157,10967,0],"monthly_25":[7980,5671,5865,5656,6480,6915,8400,6015,12800,12270,24155,35600],"media_fees_ytd":0,"media_fees_ly":0},"gambettes-box":{"am":"Raphaëlle","is_new_client":false,"signed_26":null,"remaining_budget":null,"actual_26":2275,"proj_26":3275,"actual_25":8896,"monthly_26":[1132,481,311,231,120,36,11,450,590,1079,1109,0],"monthly_25":[763,0,311,439,101,36,15,78,1609,2374,1794,1376],"media_fees_ytd":0,"media_fees_ly":0},"gaumont-pathe":{"am":"—","is_new_client":false,"signed_26":null,"remaining_budget":null,"actual_26":7851,"proj_26":0,"actual_25":47400,"monthly_26":[7851,0,0,0,0,0,0,0,0,0,0,0],"monthly_25":[0,0,0,7147,8728,4787,3242,0,0,4810,1017,17669],"media_fees_ytd":0,"media_fees_ly":0},"gemo":{"am":"—","is_new_client":false,"signed_26":60688,"remaining_budget":748.44,"actual_26":748,"proj_26":0,"actual_25":59921,"monthly_26":[0,0,748,0,0,0,0,0,0,0,0,0],"monthly_25":[0,0,0,0,0,0,0,0,0,0,20985,38936],"media_fees_ytd":0,"media_fees_ly":0},"heetch":{"am":"Raphaëlle","is_new_client":false,"signed_26":20000,"remaining_budget":7022,"actual_26":14418,"proj_26":3724,"actual_25":47940,"monthly_26":[3953,2930,2675,2765,2095,3250,474,0,0,0,0,0],"monthly_25":[3010,3440,3340,3380,3640,3765,3495,3795,3505,3635,3650,9285],"media_fees_ytd":0,"media_fees_ly":0},"hellofresh":{"am":"Eva","is_new_client":false,"signed_26":null,"remaining_budget":null,"actual_26":182121,"proj_26":149871,"actual_25":361078,"monthly_26":[65359,47256,35072,20322,14112,27088,18647,19025,26513,28729,29869,0],"monthly_25":[43606,36954,38020,20970,21924,23124,20702,21260,52661,36362,22682,22813],"media_fees_ytd":25000,"media_fees_ly":2000},"hema":{"am":"Eloïse","is_new_client":false,"signed_26":239166,"remaining_budget":133389.09,"actual_26":22382,"proj_26":18096,"actual_25":120265,"monthly_26":[5105,5236,4741,4235,3065,2810,2979,2862,2911,3148,3386,0],"monthly_25":[2944,3094,8886,10527,3364,10538,10342,10580,11289,16733,7179,24789],"media_fees_ytd":0,"media_fees_ly":10000},"hema-online":{"am":"—","is_new_client":false,"signed_26":null,"remaining_budget":null,"actual_26":2,"proj_26":0,"actual_25":4,"monthly_26":[0,0,0,2,0,0,0,0,0,0,0,0],"monthly_25":[0,0,0,0,0,0,4,0,0,0,0,0],"media_fees_ytd":0,"media_fees_ly":0},"hippopotamus":{"am":"Raphaëlle","is_new_client":false,"signed_26":50000,"remaining_budget":37706.61,"actual_26":23419,"proj_26":22193,"actual_25":0,"monthly_26":[0,0,0,12660,10759,12773,9420,0,0,0,0,0],"monthly_25":[0,0,0,0,0,0,0,0,0,0,0,0],"media_fees_ytd":0,"media_fees_ly":0},"histoire-d-or":{"am":"—","is_new_client":false,"signed_26":15000,"remaining_budget":15000,"actual_26":6550,"proj_26":3452,"actual_25":0,"monthly_26":[0,0,0,0,6550,3452,0,0,0,0,0,0],"monthly_25":[0,0,0,0,0,0,0,0,0,0,0,0],"media_fees_ytd":0,"media_fees_ly":0},"horace":{"am":"Raphaëlle","is_new_client":false,"signed_26":null,"remaining_budget":null,"actual_26":12840,"proj_26":14529,"actual_25":38820,"monthly_26":[2880,3180,2860,2120,1800,2379,2519,2209,2395,2235,2792,0],"monthly_25":[2010,2200,2040,7150,1980,1600,1640,1300,1750,2170,5070,9910],"media_fees_ytd":0,"media_fees_ly":4000},"instant-gaming":{"am":"Raphaëlle","is_new_client":false,"signed_26":null,"remaining_budget":null,"actual_26":5529,"proj_26":0,"actual_25":28035,"monthly_26":[2454,2108,967,0,0,0,0,0,0,0,0,0],"monthly_25":[2258,2242,2173,1855,2027,2000,2346,2368,2322,2459,3092,2893],"media_fees_ytd":0,"media_fees_ly":0},"kfc":{"am":"Eva","is_new_client":false,"signed_26":114947,"remaining_budget":30481.96,"actual_26":93255,"proj_26":7994,"actual_25":97555,"monthly_26":[0,28877,27580,28626,8172,5000,2994,0,0,0,0,0],"monthly_25":[0,0,0,0,0,0,981,16551,16964,34274,28785,0],"media_fees_ytd":10000,"media_fees_ly":0},"kiabi":{"am":"Eva","is_new_client":false,"signed_26":517269,"remaining_budget":360197.29,"actual_26":215877,"proj_26":275328,"actual_25":626944,"monthly_26":[30883,38550,37605,47767,61072,69825,55897,66326,61250,22030,0,0],"monthly_25":[32907,24993,44160,52208,60246,70526,40946,83194,73381,39512,39921,64950],"media_fees_ytd":11000,"media_fees_ly":10000},"kiko":{"am":"Raphaëlle","is_new_client":false,"signed_26":null,"remaining_budget":null,"actual_26":14361,"proj_26":0,"actual_25":158188,"monthly_26":[6361,3000,0,0,5000,0,0,0,0,0,0,0],"monthly_25":[10982,15614,11276,25505,13490,12914,14343,15276,10668,3887,5379,18854],"media_fees_ytd":0,"media_fees_ly":13000},"krys":{"am":"Raphaëlle","is_new_client":true,"signed_26":25000,"remaining_budget":15750,"actual_26":23931,"proj_26":0,"actual_25":0,"monthly_26":[0,0,2350,6980,14601,0,0,0,0,0,0,0],"monthly_25":[0,0,0,0,0,0,0,0,0,0,0,0],"media_fees_ytd":5000,"media_fees_ly":0},"lalalab":{"am":"Eva","is_new_client":false,"signed_26":null,"remaining_budget":null,"actual_26":6284,"proj_26":10141,"actual_25":30896,"monthly_26":[1628,1764,960,908,1024,3905,951,1201,1451,1063,1570,0],"monthly_25":[1540,2730,1016,1088,1308,2050,1316,3560,2412,1508,4522,7846],"media_fees_ytd":0,"media_fees_ly":1000},"le-closet":{"am":"Raphaëlle","is_new_client":false,"signed_26":null,"remaining_budget":null,"actual_26":2682,"proj_26":3668,"actual_25":9381,"monthly_26":[630,666,582,471,333,545,670,424,600,682,747,0],"monthly_25":[960,660,825,615,615,585,585,690,1155,990,885,816],"media_fees_ytd":0,"media_fees_ly":0},"leon":{"am":"—","is_new_client":false,"signed_26":null,"remaining_budget":null,"actual_26":8,"proj_26":0,"actual_25":0,"monthly_26":[0,0,8,0,0,0,0,0,0,0,0,0],"monthly_25":[0,0,0,0,0,0,0,0,0,0,0,0],"media_fees_ytd":0,"media_fees_ly":0},"leon-de-bruxelles":{"am":"Raphaëlle","is_new_client":true,"signed_26":38166,"remaining_budget":8839.36,"actual_26":39846,"proj_26":0,"actual_25":0,"monthly_26":[0,0,14854,14882,10110,0,0,0,0,0,0,0],"monthly_25":[0,0,0,0,0,0,0,0,0,0,0,0],"media_fees_ytd":0,"media_fees_ly":0},"leroy-merlin":{"am":"Eva","is_new_client":false,"signed_26":1000000,"remaining_budget":711759.78,"actual_26":394541,"proj_26":570806,"actual_25":796740,"monthly_26":[33893,90744,69636,119591,80677,100564,107323,105287,77352,93641,86639,0],"monthly_25":[58685,82129,69743,143293,125750,67161,83998,35009,16044,39362,51400,24166],"media_fees_ytd":5000,"media_fees_ly":10000},"les-raffineurs":{"am":"—","is_new_client":false,"signed_26":null,"remaining_budget":null,"actual_26":2260,"proj_26":4134,"actual_25":11632,"monthly_26":[570,562,401,422,305,935,489,366,412,568,1364,0],"monthly_25":[376,372,372,293,475,635,451,376,447,435,2104,5296],"media_fees_ytd":0,"media_fees_ly":0},"maisons-du-monde":{"am":"Eva","is_new_client":false,"signed_26":null,"remaining_budget":null,"actual_26":75451,"proj_26":0,"actual_25":176302,"monthly_26":[32488,16988,17733,8242,0,0,0,0,0,0,0,0],"monthly_25":[0,0,0,9099,18828,12595,19190,13300,18482,16648,35949,32211],"media_fees_ytd":5000,"media_fees_ly":5950},"monoprix":{"am":"Eva","is_new_client":false,"signed_26":100000,"remaining_budget":50468.97,"actual_26":71312,"proj_26":12296,"actual_25":53161,"monthly_26":[0,13487,19761,18379,19685,5000,7296,0,0,0,0,0],"monthly_25":[0,0,0,0,0,0,0,7302,19105,16335,10419,0],"media_fees_ytd":5000,"media_fees_ly":0},"natura-force":{"am":"—","is_new_client":false,"signed_26":null,"remaining_budget":null,"actual_26":63,"proj_26":491,"actual_25":63,"monthly_26":[6,13,16,18,10,99,79,44,120,59,90,0],"monthly_25":[0,0,1,0,0,12,13,0,0,0,31,6],"media_fees_ytd":0,"media_fees_ly":0},"nespresso":{"am":"Eva","is_new_client":false,"signed_26":28000,"remaining_budget":21487.09,"actual_26":33622,"proj_26":13178,"actual_25":88695,"monthly_26":[5910,8908,7266,5849,5689,6334,6496,348,0,0,0,0],"monthly_25":[0,0,6421,10432,9117,12414,5196,3930,10443,5165,15325,10252],"media_fees_ytd":2500,"media_fees_ly":5000},"nocibe":{"am":"Eva","is_new_client":false,"signed_26":276429,"remaining_budget":199324.38,"actual_26":121502,"proj_26":94467,"actual_25":238139,"monthly_26":[19290,29451,14296,24349,34116,48355,5000,36112,5000,0,0,0],"monthly_25":[0,0,0,0,12737,17801,17094,3544,0,15164,77137,94662],"media_fees_ytd":10000,"media_fees_ly":3000},"pokawa":{"am":"Eva","is_new_client":false,"signed_26":51000,"remaining_budget":40701.6,"actual_26":34016,"proj_26":37487,"actual_25":68850,"monthly_26":[4716,5202,11907,7131,5060,14618,9255,9025,4589,0,0,0],"monthly_25":[0,8585,4339,4901,5701,9630,5428,5488,10769,4601,4645,4763],"media_fees_ytd":5000,"media_fees_ly":5000},"printemps":{"am":"Eloïse","is_new_client":false,"signed_26":253000,"remaining_budget":176697.5,"actual_26":47369,"proj_26":70845,"actual_25":159804,"monthly_26":[13760,8144,8521,8922,8022,5000,18691,10025,10110,12312,14707,0],"monthly_25":[8761,11448,5843,5862,6577,13725,10503,7291,13062,16736,23797,36199],"media_fees_ytd":0,"media_fees_ly":5000},"prismashop":{"am":"Raphaëlle","is_new_client":false,"signed_26":null,"remaining_budget":null,"actual_26":3208,"proj_26":4927,"actual_25":8824,"monthly_26":[872,512,696,616,512,676,857,874,718,823,979,0],"monthly_25":[728,680,1624,680,480,624,592,552,608,552,720,984],"media_fees_ytd":0,"media_fees_ly":0},"privatesportshop":{"am":"Raphaëlle","is_new_client":false,"signed_26":null,"remaining_budget":null,"actual_26":5556,"proj_26":7448,"actual_25":15466,"monthly_26":[1319,1116,1311,1020,790,980,1105,1134,1092,1207,1930,0],"monthly_25":[1295,1059,1207,1168,1377,1078,1206,1229,1368,1268,1659,1552],"media_fees_ytd":0,"media_fees_ly":0},"promod":{"am":"—","is_new_client":false,"signed_26":60000,"remaining_budget":5765.03,"actual_26":1153,"proj_26":0,"actual_25":60270,"monthly_26":[1153,0,0,0,0,0,0,0,0,0,0,0],"monthly_25":[3443,4057,4919,4867,5933,6431,5830,2874,4219,4164,6028,7505],"media_fees_ytd":0,"media_fees_ly":0},"quitoque":{"am":"Raphaëlle","is_new_client":false,"signed_26":null,"remaining_budget":null,"actual_26":6286,"proj_26":9600,"actual_25":16865,"monthly_26":[2240,1853,1035,490,668,1555,1162,1152,1865,1875,1991,0],"monthly_25":[2290,3234,1134,940,796,588,383,946,3307,1467,870,910],"media_fees_ytd":0,"media_fees_ly":0},"rougegorge":{"am":"Eloïse","is_new_client":false,"signed_26":null,"remaining_budget":null,"actual_26":20481,"proj_26":20795,"actual_25":73841,"monthly_26":[8369,4987,2416,2678,2031,6837,5087,2585,2129,1775,2382,0],"monthly_25":[3593,3068,551,6605,10692,13461,12785,6209,2976,2568,4176,7157],"media_fees_ytd":0,"media_fees_ly":2000},"sephora":{"am":"Eva","is_new_client":false,"signed_26":null,"remaining_budget":null,"actual_26":133487,"proj_26":325710,"actual_25":252747,"monthly_26":[29855,25066,26301,20551,31714,51588,50671,44977,46267,54257,77950,0],"monthly_25":[151,5113,111,7116,10310,26623,33812,20804,31886,24371,55108,37342],"media_fees_ytd":10000,"media_fees_ly":22000},"showroomprive":{"am":"Eva","is_new_client":false,"signed_26":200000,"remaining_budget":128897,"actual_26":94568,"proj_26":83104,"actual_25":267304,"monthly_26":[17847,15260,16211,22828,22422,5000,12302,16272,14455,18468,16607,0],"monthly_25":[12045,17259,14567,14193,22025,29704,17727,15330,15766,21409,47453,39826],"media_fees_ytd":10000,"media_fees_ly":5000},"stych":{"am":"Raphaëlle","is_new_client":false,"signed_26":null,"remaining_budget":null,"actual_26":6120,"proj_26":12102,"actual_25":14460,"monthly_26":[1680,1160,1640,720,920,2004,2014,1710,1981,2102,2291,0],"monthly_25":[1340,840,1280,1080,760,920,1280,1320,1080,1360,2200,1000],"media_fees_ytd":0,"media_fees_ly":0},"subway":{"am":"Eva","is_new_client":false,"signed_26":150000,"remaining_budget":118120.14,"actual_26":38593,"proj_26":46771,"actual_25":82102,"monthly_26":[2670,7873,12196,8987,6867,3000,9376,9340,8340,8964,7751,0],"monthly_25":[0,4597,10372,0,0,15457,285,0,15214,10494,9769,15914],"media_fees_ytd":3000,"media_fees_ly":0},"the-bradery":{"am":"Eloïse","is_new_client":false,"signed_26":null,"remaining_budget":null,"actual_26":59750,"proj_26":80470,"actual_25":123556,"monthly_26":[9407,11762,15615,13094,9872,18743,9023,5885,10477,20055,16287,0],"monthly_25":[5914,5247,17256,8377,8939,10479,6576,5897,9199,11996,15900,17776],"media_fees_ytd":0,"media_fees_ly":5000},"uber-eats":{"am":"Eva","is_new_client":false,"signed_26":164354,"remaining_budget":121638.55,"actual_26":260770,"proj_26":10000,"actual_25":584336,"monthly_26":[61959,55344,54874,49245,39348,10000,0,0,0,0,0,0],"monthly_25":[75917,43710,41690,35155,35496,37248,44170,51180,51460,52379,55945,59986],"media_fees_ytd":0,"media_fees_ly":5000},"ultra-premium-direct":{"am":"Eloïse","is_new_client":false,"signed_26":null,"remaining_budget":null,"actual_26":35817,"proj_26":0,"actual_25":70777,"monthly_26":[20322,13979,1516,0,0,0,0,0,0,0,0,0],"monthly_25":[0,0,0,0,0,0,4428,10679,15164,11243,14803,14460],"media_fees_ytd":16000,"media_fees_ly":0},"ulysse":{"am":"—","is_new_client":false,"signed_26":null,"remaining_budget":null,"actual_26":3560,"proj_26":8403,"actual_25":6360,"monthly_26":[540,780,860,740,640,1221,1338,1301,944,1494,2105,0],"monthly_25":[520,460,560,460,640,440,740,620,480,480,420,540],"media_fees_ytd":0,"media_fees_ly":0},"vente-privee":{"am":"Eloïse","is_new_client":false,"signed_26":120000,"remaining_budget":86840,"actual_26":136905,"proj_26":53489,"actual_25":339367,"monthly_26":[28472,25430,33761,26852,22390,26929,23777,2783,0,0,0,0],"monthly_25":[19262,19059,23952,18003,19947,24777,22872,26751,26748,38482,62306,37208],"media_fees_ytd":0,"media_fees_ly":0},"vertbaudet":{"am":"Eloïse","is_new_client":false,"signed_26":93222,"remaining_budget":47278.32,"actual_26":49607,"proj_26":42548,"actual_25":138072,"monthly_26":[22026,8494,10418,6323,2346,7487,9857,7910,7381,9913,0,0],"monthly_25":[12592,4948,14204,9292,7511,7888,10640,8752,10297,9968,31175,10805],"media_fees_ytd":4000,"media_fees_ly":5000},"verychic":{"am":"—","is_new_client":false,"signed_26":null,"remaining_budget":null,"actual_26":5,"proj_26":0,"actual_25":0,"monthly_26":[5,0,0,0,0,0,0,0,0,0,0,0],"monthly_25":[0,0,0,0,0,0,0,0,0,0,0,0],"media_fees_ytd":0,"media_fees_ly":0},"zadig-et-voltaire":{"am":"Raphaëlle","is_new_client":false,"signed_26":null,"remaining_budget":null,"actual_26":7593,"proj_26":9709,"actual_25":29881,"monthly_26":[2655,1294,1432,1159,1053,2290,1851,761,2283,1006,1518,0],"monthly_25":[0,0,0,149,1662,1642,2332,3547,4350,4282,4781,7136],"media_fees_ytd":0,"media_fees_ly":0},"zoomalia":{"am":"Eloïse","is_new_client":false,"signed_26":null,"remaining_budget":null,"actual_26":22186,"proj_26":33689,"actual_25":91297,"monthly_26":[4431,4089,4925,5009,3732,5205,5603,5556,5357,5817,6151,0],"monthly_25":[6306,10855,7455,8462,7448,6292,7015,6520,6713,8047,7774,8410],"media_fees_ytd":0,"media_fees_ly":3000}}};
+/* ── Bootstrap ── */
+const INLINE_DATA = {"updated_at":"29/05/2026","summary":{"ytd_actual":3980810,"ytd_months":5,"fy_projection":6759137,"fy_pct_okr":54.1,"okr_total":12494718,"active_merchants_26":78,"active_merchants_25_ytd":93,"new_clients_26":7,"new_clients_25_ytd":13,"ytd_new_clients_revenue":222775,"ytd_25":3369673,"ytd_yoy":18.1},"chart_arrays":{"R26A":[837165,832932,835205,793995,681513,50833,8333,0,5000,0,0,0],"R26P":[8000,13278,3748,0,5000,554267,521817,485893,381633,384432,386119,0],"R25":[706054,647622,561855,662158,646858,713546,758735,719177,671060,743468,1157111,1188822],"R24":[13800,28400,38200,204112,746599,804652,876982,709724,629343,690135,953395,1105978],"OKR":[779345,854922,839481,937582,997523,1105331,1066096,987765,1165013,1114888,1260476,1386296]},"quarterly":{"Q1":{"actual":2505302,"proj":0,"okr":2473748},"Q2":{"actual":1526341,"proj":554267,"okr":3040436},"Q3":{"actual":13333,"proj":1389343,"okr":3218874},"Q4":{"actual":0,"proj":770551,"okr":3761660}},"fy_card":{"capped_total":6090756,"capped_pct":48.7,"uncapped_total":698407,"uncapped_pct":5.6},"merchants":{"jules":{"am":"Eloïse","is_new_client":false,"signed_26":24000,"remaining_budget":16077.64,"actual_26":37181,"proj_26":4947,"actual_25":95135,"monthly_26":[10402,6178,5693,6561,8347,4947,0,0,0,0,0,0],"monthly_25":[9492,6096,10454,6014,7851,15261,8595,1062,4551,6187,8390,11182],"media_fees_ytd":3000,"media_fees_ly":3000},"uber":{"am":"Eva","is_new_client":false,"signed_26":85000,"remaining_budget":45606.19,"actual_26":319450,"proj_26":0,"actual_25":1081888,"monthly_26":[112745,94556,45966,25932,40251,0,0,0,0,0,0,0],"monthly_25":[58241,82645,88343,80388,88676,102045,111184,154470,38299,86098,83033,108466],"media_fees_ytd":0,"media_fees_ly":5000},"adopt":{"am":"Eva","is_new_client":false,"signed_26":84000,"remaining_budget":72437.45,"actual_26":91061,"proj_26":43887,"actual_25":14500,"monthly_26":[2540,18304,26156,22617,21444,32955,10932,0,0,0,0,0],"monthly_25":[3930,9970,600,0,0,0,0,0,0,0,0,0],"media_fees_ytd":8000,"media_fees_ly":0},"alinea":{"am":"Eloïse","is_new_client":false,"signed_26":null,"remaining_budget":null,"actual_26":39575,"proj_26":0,"actual_25":143626,"monthly_26":[14527,22048,3000,0,0,0,0,0,0,0,0,0],"monthly_25":[3116,9242,21105,4358,11086,9292,12045,10061,10482,22137,11726,18976],"media_fees_ytd":0,"media_fees_ly":4000},"allopneus":{"am":"Raphaëlle","is_new_client":false,"signed_26":null,"remaining_budget":null,"actual_26":5313,"proj_26":0,"actual_25":54561,"monthly_26":[4834,479,0,0,0,0,0,0,0,0,0,0],"monthly_25":[6031,4764,5085,5459,3909,5535,3815,0,7688,6525,3513,2237],"media_fees_ytd":0,"media_fees_ly":0},"aroma-zone":{"am":"Eva","is_new_client":true,"signed_26":40000,"remaining_budget":34804.17,"actual_26":9903,"proj_26":27255,"actual_25":0,"monthly_26":[0,0,0,5239,4664,6172,7200,7940,5943,0,0,0],"monthly_25":[0,0,0,0,0,0,0,0,0,0,0,0],"media_fees_ytd":0,"media_fees_ly":0},"b-and-m":{"am":"Raphaëlle","is_new_client":true,"signed_26":null,"remaining_budget":null,"actual_26":38814,"proj_26":0,"actual_25":0,"monthly_26":[18002,4836,15976,0,0,0,0,0,0,0,0,0],"monthly_25":[0,0,0,0,0,0,0,0,0,0,0,0],"media_fees_ytd":0,"media_fees_ly":0},"beauteprivee":{"am":"Eloïse","is_new_client":false,"signed_26":null,"remaining_budget":null,"actual_26":22408,"proj_26":25935,"actual_25":63696,"monthly_26":[5589,4243,5545,3841,3190,3849,3998,3517,3982,4742,5847,0],"monthly_25":[4760,3903,5885,4994,5425,4924,4476,4363,4175,5700,7860,7231],"media_fees_ytd":0,"media_fees_ly":0},"beauty-success":{"am":"Raphaëlle","is_new_client":true,"signed_26":35000,"remaining_budget":33371.78,"actual_26":10338,"proj_26":15657,"actual_25":0,"monthly_26":[0,5000,0,1640,3698,3333,3333,2303,2000,2109,2579,0],"monthly_25":[0,0,0,0,0,0,0,0,0,0,0,0],"media_fees_ytd":2000,"media_fees_ly":0},"bizzbee":{"am":"—","is_new_client":false,"signed_26":null,"remaining_budget":null,"actual_26":3000,"proj_26":0,"actual_25":37907,"monthly_26":[3000,0,0,0,0,0,0,0,0,0,0,0],"monthly_25":[2049,1832,2770,3260,3696,4488,3497,4160,4437,4042,798,2878],"media_fees_ytd":0,"media_fees_ly":0},"blablacar":{"am":"Raphaëlle","is_new_client":true,"signed_26":86000,"remaining_budget":77306.44,"actual_26":64810,"proj_26":52308,"actual_25":0,"monthly_26":[0,11370,14339,20614,18487,14714,18496,18441,657,0,0,0],"monthly_25":[0,0,0,0,0,0,0,0,0,0,0,0],"media_fees_ytd":5000,"media_fees_ly":0},"boulanger":{"am":"Eva","is_new_client":false,"signed_26":33362,"remaining_budget":6276,"actual_26":127853,"proj_26":0,"actual_25":126464,"monthly_26":[37476,25344,20277,26765,17991,0,0,0,0,0,0,0],"monthly_25":[0,0,0,0,0,54,9502,6507,5121,14724,42396,48160],"media_fees_ytd":8000,"media_fees_ly":0},"brico-depot":{"am":"Eloïse","is_new_client":false,"signed_26":25000,"remaining_budget":2278,"actual_26":67104,"proj_26":0,"actual_25":270481,"monthly_26":[5914,2278,9540,34142,15230,0,0,0,0,0,0,0],"monthly_25":[15470,37256,17862,19746,19710,22258,19569,27164,18762,27790,32372,12522],"media_fees_ytd":11000,"media_fees_ly":13000},"bricomarche":{"am":"Eva","is_new_client":false,"signed_26":null,"remaining_budget":null,"actual_26":48671,"proj_26":0,"actual_25":2094,"monthly_26":[16945,16750,14976,0,0,0,0,0,0,0,0,0],"monthly_25":[0,0,0,0,0,0,0,0,0,0,0,2094],"media_fees_ytd":0,"media_fees_ly":0},"but":{"am":"Eloïse","is_new_client":false,"signed_26":96000,"remaining_budget":417.81,"actual_26":37788,"proj_26":0,"actual_25":296174,"monthly_26":[25171,12617,0,0,0,0,0,0,0,0,0,0],"monthly_25":[145483,92928,0,0,0,0,0,0,4270,11633,26031,15829],"media_fees_ytd":5000,"media_fees_ly":0},"carrefour":{"am":"Eva","is_new_client":false,"signed_26":616163,"remaining_budget":432293.53,"actual_26":205775,"proj_26":171975,"actual_25":348087,"monthly_26":[44547,41272,42831,43034,34091,12000,33097,33100,32620,31020,30138,0],"monthly_25":[0,0,0,0,0,0,51988,47788,34751,38387,77436,97737],"media_fees_ytd":60000,"media_fees_ly":0},"castorama":{"am":"Eloïse","is_new_client":false,"signed_26":400000,"remaining_budget":290999.89,"actual_26":132937,"proj_26":226023,"actual_25":345281,"monthly_26":[0,29819,48886,31305,22927,41098,44219,45990,28528,34827,31361,0],"monthly_25":[65861,39184,35939,75705,18040,22435,48996,29060,10061,0,0,0],"media_fees_ytd":10000,"media_fees_ly":10000},"celio":{"am":"Eloïse","is_new_client":false,"signed_26":null,"remaining_budget":null,"actual_26":22969,"proj_26":5000,"actual_25":27015,"monthly_26":[13986,5537,3446,0,0,5000,0,0,0,0,0,0],"monthly_25":[0,0,0,0,0,0,0,0,0,0,7503,19512],"media_fees_ytd":3000,"media_fees_ly":0},"certideal":{"am":"Eloïse","is_new_client":false,"signed_26":null,"remaining_budget":null,"actual_26":38292,"proj_26":52587,"actual_25":99121,"monthly_26":[8832,6607,7111,6852,8890,5416,9490,9426,7415,4974,15866,0],"monthly_25":[7520,4215,5570,5437,5874,6444,7787,6399,10438,6141,18613,14683],"media_fees_ytd":3000,"media_fees_ly":0},"cetelem":{"am":"—","is_new_client":false,"signed_26":null,"remaining_budget":null,"actual_26":11,"proj_26":0,"actual_25":21,"monthly_26":[8,0,3,0,0,0,0,0,0,0,0,0],"monthly_25":[7,0,0,0,0,0,0,0,0,0,0,14],"media_fees_ytd":0,"media_fees_ly":0},"chaussea":{"am":"Eva","is_new_client":false,"signed_26":95000,"remaining_budget":53256.22,"actual_26":50151,"proj_26":5000,"actual_25":62123,"monthly_26":[0,0,44504,5647,0,5000,0,0,0,0,0,0],"monthly_25":[0,0,0,0,0,0,0,0,0,0,46671,15452],"media_fees_ytd":5000,"media_fees_ly":0},"chronodrive":{"am":"Eloïse","is_new_client":false,"signed_26":35000,"remaining_budget":4594.67,"actual_26":44375,"proj_26":0,"actual_25":62410,"monthly_26":[10635,8438,11447,9077,4778,0,0,0,0,0,0,0],"monthly_25":[7978,2052,0,0,7480,11229,502,0,13228,7819,8221,3901],"media_fees_ytd":0,"media_fees_ly":0},"cofidis":{"am":"—","is_new_client":false,"signed_26":null,"remaining_budget":null,"actual_26":9,"proj_26":0,"actual_25":0,"monthly_26":[0,9,0,0,0,0,0,0,0,0,0,0],"monthly_25":[0,0,0,0,0,0,0,0,0,0,0,0],"media_fees_ytd":0,"media_fees_ly":0},"damart":{"am":"Eloïse","is_new_client":false,"signed_26":null,"remaining_budget":null,"actual_26":14311,"proj_26":20641,"actual_25":50375,"monthly_26":[5852,3368,2304,1624,1163,1866,1924,1116,2142,4757,8836,0],"monthly_25":[4753,2850,1649,1342,1387,1307,1162,1230,2565,4902,16378,10850],"media_fees_ytd":0,"media_fees_ly":0},"darjeeling":{"am":"—","is_new_client":false,"signed_26":null,"remaining_budget":null,"actual_26":3000,"proj_26":0,"actual_25":16835,"monthly_26":[0,3000,0,0,0,0,0,0,0,0,0,0],"monthly_25":[3278,2842,425,0,0,1552,3714,1962,1498,1312,252,0],"media_fees_ytd":0,"media_fees_ly":0},"decathlon":{"am":"Eloïse","is_new_client":false,"signed_26":50264,"remaining_budget":23248.5,"actual_26":43588,"proj_26":2500,"actual_25":50266,"monthly_26":[5000,12519,7880,7689,10500,2500,0,0,0,0,0,0],"monthly_25":[0,0,371,9199,12417,12279,16000,0,0,0,0,0],"media_fees_ytd":5000,"media_fees_ly":0},"dominos-pizza":{"am":"Raphaëlle","is_new_client":true,"signed_26":36000,"remaining_budget":11743.34,"actual_26":35133,"proj_26":0,"actual_25":0,"monthly_26":[0,0,12050,12805,10278,0,0,0,0,0,0,0],"monthly_25":[0,0,0,0,0,0,0,0,0,0,0,0],"media_fees_ytd":0,"media_fees_ly":0},"electro-depot":{"am":"—","is_new_client":false,"signed_26":null,"remaining_budget":null,"actual_26":16,"proj_26":0,"actual_25":0,"monthly_26":[0,0,0,16,0,0,0,0,0,0,0,0],"monthly_25":[0,0,0,0,0,0,0,0,0,0,0,0],"media_fees_ytd":0,"media_fees_ly":0},"etam":{"am":"Eloïse","is_new_client":false,"signed_26":700000,"remaining_budget":39018.92,"actual_26":107530,"proj_26":0,"actual_25":342783,"monthly_26":[26349,16362,22961,25806,16052,0,0,0,0,0,0,0],"monthly_25":[27715,23185,19763,19019,24023,37638,32780,20533,20680,19785,51311,46351],"media_fees_ytd":10000,"media_fees_ly":5000},"feed":{"am":"Raphaëlle","is_new_client":false,"signed_26":null,"remaining_budget":null,"actual_26":700,"proj_26":2582,"actual_25":3520,"monthly_26":[80,150,250,120,100,550,352,340,486,544,310,0],"monthly_25":[360,340,520,270,180,340,220,300,350,330,190,120],"media_fees_ytd":0,"media_fees_ly":0},"flunch":{"am":"—","is_new_client":false,"signed_26":null,"remaining_budget":null,"actual_26":5380,"proj_26":0,"actual_25":40063,"monthly_26":[5380,0,0,0,0,0,0,0,0,0,0,0],"monthly_25":[17832,0,0,0,0,0,0,0,0,0,3407,18824],"media_fees_ytd":0,"media_fees_ly":0},"galeries-lafayette":{"am":"Eloïse","is_new_client":false,"signed_26":150000,"remaining_budget":124215,"actual_26":43230,"proj_26":57290,"actual_25":137807,"monthly_26":[12660,8580,7755,7485,6750,10217,13895,7776,6278,8157,10967,0],"monthly_25":[7980,5671,5865,5656,6480,6915,8400,6015,12800,12270,24155,35600],"media_fees_ytd":0,"media_fees_ly":0},"gambettes-box":{"am":"Raphaëlle","is_new_client":false,"signed_26":null,"remaining_budget":null,"actual_26":2275,"proj_26":3275,"actual_25":8896,"monthly_26":[1132,481,311,231,120,36,11,450,590,1079,1109,0],"monthly_25":[763,0,311,439,101,36,15,78,1609,2374,1794,1376],"media_fees_ytd":0,"media_fees_ly":0},"gaumont-pathe":{"am":"—","is_new_client":false,"signed_26":null,"remaining_budget":null,"actual_26":7851,"proj_26":0,"actual_25":47400,"monthly_26":[7851,0,0,0,0,0,0,0,0,0,0,0],"monthly_25":[0,0,0,7147,8728,4787,3242,0,0,4810,1017,17669],"media_fees_ytd":0,"media_fees_ly":0},"gemo":{"am":"—","is_new_client":false,"signed_26":60688,"remaining_budget":748.44,"actual_26":748,"proj_26":0,"actual_25":59921,"monthly_26":[0,0,748,0,0,0,0,0,0,0,0,0],"monthly_25":[0,0,0,0,0,0,0,0,0,0,20985,38936],"media_fees_ytd":0,"media_fees_ly":0},"heetch":{"am":"Raphaëlle","is_new_client":false,"signed_26":20000,"remaining_budget":7022,"actual_26":14418,"proj_26":3724,"actual_25":47940,"monthly_26":[3953,2930,2675,2765,2095,3250,474,0,0,0,0,0],"monthly_25":[3010,3440,3340,3380,3640,3765,3495,3795,3505,3635,3650,9285],"media_fees_ytd":0,"media_fees_ly":0},"hellofresh":{"am":"Eva","is_new_client":false,"signed_26":null,"remaining_budget":null,"actual_26":182121,"proj_26":149871,"actual_25":361078,"monthly_26":[65359,47256,35072,20322,14112,27088,18647,19025,26513,28729,29869,0],"monthly_25":[43606,36954,38020,20970,21924,23124,20702,21260,52661,36362,22682,22813],"media_fees_ytd":25000,"media_fees_ly":2000},"hema":{"am":"Eloïse","is_new_client":false,"signed_26":239166,"remaining_budget":133389.09,"actual_26":22382,"proj_26":18096,"actual_25":120265,"monthly_26":[5105,5236,4741,4235,3065,2810,2979,2862,2911,3148,3386,0],"monthly_25":[2944,3094,8886,10527,3364,10538,10342,10580,11289,16733,7179,24789],"media_fees_ytd":0,"media_fees_ly":10000},"hema-online":{"am":"—","is_new_client":false,"signed_26":null,"remaining_budget":null,"actual_26":2,"proj_26":0,"actual_25":4,"monthly_26":[0,0,0,2,0,0,0,0,0,0,0,0],"monthly_25":[0,0,0,0,0,0,4,0,0,0,0,0],"media_fees_ytd":0,"media_fees_ly":0},"hippopotamus":{"am":"Raphaëlle","is_new_client":false,"signed_26":50000,"remaining_budget":37706.61,"actual_26":23419,"proj_26":22193,"actual_25":0,"monthly_26":[0,0,0,12660,10759,12773,9420,0,0,0,0,0],"monthly_25":[0,0,0,0,0,0,0,0,0,0,0,0],"media_fees_ytd":0,"media_fees_ly":0},"histoire-d-or":{"am":"—","is_new_client":false,"signed_26":15000,"remaining_budget":15000,"actual_26":6550,"proj_26":3452,"actual_25":0,"monthly_26":[0,0,0,0,6550,3452,0,0,0,0,0,0],"monthly_25":[0,0,0,0,0,0,0,0,0,0,0,0],"media_fees_ytd":0,"media_fees_ly":0},"horace":{"am":"Raphaëlle","is_new_client":false,"signed_26":null,"remaining_budget":null,"actual_26":12840,"proj_26":14529,"actual_25":38820,"monthly_26":[2880,3180,2860,2120,1800,2379,2519,2209,2395,2235,2792,0],"monthly_25":[2010,2200,2040,7150,1980,1600,1640,1300,1750,2170,5070,9910],"media_fees_ytd":0,"media_fees_ly":4000},"instant-gaming":{"am":"Raphaëlle","is_new_client":false,"signed_26":null,"remaining_budget":null,"actual_26":5529,"proj_26":0,"actual_25":28035,"monthly_26":[2454,2108,967,0,0,0,0,0,0,0,0,0],"monthly_25":[2258,2242,2173,1855,2027,2000,2346,2368,2322,2459,3092,2893],"media_fees_ytd":0,"media_fees_ly":0},"kfc":{"am":"Eva","is_new_client":false,"signed_26":114947,"remaining_budget":30481.96,"actual_26":93255,"proj_26":7994,"actual_25":97556,"monthly_26":[0,28877,27580,28626,8172,5000,2994,0,0,0,0,0],"monthly_25":[0,0,0,0,0,0,981,16551,16965,34274,28785,0],"media_fees_ytd":10000,"media_fees_ly":0},"kiabi":{"am":"Eva","is_new_client":false,"signed_26":517269,"remaining_budget":360197.29,"actual_26":215877,"proj_26":275328,"actual_25":626944,"monthly_26":[30883,38550,37605,47767,61072,69825,55897,66326,61250,22030,0,0],"monthly_25":[32907,24993,44160,52208,60246,70526,40946,83194,73381,39512,39921,64950],"media_fees_ytd":11000,"media_fees_ly":10000},"kiko":{"am":"Raphaëlle","is_new_client":false,"signed_26":null,"remaining_budget":null,"actual_26":14361,"proj_26":0,"actual_25":158188,"monthly_26":[6361,3000,0,0,5000,0,0,0,0,0,0,0],"monthly_25":[10982,15614,11276,25505,13490,12914,14343,15276,10668,3887,5379,18854],"media_fees_ytd":0,"media_fees_ly":13000},"krys":{"am":"Raphaëlle","is_new_client":true,"signed_26":25000,"remaining_budget":15750,"actual_26":23931,"proj_26":0,"actual_25":0,"monthly_26":[0,0,2350,6980,14601,0,0,0,0,0,0,0],"monthly_25":[0,0,0,0,0,0,0,0,0,0,0,0],"media_fees_ytd":5000,"media_fees_ly":0},"lalalab":{"am":"Eva","is_new_client":false,"signed_26":null,"remaining_budget":null,"actual_26":6284,"proj_26":10141,"actual_25":30896,"monthly_26":[1628,1764,960,908,1024,3905,951,1201,1451,1063,1570,0],"monthly_25":[1540,2730,1016,1088,1308,2050,1316,3560,2412,1508,4522,7846],"media_fees_ytd":0,"media_fees_ly":1000},"le-closet":{"am":"Raphaëlle","is_new_client":false,"signed_26":null,"remaining_budget":null,"actual_26":2682,"proj_26":3668,"actual_25":9381,"monthly_26":[630,666,582,471,333,545,670,424,600,682,747,0],"monthly_25":[960,660,825,615,615,585,585,690,1155,990,885,816],"media_fees_ytd":0,"media_fees_ly":0},"leon":{"am":"—","is_new_client":false,"signed_26":null,"remaining_budget":null,"actual_26":8,"proj_26":0,"actual_25":0,"monthly_26":[0,0,8,0,0,0,0,0,0,0,0,0],"monthly_25":[0,0,0,0,0,0,0,0,0,0,0,0],"media_fees_ytd":0,"media_fees_ly":0},"leon-de-bruxelles":{"am":"Raphaëlle","is_new_client":true,"signed_26":38166,"remaining_budget":8839.36,"actual_26":39846,"proj_26":0,"actual_25":0,"monthly_26":[0,0,14854,14882,10110,0,0,0,0,0,0,0],"monthly_25":[0,0,0,0,0,0,0,0,0,0,0,0],"media_fees_ytd":0,"media_fees_ly":0},"leroy-merlin":{"am":"Eva","is_new_client":false,"signed_26":1000000,"remaining_budget":711759.78,"actual_26":394541,"proj_26":570806,"actual_25":796740,"monthly_26":[33893,90744,69636,119591,80677,100564,107323,105287,77352,93641,86639,0],"monthly_25":[58685,82129,69743,143293,125750,67161,83998,35009,16044,39362,51400,24166],"media_fees_ytd":5000,"media_fees_ly":10000},"les-raffineurs":{"am":"—","is_new_client":false,"signed_26":null,"remaining_budget":null,"actual_26":2260,"proj_26":4134,"actual_25":11632,"monthly_26":[570,562,401,422,305,935,489,366,412,568,1364,0],"monthly_25":[376,372,372,293,475,635,451,376,447,435,2104,5296],"media_fees_ytd":0,"media_fees_ly":0},"maisons-du-monde":{"am":"Eva","is_new_client":false,"signed_26":null,"remaining_budget":null,"actual_26":75451,"proj_26":0,"actual_25":176302,"monthly_26":[32488,16988,17733,8242,0,0,0,0,0,0,0,0],"monthly_25":[0,0,0,9099,18828,12595,19190,13300,18482,16648,35949,32211],"media_fees_ytd":5000,"media_fees_ly":5950},"monoprix":{"am":"Eva","is_new_client":false,"signed_26":100000,"remaining_budget":50468.97,"actual_26":71312,"proj_26":12296,"actual_25":53161,"monthly_26":[0,13487,19761,18379,19685,5000,7296,0,0,0,0,0],"monthly_25":[0,0,0,0,0,0,0,7302,19105,16335,10419,0],"media_fees_ytd":5000,"media_fees_ly":0},"natura-force":{"am":"—","is_new_client":false,"signed_26":null,"remaining_budget":null,"actual_26":63,"proj_26":491,"actual_25":63,"monthly_26":[6,13,16,18,10,99,79,44,120,59,90,0],"monthly_25":[0,0,1,0,0,12,13,0,0,0,31,6],"media_fees_ytd":0,"media_fees_ly":0},"nespresso":{"am":"Eva","is_new_client":false,"signed_26":28000,"remaining_budget":21487.09,"actual_26":33622,"proj_26":13178,"actual_25":88695,"monthly_26":[5910,8908,7266,5849,5689,6334,6496,348,0,0,0,0],"monthly_25":[0,0,6421,10432,9117,12414,5196,3930,10443,5165,15325,10252],"media_fees_ytd":2500,"media_fees_ly":5000},"nocibe":{"am":"Eva","is_new_client":false,"signed_26":276429,"remaining_budget":199324.38,"actual_26":121502,"proj_26":94467,"actual_25":238139,"monthly_26":[19290,29451,14296,24349,34116,48355,5000,36112,5000,0,0,0],"monthly_25":[0,0,0,0,12737,17801,17094,3544,0,15164,77137,94662],"media_fees_ytd":10000,"media_fees_ly":3000},"pokawa":{"am":"Eva","is_new_client":false,"signed_26":51000,"remaining_budget":40701.6,"actual_26":34016,"proj_26":37487,"actual_25":68850,"monthly_26":[4716,5202,11907,7131,5060,14618,9255,9025,4589,0,0,0],"monthly_25":[0,8585,4339,4901,5701,9630,5428,5488,10769,4601,4645,4763],"media_fees_ytd":5000,"media_fees_ly":5000},"printemps":{"am":"Eloïse","is_new_client":false,"signed_26":253000,"remaining_budget":176697.5,"actual_26":47369,"proj_26":70845,"actual_25":159804,"monthly_26":[13760,8144,8521,8922,8022,5000,18691,10025,10110,12312,14707,0],"monthly_25":[8761,11448,5843,5862,6577,13725,10503,7291,13062,16736,23797,36199],"media_fees_ytd":0,"media_fees_ly":5000},"prismashop":{"am":"Raphaëlle","is_new_client":false,"signed_26":null,"remaining_budget":null,"actual_26":3208,"proj_26":4927,"actual_25":8824,"monthly_26":[872,512,696,616,512,676,857,874,718,823,979,0],"monthly_25":[728,680,1624,680,480,624,592,552,608,552,720,984],"media_fees_ytd":0,"media_fees_ly":0},"privatesportshop":{"am":"Raphaëlle","is_new_client":false,"signed_26":null,"remaining_budget":null,"actual_26":5556,"proj_26":7448,"actual_25":15466,"monthly_26":[1319,1116,1311,1020,790,980,1105,1134,1092,1207,1930,0],"monthly_25":[1295,1059,1207,1168,1377,1078,1206,1229,1368,1268,1659,1552],"media_fees_ytd":0,"media_fees_ly":0},"promod":{"am":"—","is_new_client":false,"signed_26":60000,"remaining_budget":5765.03,"actual_26":1153,"proj_26":0,"actual_25":60271,"monthly_26":[1153,0,0,0,0,0,0,0,0,0,0,0],"monthly_25":[3443,4057,4920,4867,5933,6431,5830,2874,4219,4164,6028,7505],"media_fees_ytd":0,"media_fees_ly":0},"quitoque":{"am":"Raphaëlle","is_new_client":false,"signed_26":null,"remaining_budget":null,"actual_26":6286,"proj_26":9600,"actual_25":16865,"monthly_26":[2240,1853,1035,490,668,1555,1162,1152,1865,1875,1991,0],"monthly_25":[2290,3234,1134,940,796,588,383,946,3307,1467,870,910],"media_fees_ytd":0,"media_fees_ly":0},"rougegorge":{"am":"Eloïse","is_new_client":false,"signed_26":null,"remaining_budget":null,"actual_26":20481,"proj_26":20795,"actual_25":73841,"monthly_26":[8369,4987,2416,2678,2031,6837,5087,2585,2129,1775,2382,0],"monthly_25":[3593,3068,551,6605,10692,13461,12785,6209,2976,2568,4176,7157],"media_fees_ytd":0,"media_fees_ly":2000},"sephora":{"am":"Eva","is_new_client":false,"signed_26":null,"remaining_budget":null,"actual_26":133487,"proj_26":325710,"actual_25":252747,"monthly_26":[29855,25066,26301,20551,31714,51588,50671,44977,46267,54257,77950,0],"monthly_25":[151,5113,111,7116,10310,26623,33812,20804,31886,24371,55108,37342],"media_fees_ytd":10000,"media_fees_ly":22000},"showroomprive":{"am":"Eva","is_new_client":false,"signed_26":200000,"remaining_budget":128897,"actual_26":94568,"proj_26":83104,"actual_25":267304,"monthly_26":[17847,15260,16211,22828,22422,5000,12302,16272,14455,18468,16607,0],"monthly_25":[12045,17259,14567,14193,22025,29704,17727,15330,15766,21409,47453,39826],"media_fees_ytd":10000,"media_fees_ly":5000},"stych":{"am":"Raphaëlle","is_new_client":false,"signed_26":null,"remaining_budget":null,"actual_26":6120,"proj_26":12102,"actual_25":14460,"monthly_26":[1680,1160,1640,720,920,2004,2014,1710,1981,2102,2291,0],"monthly_25":[1340,840,1280,1080,760,920,1280,1320,1080,1360,2200,1000],"media_fees_ytd":0,"media_fees_ly":0},"subway":{"am":"Eva","is_new_client":false,"signed_26":150000,"remaining_budget":118120.14,"actual_26":38593,"proj_26":46771,"actual_25":82102,"monthly_26":[2670,7873,12196,8987,6867,3000,9376,9340,8340,8964,7751,0],"monthly_25":[0,4597,10372,0,0,15457,285,0,15214,10494,9769,15914],"media_fees_ytd":3000,"media_fees_ly":0},"the-bradery":{"am":"Eloïse","is_new_client":false,"signed_26":null,"remaining_budget":null,"actual_26":59750,"proj_26":80470,"actual_25":123556,"monthly_26":[9407,11762,15615,13094,9872,18743,9023,5885,10477,20055,16287,0],"monthly_25":[5914,5247,17256,8377,8939,10479,6576,5897,9199,11996,15900,17776],"media_fees_ytd":0,"media_fees_ly":5000},"uber-eats":{"am":"Eva","is_new_client":false,"signed_26":164354,"remaining_budget":121638.55,"actual_26":260770,"proj_26":10000,"actual_25":584333,"monthly_26":[61959,55344,54874,49245,39348,10000,0,0,0,0,0,0],"monthly_25":[75917,43710,41690,35155,35496,37248,44170,51181,51460,52375,55945,59986],"media_fees_ytd":0,"media_fees_ly":5000},"ultra-premium-direct":{"am":"Eloïse","is_new_client":false,"signed_26":null,"remaining_budget":null,"actual_26":35817,"proj_26":0,"actual_25":70777,"monthly_26":[20322,13979,1516,0,0,0,0,0,0,0,0,0],"monthly_25":[0,0,0,0,0,0,4428,10679,15164,11243,14803,14460],"media_fees_ytd":16000,"media_fees_ly":0},"ulysse":{"am":"—","is_new_client":false,"signed_26":null,"remaining_budget":null,"actual_26":3560,"proj_26":8403,"actual_25":6360,"monthly_26":[540,780,860,740,640,1221,1338,1301,944,1494,2105,0],"monthly_25":[520,460,560,460,640,440,740,620,480,480,420,540],"media_fees_ytd":0,"media_fees_ly":0},"vente-privee":{"am":"Eloïse","is_new_client":false,"signed_26":120000,"remaining_budget":86840,"actual_26":136905,"proj_26":53489,"actual_25":339367,"monthly_26":[28472,25430,33761,26852,22390,26929,23777,2783,0,0,0,0],"monthly_25":[19262,19059,23952,18003,19947,24777,22872,26751,26748,38482,62306,37208],"media_fees_ytd":0,"media_fees_ly":0},"vertbaudet":{"am":"Eloïse","is_new_client":false,"signed_26":93222,"remaining_budget":47278.32,"actual_26":49607,"proj_26":42548,"actual_25":138072,"monthly_26":[22026,8494,10418,6323,2346,7487,9857,7910,7381,9913,0,0],"monthly_25":[12592,4948,14204,9292,7511,7888,10640,8752,10297,9968,31175,10805],"media_fees_ytd":4000,"media_fees_ly":5000},"verychic":{"am":"—","is_new_client":false,"signed_26":null,"remaining_budget":null,"actual_26":5,"proj_26":0,"actual_25":0,"monthly_26":[5,0,0,0,0,0,0,0,0,0,0,0],"monthly_25":[0,0,0,0,0,0,0,0,0,0,0,0],"media_fees_ytd":0,"media_fees_ly":0},"zadig-et-voltaire":{"am":"Raphaëlle","is_new_client":false,"signed_26":null,"remaining_budget":null,"actual_26":7593,"proj_26":9709,"actual_25":29881,"monthly_26":[2655,1294,1432,1159,1053,2290,1851,761,2283,1006,1518,0],"monthly_25":[0,0,0,149,1662,1642,2332,3547,4350,4282,4781,7136],"media_fees_ytd":0,"media_fees_ly":0},"zoomalia":{"am":"Eloïse","is_new_client":false,"signed_26":null,"remaining_budget":null,"actual_26":22186,"proj_26":33689,"actual_25":91297,"monthly_26":[4431,4089,4925,5009,3732,5205,5603,5556,5357,5817,6151,0],"monthly_25":[6306,10855,7455,8462,7448,6292,7015,6520,6713,8047,7774,8410],"media_fees_ytd":0,"media_fees_ly":3000}}};
 
 fetch('./data.json').then(r=>r.json()).then(renderAll).catch(()=>renderAll(INLINE_DATA));
 </script>
