@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Joko ‚Äî CL Revenue Dashboard</title>
+  <title>Joko — CL Revenue Dashboard</title>
   <link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
   <style>
@@ -17,7 +17,7 @@
     }
     body { background: var(--bg); color: var(--text); font-family: var(--font); font-size: 13px; line-height: 1.5; }
 
-    /* ‚îÄ‚îÄ Header ‚îÄ‚îÄ */
+    /* ── Header ── */
     header { display:flex; align-items:center; justify-content:space-between; padding:0 24px; height:50px; border-bottom:1px solid var(--border); position:sticky; top:0; background:var(--bg); z-index:200; }
     .logo { font-weight:700; font-size:14px; color:var(--green); }
     .logo span { color:var(--text2); font-weight:400; margin-left:6px; font-size:12px; }
@@ -27,12 +27,12 @@
     .tab.active { color:var(--green); }
     .updated { font-size:12px; color:#fff; background:rgba(255,255,255,0.15); padding:4px 10px; border-radius:6px; border:1px solid rgba(255,255,255,0.35); font-weight:500; }
 
-    /* ‚îÄ‚îÄ Layout ‚îÄ‚îÄ */
+    /* ── Layout ── */
     main { padding:18px 24px; max-width:1700px; margin:0 auto; }
     .tab-content { display:none; flex-direction:column; gap:14px; }
     .tab-content.active { display:flex; }
 
-    /* ‚îÄ‚îÄ KPI Bar ‚îÄ‚îÄ */
+    /* ── KPI Bar ── */
     .kpi-bar    { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; }
     .am-kpi-bar { display:grid; grid-template-columns:repeat(4,1fr); gap:10px; margin-bottom:14px; }
     .kpi { background:var(--s1); border:1px solid var(--border); border-radius:var(--radius); padding:14px 16px; }
@@ -43,11 +43,11 @@
     .kpi-sub { font-size:11px; color:var(--text2); margin-top:3px; }
     .pos { color:var(--green); } .neg { color:var(--red); } .neu { color:var(--text2); }
 
-    /* ‚îÄ‚îÄ Cards ‚îÄ‚îÄ */
+    /* ── Cards ── */
     .card { background:var(--s1); border:1px solid var(--border); border-radius:var(--radius); padding:18px; }
     .card-title { font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:.6px; color:var(--text2); margin-bottom:14px; }
 
-    /* ‚îÄ‚îÄ Charts ‚îÄ‚îÄ */
+    /* ── Charts ── */
     .chart-full canvas { width:100%!important; height:300px!important; }
     .chart-legend { display:flex; gap:14px; flex-wrap:wrap; margin-bottom:10px; }
     .legend-item { display:flex; align-items:center; gap:5px; font-size:11px; color:var(--text2); }
@@ -59,7 +59,7 @@
     .q-chart-wrap { margin-bottom:16px; }
     .q-chart-wrap canvas { height:180px!important; width:100%!important; }
 
-    /* ‚îÄ‚îÄ Transposed performance table ‚îÄ‚îÄ */
+    /* ── Transposed performance table ── */
     .section-sep { height:1px; background:var(--border); margin:18px 0 16px; }
     .perf-table { width:100%; border-collapse:collapse; font-size:11px; table-layout:auto; }
     .perf-table thead th { padding:6px 8px; font-size:10px; font-weight:600; text-transform:uppercase; letter-spacing:.4px; color:var(--text2); border-bottom:1px solid var(--border); text-align:right; white-space:nowrap; }
@@ -68,15 +68,15 @@
     .perf-table tbody td.row-label { text-align:left; font-weight:600; font-size:11px; white-space:nowrap; position:sticky; left:0; background:var(--s1); z-index:2; padding-right:14px; }
     .perf-table tbody tr:last-child td { border-top:1px solid var(--border); border-bottom:none; font-weight:700; }
 
-    /* ‚îÄ‚îÄ Merchant Table ‚îÄ‚îÄ */
+    /* ── Merchant Table ── */
     .table-wrap { overflow-x:auto; }
     table { width:100%; border-collapse:collapse; font-size:12px; }
     thead th { text-align:left; padding:7px 10px; font-size:10px; font-weight:600; text-transform:uppercase; letter-spacing:.5px; color:var(--text2); border-bottom:1px solid var(--border); white-space:nowrap; }
     thead th.num { text-align:right; }
     thead th.sortable { cursor:pointer; user-select:none; transition:color .1s; }
     thead th.sortable:hover { color:var(--text); }
-    thead th.sort-asc::after  { content:' ‚Üë'; color:var(--green); }
-    thead th.sort-desc::after { content:' ‚Üì'; color:var(--green); }
+    thead th.sort-asc::after  { content:' ↑'; color:var(--green); }
+    thead th.sort-desc::after { content:' ↓'; color:var(--green); }
     tbody tr { border-bottom:1px solid #161616; cursor:pointer; transition:background .1s; }
     tbody tr:hover { background:var(--s2); }
     tbody td { padding:8px 10px; vertical-align:middle; }
@@ -87,22 +87,22 @@
     .dim { color:var(--muted); font-size:11px; }
     .yoy-pos { color:var(--green); font-weight:500; } .yoy-neg { color:var(--red); font-weight:500; }
 
-    /* ‚îÄ‚îÄ Budget Gauge ‚îÄ‚îÄ */
+    /* ── Budget Gauge ── */
     .gauge-wrap { display:flex; align-items:center; gap:6px; justify-content:flex-end; }
     .gauge-bar { width:54px; height:4px; background:var(--border); border-radius:2px; overflow:hidden; flex-shrink:0; }
     .gauge-fill { height:100%; border-radius:2px; }
     .gauge-pct { font-size:11px; min-width:28px; text-align:right; font-variant-numeric:tabular-nums; }
 
-    /* ‚îÄ‚îÄ Type badge ‚îÄ‚îÄ */
+    /* ── Type badge ── */
     .type-capped   { font-size:10px; font-weight:600; color:var(--purple); background:rgba(146,84,227,.12); border:1px solid rgba(146,84,227,.3); border-radius:4px; padding:2px 6px; white-space:nowrap; }
     .type-uncapped { font-size:10px; font-weight:600; color:var(--yellow); background:rgba(228,250,98,.08); border:1px solid rgba(228,250,98,.25); border-radius:4px; padding:2px 6px; white-space:nowrap; }
 
-    /* ‚îÄ‚îÄ AM View ‚îÄ‚îÄ */
+    /* ── AM View ── */
     .am-filter { display:flex; gap:8px; margin-bottom:14px; }
     .am-btn { padding:6px 16px; border-radius:8px; font-size:12px; font-weight:600; cursor:pointer; border:1px solid var(--border); background:var(--s2); color:var(--text2); transition:all .15s; }
     .am-btn.active { background:var(--green); color:#000; border-color:var(--green); }
 
-    /* ‚îÄ‚îÄ Modal ‚îÄ‚îÄ */
+    /* ── Modal ── */
     .modal-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,.75); z-index:500; align-items:center; justify-content:center; }
     .modal-overlay.open { display:flex; }
     .modal { background:var(--s1); border:1px solid var(--border); border-radius:16px; width:min(900px,96vw); max-height:90vh; overflow-y:auto; padding:24px; position:relative; }
@@ -137,18 +137,18 @@
     <button class="tab" onclick="switchTab('am',this)">AM View</button>
     <button class="tab" onclick="switchTab('merchants',this)">Merchants</button>
   </nav>
-  <div class="updated" id="updated-at">‚Äî</div>
+  <div class="updated" id="updated-at">—</div>
 </header>
 
 <main>
-  <!-- ‚ïê‚ïê‚ïê MANAGEMENT ‚ïê‚ïê‚ïê -->
+  <!-- ═══ MANAGEMENT ═══ -->
   <div id="tab-management" class="tab-content active">
     <div class="kpi-bar" id="kpi-bar"></div>
 
     <div class="card chart-full">
       <div class="section-header">
         <span class="section-title">Monthly Card-Linked Revenue</span>
-        <span class="section-sub">2024 ¬∑ 2025 ¬∑ 2026 actual + projection vs OKR</span>
+        <span class="section-sub">2024 · 2025 · 2026 actual + projection vs OKR</span>
       </div>
       <div class="chart-legend">
         <div class="legend-item"><div class="legend-dot" style="background:rgba(90,90,90,.8)"></div>2024</div>
@@ -173,13 +173,13 @@
     </div>
   </div>
 
-  <!-- ‚ïê‚ïê‚ïê AM VIEW ‚ïê‚ïê‚ïê -->
+  <!-- ═══ AM VIEW ═══ -->
   <div id="tab-am" class="tab-content">
     <div class="am-filter">
       <button class="am-btn active" onclick="filterAM('all',this)">All</button>
       <button class="am-btn" onclick="filterAM('Eva',this)">Eva</button>
-      <button class="am-btn" onclick="filterAM('Elo√Øse',this)">Elo√Øse</button>
-      <button class="am-btn" onclick="filterAM('Rapha√´lle',this)">Rapha√´lle</button>
+      <button class="am-btn" onclick="filterAM('Eloïse',this)">Eloïse</button>
+      <button class="am-btn" onclick="filterAM('Raphaëlle',this)">Raphaëlle</button>
     </div>
     <div class="am-kpi-bar" id="am-kpi-bar"></div>
     <div class="card">
@@ -187,30 +187,30 @@
     </div>
   </div>
 
-  <!-- ‚ïê‚ïê‚ïê MERCHANTS ‚ïê‚ïê‚ïê -->
+  <!-- ═══ MERCHANTS ═══ -->
   <div id="tab-merchants" class="tab-content">
     <div class="card">
       <div class="section-header">
         <span class="section-title">All Merchants</span>
-        <span class="section-sub" id="merchants-count">‚Äî</span>
+        <span class="section-sub" id="merchants-count">—</span>
       </div>
       <div class="table-wrap" id="merchants-table-wrap"></div>
     </div>
   </div>
 </main>
 
-<!-- ‚ïê‚ïê‚ïê MERCHANT MODAL ‚ïê‚ïê‚ïê -->
+<!-- ═══ MERCHANT MODAL ═══ -->
 <div class="modal-overlay" id="modal-overlay" onclick="closeModal(event)">
   <div class="modal">
     <div class="modal-header">
       <div>
-        <div class="modal-title" id="modal-title">‚Äî</div>
+        <div class="modal-title" id="modal-title">—</div>
         <div class="modal-sub" id="modal-sub"></div>
       </div>
-      <button class="modal-close" onclick="closeModalDirect()">‚úï</button>
+      <button class="modal-close" onclick="closeModalDirect()">✕</button>
     </div>
     <div class="modal-kpis" id="modal-kpis"></div>
-    <div class="modal-chart-title">Monthly Revenue 2025 ¬∑ 2026</div>
+    <div class="modal-chart-title">Monthly Revenue 2025 · 2026</div>
     <div class="modal-chart-legend" id="modal-chart-legend"></div>
     <div class="modal-chart-wrap"><canvas id="modal-chart"></canvas></div>
     <table class="modal-table" id="modal-table"></table>
@@ -218,7 +218,7 @@
   </div>
 </div>
 
-<!-- ‚ïê‚ïê‚ïê NEW CLIENTS MODAL ‚ïê‚ïê‚ïê -->
+<!-- ═══ NEW CLIENTS MODAL ═══ -->
 <div class="modal-overlay" id="nc-modal-overlay" onclick="if(event.target===this)closeNewClientsModal()">
   <div class="modal" style="width:min(640px,96vw)">
     <div class="modal-header">
@@ -226,7 +226,7 @@
         <div class="modal-title">New Clients 2026</div>
         <div class="modal-sub" id="nc-modal-sub">Revenue breakdown</div>
       </div>
-      <button class="modal-close" onclick="closeNewClientsModal()">‚úï</button>
+      <button class="modal-close" onclick="closeNewClientsModal()">✕</button>
     </div>
     <div id="nc-modal-body"></div>
   </div>
@@ -240,57 +240,58 @@ let modalChart = null;
 let sortCol  = 'signed';
 let sortDir  = -1;
 
-/* ‚îÄ‚îÄ Merchant display names ‚îÄ‚îÄ */
+/* ── Merchant display names ── */
 const MERCHANT_LABELS = {
   'leroy-merlin':'Leroy Merlin','uber-eats':'Uber Eats','uber':'Uber',
   'carrefour':'Carrefour','hellofresh':'HelloFresh','kiabi':'Kiabi',
-  'castorama':'Castorama','vente-privee':'Vente-Priv√©e','boulanger':'Boulanger',
-  'sephora':'Sephora','nocibe':'Nocib√©','etam':'Etam','kfc':'KFC',
-  'maisons-du-monde':'Maisons du Monde','adopt':'Adopt','showroomprive':'Showroompriv√©',
-  'chaussea':'Chaussea','bricomarche':'Bricomarch√©','monoprix':'Monoprix',
+  'castorama':'Castorama','vente-privee':'Vente-Privée','boulanger':'Boulanger',
+  'sephora':'Sephora','nocibe':'Nocibé','etam':'Etam','kfc':'KFC',
+  'maisons-du-monde':'Maisons du Monde','adopt':'Adopt','showroomprive':'Showroomprivé',
+  'chaussea':'Chaussea','bricomarche':'Bricomarché','monoprix':'Monoprix',
   'vertbaudet':'Vertbaudet','the-bradery':'The Bradery','b-and-m':'B&M',
-  'but':'But','blablacar':'BlaBlaCar','alinea':'Alin√©a','printemps':'Printemps',
+  'but':'But','blablacar':'BlaBlaCar','alinea':'Alinéa','printemps':'Printemps',
   'ultra-premium-direct':'Ultra Premium Direct','chronodrive':'Chronodrive',
   'galeries-lafayette':'Galeries Lafayette','subway':'Subway','decathlon':'Decathlon',
-  'brico-depot':'Brico D√©p√¥t','certideal':'Certideal','jules':'Jules',
-  'pokawa':'Pokawa','nespresso':'Nespresso','leon-de-bruxelles':'L√©on de Bruxelles',
-  'celio':'Celio','dominos-pizza':"Domino's Pizza",'beauteprivee':'Beaut√© Priv√©e',
+  'brico-depot':'Brico Dépôt','certideal':'Certideal','jules':'Jules',
+  'pokawa':'Pokawa','nespresso':'Nespresso','leon-de-bruxelles':'Léon de Bruxelles',
+  'celio':'Celio','dominos-pizza':"Domino's Pizza",'beauteprivee':'Beauté Privée',
   'hema':'Hema','rougegorge':'RougeGorge','zoomalia':'Zoomalia','damart':'Damart',
   'heetch':'Heetch','krys':'Krys','horace':'Horace','beauty-success':'Beauty Success',
-  'gaumont-pathe':'Gaumont Path√©','hippopotamus':'Hippopotamus','kiko':'Kiko',
+  'gaumont-pathe':'Gaumont Pathé','hippopotamus':'Hippopotamus','kiko':'Kiko',
   'zadig-et-voltaire':'Zadig & Voltaire','instant-gaming':'Instant Gaming',
   'flunch':'Flunch','allopneus':'Allopneus','quitoque':'Quitoque','lalalab':'Lalalab',
   'stych':'Stych','privatesportshop':'Private Sport Shop','aroma-zone':'Aroma-Zone',
   'ulysse':'Ulysse','prismashop':'Prismashop','le-closet':'Le Closet',
   'gambettes-box':'Gambettes Box','les-raffineurs':'Les Raffineurs','promod':'Promod',
-  'feed':'Feed.','natura-force':'Natura Force','gemo':'G√©mo',
+  'feed':'Feed.','natura-force':'Natura Force','gemo':'Gémo',
   'jules-et-jenn':'Jules & Jenn','darjeeling':'Darjeeling','bizzbee':'Bizzbee',
 };
 function merchantLabel(id) {
   return MERCHANT_LABELS[id] || id.split('-').map(w=>w.charAt(0).toUpperCase()+w.slice(1)).join(' ');
 }
 
-/* ‚îÄ‚îÄ Number helpers ‚îÄ‚îÄ */
-function fmt(n, d=0) {
-  if (n==null||isNaN(n)) return '‚Äî';
-  if (Math.abs(n)>=1e6) return '‚Ç¨'+(n/1e6).toFixed(d||2)+'M';
-  if (Math.abs(n)>=1e3) return '‚Ç¨'+Math.round(n/1e3)+'K';
-  return '‚Ç¨'+Math.round(n);
+/* ── Number helpers ── */
+function fmt(n, d=1) {
+  if (n==null||isNaN(n)) return '—';
+  const abs = Math.abs(n);
+  if (abs>=1e6) return '€'+(n/1e6).toFixed(d)+'M';
+  if (abs>=1e3) return '€'+(n/1e3).toFixed(abs>=100e3?0:1)+'K';
+  return '€'+Math.round(n);
 }
 function pct(v,b) { return b ? Math.round((v-b)/b*100) : null; }
 function pctStr(v,b) {
   const p = pct(v,b);
-  if (p==null) return '<span class="neu">‚Äî</span>';
+  if (p==null) return '<span class="neu">—</span>';
   return p>=0 ? `<span class="yoy-pos">+${p}%</span>` : `<span class="yoy-neg">${p}%</span>`;
 }
 
-/* ‚îÄ‚îÄ Signed 2026 ‚îÄ‚îÄ */
+/* ── Signed 2026 ── */
 function signed26(m) {
   if (m.signed_26 != null) return m.signed_26;
   if (m.remaining_budget != null) return (m.actual_26||0) + m.remaining_budget;
   return (m.actual_26||0) + (m.proj_26||0);
 }
-/* ‚îÄ‚îÄ Budget consumed % (actual / signed contract) ‚îÄ‚îÄ */
+/* ── Budget consumed % (actual / signed contract) ── */
 function budgetPct(m) {
   if (m.signed_26 == null && m.remaining_budget == null) return null;
   const s = signed26(m);
@@ -298,7 +299,7 @@ function budgetPct(m) {
   const p = Math.round((m.actual_26||0) / s * 100);
   return p > 110 ? null : p;
 }
-/* ‚îÄ‚îÄ Actual vs currently-open budget : actual / (actual + remaining) ‚îÄ‚îÄ */
+/* ── Actual vs currently-open budget : actual / (actual + remaining) ── */
 function actualVsOpenBudget(m) {
   if (m.remaining_budget == null) return null;
   const opened = (m.actual_26||0) + m.remaining_budget;
@@ -306,7 +307,7 @@ function actualVsOpenBudget(m) {
   return Math.round((m.actual_26||0) / opened * 100);
 }
 function budgetGauge(p, color) {
-  if (p == null) return '<span class="neu">‚Äî</span>';
+  if (p == null) return '<span class="neu">—</span>';
   const c = color || (p>=80 ? 'var(--red)' : p>=50 ? 'var(--yellow)' : 'var(--green)');
   return `<div class="gauge-wrap">
     <div class="gauge-bar"><div class="gauge-fill" style="width:${Math.min(p,100)}%;background:${c}"></div></div>
@@ -314,15 +315,15 @@ function budgetGauge(p, color) {
   </div>`;
 }
 
-/* ‚îÄ‚îÄ vs OKR color cell ‚îÄ‚îÄ */
+/* ── vs OKR color cell ── */
 function vsOkrCell(total, okr) {
-  if (!okr || !total) return `<td style="text-align:right;color:var(--muted)">‚Äî</td>`;
+  if (!okr || !total) return `<td style="text-align:right;color:var(--muted)">—</td>`;
   const v = Math.round(total / okr * 100);
   const c = v>=90?'var(--green)':v>=70?'var(--yellow)':'var(--red)';
   return `<td style="text-align:right;color:${c};font-weight:700">${v}%</td>`;
 }
 
-/* ‚îÄ‚îÄ Chart helpers ‚îÄ‚îÄ */
+/* ── Chart helpers ── */
 function ttip() {
   return { backgroundColor:'#1a1a1a', borderColor:'#333', borderWidth:1,
     titleColor:'#fff', bodyColor:'#999', padding:10,
@@ -332,11 +333,11 @@ function scalesXY(stacked=false) {
   return {
     x: { stacked, grid:{color:'transparent'}, ticks:{color:'#555',font:{size:10}} },
     y: { stacked:false, grid:{color:'rgba(255,255,255,0.04)'}, ticks:{color:'#555',font:{size:10},
-      callback:v=>Math.abs(v)>=1e6?'‚Ç¨'+(v/1e6).toFixed(1)+'M':'‚Ç¨'+Math.round(v/1e3)+'K' }}
+      callback:v=>Math.abs(v)>=1e6?'€'+(v/1e6).toFixed(1)+'M':'€'+Math.round(v/1e3)+'K' }}
   };
 }
 
-/* ‚îÄ‚îÄ Tab switching ‚îÄ‚îÄ */
+/* ── Tab switching ── */
 function switchTab(id, btn) {
   document.querySelectorAll('.tab-content').forEach(t=>t.classList.remove('active'));
   document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
@@ -344,7 +345,7 @@ function switchTab(id, btn) {
   btn.classList.add('active');
 }
 
-/* ‚îÄ‚îÄ Main render ‚îÄ‚îÄ */
+/* ── Main render ── */
 function renderAll(data) {
   GDATA = data;
   document.getElementById('updated-at').textContent = 'Updated: '+data.updated_at;
@@ -357,7 +358,7 @@ function renderAll(data) {
   renderAMView(data.merchants, data.summary);
 }
 
-/* ‚îÄ‚îÄ KPI Bar (3 cards, no month range in label) ‚îÄ‚îÄ */
+/* ── KPI Bar (3 cards, no month range in label) ── */
 function renderKPIs(s) {
   const ytdYoyHtml = s.ytd_yoy!=null
     ? (s.ytd_yoy>=0
@@ -365,13 +366,13 @@ function renderKPIs(s) {
         : `<span class="neg">${s.ytd_yoy}% vs LY</span>`)
     : '';
   const ytdRange = s.ytd_months > 0
-    ? `Jan‚Äì${MONTHS[s.ytd_months-1]} 2026`
+    ? `Jan–${MONTHS[s.ytd_months-1]} 2026`
     : '2026 YTD';
 
   const kpis = [
     { label:'YTD Actual',
       value: fmt(s.ytd_actual),
-      sub: (ytdYoyHtml ? ytdYoyHtml + ' ¬∑ ' : '') + `<span class="neu">${ytdRange}</span>`,
+      sub: (ytdYoyHtml ? ytdYoyHtml + ' · ' : '') + `<span class="neu">${ytdRange}</span>`,
       clickable: false },
     { label:'New Client Revenue',
       value: fmt(s.ytd_new_clients_revenue),
@@ -384,13 +385,13 @@ function renderKPIs(s) {
   ];
   document.getElementById('kpi-bar').innerHTML = kpis.map(k=>`
     <div class="kpi${k.clickable?' clickable':''}"${k.onclick?` onclick="${k.onclick}"`:''}>
-      <div class="kpi-label">${k.label}${k.clickable?' <span style="opacity:.45;font-size:9px">‚Üó</span>':''}</div>
+      <div class="kpi-label">${k.label}${k.clickable?' <span style="opacity:.45;font-size:9px">↗</span>':''}</div>
       <div class="kpi-value">${k.value}</div>
       <div class="kpi-sub">${k.sub}</div>
     </div>`).join('');
 }
 
-/* ‚îÄ‚îÄ Main chart ‚îÄ‚îÄ */
+/* ── Main chart ── */
 function renderMainChart(ca) {
   new Chart(document.getElementById('main-chart').getContext('2d'),{
     type:'bar',
@@ -409,7 +410,7 @@ function renderMainChart(ca) {
   });
 }
 
-/* ‚îÄ‚îÄ Monthly Performance Table (transposed: months = columns) ‚îÄ‚îÄ */
+/* ── Monthly Performance Table (transposed: months = columns) ── */
 function renderMonthlyTable(ca, ytdMonths) {
   // Fix: no projection for past months
   const actuals = ca.R26A.map(v => v || 0);
@@ -429,7 +430,7 @@ function renderMonthlyTable(ca, ytdMonths) {
   const totRow   = aRow.map((a,i) => a + pRow[i]);
 
   function fmtCell(v, style) {
-    return `<td style="text-align:right;${style}">${v>0?fmt(v):'‚Äî'}</td>`;
+    return `<td style="text-align:right;${style}">${v>0?fmt(v):'—'}</td>`;
   }
 
   document.getElementById('monthly-table-wrap').innerHTML = `
@@ -443,28 +444,28 @@ function renderMonthlyTable(ca, ytdMonths) {
           <td class="row-label" style="color:var(--green)">Actual</td>
           ${aRow.map((v,i) => {
             const sep = i===12 ? 'border-left:1px solid var(--border);' : '';
-            return `<td style="text-align:right;${sep}color:${v>0?'var(--green)':'var(--muted)'}">${v>0?fmt(v):'‚Äî'}</td>`;
+            return `<td style="text-align:right;${sep}color:${v>0?'var(--green)':'var(--muted)'}">${v>0?fmt(v):'—'}</td>`;
           }).join('')}
         </tr>
         <tr>
           <td class="row-label" style="color:rgba(100,231,106,.55)">Projection</td>
           ${pRow.map((v,i) => {
             const sep = i===12 ? 'border-left:1px solid var(--border);' : '';
-            return `<td style="text-align:right;${sep}color:${v>0?'rgba(100,231,106,.55)':'var(--muted)'}">${v>0?fmt(v):'‚Äî'}</td>`;
+            return `<td style="text-align:right;${sep}color:${v>0?'rgba(100,231,106,.55)':'var(--muted)'}">${v>0?fmt(v):'—'}</td>`;
           }).join('')}
         </tr>
         <tr>
           <td class="row-label" style="color:var(--muted)">OKR</td>
           ${oRow.map((v,i) => {
             const sep = i===12 ? 'border-left:1px solid var(--border);' : '';
-            return `<td style="text-align:right;${sep}color:var(--muted)">${v>0?fmt(v):'‚Äî'}</td>`;
+            return `<td style="text-align:right;${sep}color:var(--muted)">${v>0?fmt(v):'—'}</td>`;
           }).join('')}
         </tr>
         <tr>
           <td class="row-label" style="color:var(--text2)">vs OKR</td>
           ${totRow.map((total,i) => {
             const sep = i===12 ? 'border-left:1px solid var(--border);' : '';
-            if (!oRow[i] || !total) return `<td style="text-align:right;${sep}color:var(--muted)">‚Äî</td>`;
+            if (!oRow[i] || !total) return `<td style="text-align:right;${sep}color:var(--muted)">—</td>`;
             const v = Math.round(total/oRow[i]*100);
             const c = v>=90?'var(--green)':v>=70?'var(--yellow)':'var(--red)';
             return `<td style="text-align:right;${sep}color:${c};font-weight:700">${v}%</td>`;
@@ -474,7 +475,7 @@ function renderMonthlyTable(ca, ytdMonths) {
     </table>`;
 }
 
-/* ‚îÄ‚îÄ Quarterly Performance (chart first, then transposed table) ‚îÄ‚îÄ */
+/* ── Quarterly Performance (chart first, then transposed table) ── */
 function renderQSection(q, r25) {
   const quarters = ['Q1','Q2','Q3','Q4'];
   const q25 = [
@@ -484,7 +485,7 @@ function renderQSection(q, r25) {
     r25.slice(9,12).reduce((a,b)=>a+b,0),
   ];
 
-  // ‚îÄ‚îÄ Chart ‚îÄ‚îÄ
+  // ── Chart ──
   new Chart(document.getElementById('q-chart').getContext('2d'),{
     type:'bar',
     data:{ labels:quarters, datasets:[
@@ -498,7 +499,7 @@ function renderQSection(q, r25) {
       scales:scalesXY(false) }
   });
 
-  // ‚îÄ‚îÄ Transposed table ‚îÄ‚îÄ
+  // ── Transposed table ──
   const total25     = q25.reduce((a,b)=>a+b,0);
   const totalActual = quarters.reduce((s,k)=>s+q[k].actual,0);
   const totalProj   = quarters.reduce((s,k)=>s+q[k].proj,0);
@@ -523,35 +524,35 @@ function renderQSection(q, r25) {
           <td class="row-label" style="color:var(--muted)">2025</td>
           ${a25Row.map((v,i) => {
             const sep = i===4?'border-left:1px solid var(--border);':'';
-            return `<td style="text-align:right;${sep}color:var(--muted)">${v>0?fmt(v):'‚Äî'}</td>`;
+            return `<td style="text-align:right;${sep}color:var(--muted)">${v>0?fmt(v):'—'}</td>`;
           }).join('')}
         </tr>
         <tr>
           <td class="row-label" style="color:var(--green)">Actual</td>
           ${aRow.map((v,i) => {
             const sep = i===4?'border-left:1px solid var(--border);':'';
-            return `<td style="text-align:right;${sep}color:${v>0?'var(--green)':'var(--muted)'}">${v>0?fmt(v):'‚Äî'}</td>`;
+            return `<td style="text-align:right;${sep}color:${v>0?'var(--green)':'var(--muted)'}">${v>0?fmt(v):'—'}</td>`;
           }).join('')}
         </tr>
         <tr>
           <td class="row-label" style="color:rgba(100,231,106,.55)">Projection</td>
           ${pRow.map((v,i) => {
             const sep = i===4?'border-left:1px solid var(--border);':'';
-            return `<td style="text-align:right;${sep}color:${v>0?'rgba(100,231,106,.55)':'var(--muted)'}">${v>0?fmt(v):'‚Äî'}</td>`;
+            return `<td style="text-align:right;${sep}color:${v>0?'rgba(100,231,106,.55)':'var(--muted)'}">${v>0?fmt(v):'—'}</td>`;
           }).join('')}
         </tr>
         <tr>
           <td class="row-label" style="color:var(--muted)">OKR</td>
           ${oRow.map((v,i) => {
             const sep = i===4?'border-left:1px solid var(--border);':'';
-            return `<td style="text-align:right;${sep}color:var(--muted)">${v>0?fmt(v):'‚Äî'}</td>`;
+            return `<td style="text-align:right;${sep}color:var(--muted)">${v>0?fmt(v):'—'}</td>`;
           }).join('')}
         </tr>
         <tr>
           <td class="row-label" style="color:var(--text2)">vs OKR</td>
           ${totRow.map((total,i) => {
             const sep = i===4?'border-left:1px solid var(--border);':'';
-            if (!oRow[i] || !total) return `<td style="text-align:right;${sep}color:var(--muted)">‚Äî</td>`;
+            if (!oRow[i] || !total) return `<td style="text-align:right;${sep}color:var(--muted)">—</td>`;
             const v = Math.round(total/oRow[i]*100);
             const c = v>=90?'var(--green)':v>=70?'var(--yellow)':'var(--red)';
             return `<td style="text-align:right;${sep}color:${c};font-weight:700">${v}%</td>`;
@@ -561,7 +562,7 @@ function renderQSection(q, r25) {
     </table>`;
 }
 
-/* ‚îÄ‚îÄ Sort state ‚îÄ‚îÄ */
+/* ── Sort state ── */
 function sortBy(col) {
   if (sortCol===col) sortDir = -sortDir;
   else { sortCol=col; sortDir = (col==='name'||col==='am') ? 1 : -1; }
@@ -573,11 +574,17 @@ function sortBy(col) {
   renderAMTable('am-table-wrap', GDATA.merchants, activeAM);
 }
 
-/* ‚îÄ‚îÄ Merchant rows (sorted) ‚îÄ‚îÄ */
+/* ── Normalize string for comparison (strips accents, lowercases) ── */
+function normStr(s) {
+  return (s||'').normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase().trim();
+}
+
+/* ── Merchant rows (sorted) ── */
 function merchantRows(merchants, amFilter) {
+  const normFilter = normStr(amFilter);
   return Object.entries(merchants)
     .map(([id,m])=>({ id, ...m, signed: signed26(m), bpct: budgetPct(m) }))
-    .filter(r=> amFilter==='all' || r.am===amFilter)
+    .filter(r=> amFilter==='all' || normStr(r.am)===normFilter)
     .sort((a,b) => {
       let av, bv;
       if (sortCol==='name') return sortDir * merchantLabel(a.id).localeCompare(merchantLabel(b.id));
@@ -599,7 +606,7 @@ function merchantRows(merchants, amFilter) {
     });
 }
 
-/* ‚îÄ‚îÄ Merchants tab table ‚îÄ‚îÄ */
+/* ── Merchants tab table ── */
 function renderMerchantTable(wrapId, merchants) {
   const rows = merchantRows(merchants, 'all');
   const cc = col => col===sortCol ? (sortDir>0?'sort-asc':'sort-desc') : '';
@@ -615,22 +622,22 @@ function renderMerchantTable(wrapId, merchants) {
       <th class="num sortable ${cc('mf_ly')}"  data-col="mf_ly"  onclick="sortBy('mf_ly')">Media Fees LY</th>
     </tr></thead>
     <tbody>${rows.map(r=>{
-      const yoy = r.actual_25>0 ? pctStr(r.signed, r.actual_25) : '<span class="neu">‚Äî</span>';
+      const yoy = r.actual_25>0 ? pctStr(r.signed, r.actual_25) : '<span class="neu">—</span>';
       return `<tr onclick="openModal('${r.id}')">
         <td class="merchant-name">${merchantLabel(r.id)}${r.is_new_client?'<span class="badge-new">new</span>':''}</td>
         <td><span class="am-pill">${r.am}</span></td>
-        <td class="num dim">${r.actual_25>0?fmt(r.actual_25):'‚Äî'}</td>
+        <td class="num dim">${r.actual_25>0?fmt(r.actual_25):'—'}</td>
         <td class="num"><strong>${fmt(r.signed)}</strong></td>
         <td class="num">${yoy}</td>
         <td class="num">${fmt(r.actual_26)}</td>
-        <td class="num">${r.media_fees_ytd>0?fmt(r.media_fees_ytd):'<span class="neu">‚Äî</span>'}</td>
-        <td class="num dim">${r.media_fees_ly>0?fmt(r.media_fees_ly):'‚Äî'}</td>
+        <td class="num">${r.media_fees_ytd>0?fmt(r.media_fees_ytd):'<span class="neu">—</span>'}</td>
+        <td class="num dim">${r.media_fees_ly>0?fmt(r.media_fees_ly):'—'}</td>
       </tr>`;
     }).join('')}</tbody>
   </table>`;
 }
 
-/* ‚îÄ‚îÄ AM View table ‚îÄ‚îÄ */
+/* ── AM View table ── */
 function renderAMTable(wrapId, merchants, amFilter='all') {
   const rows = merchantRows(merchants, amFilter);
   const cc = col => col===sortCol ? (sortDir>0?'sort-asc':'sort-desc') : '';
@@ -652,12 +659,12 @@ function renderAMTable(wrapId, merchants, amFilter='all') {
         : `<span class="type-uncapped">Uncapped</span>`;
       const openBudget = r.remaining_budget != null
         ? `<span style="color:var(--purple)">${fmt(r.remaining_budget)}</span>`
-        : '<span class="neu">‚Äî</span>';
+        : '<span class="neu">—</span>';
       const avb = actualVsOpenBudget(r);
       const avbColor = avb==null?'var(--muted)':avb>=80?'var(--red)':avb>=50?'var(--yellow)':'var(--green)';
       const avbHtml = avb!=null
         ? `<span style="color:${avbColor};font-weight:600">${avb}%</span>`
-        : '<span class="neu">‚Äî</span>';
+        : '<span class="neu">—</span>';
       return `<tr onclick="openModal('${r.id}')">
         <td class="merchant-name">${merchantLabel(r.id)}${r.is_new_client?'<span class="badge-new">new</span>':''}</td>
         <td><span class="am-pill">${r.am}</span></td>
@@ -671,7 +678,7 @@ function renderAMTable(wrapId, merchants, amFilter='all') {
   </table>`;
 }
 
-/* ‚îÄ‚îÄ AM View ‚îÄ‚îÄ */
+/* ── AM View ── */
 function renderAMView(merchants, summary) {
   renderAMKPIs(merchants, 'all', summary);
   renderAMTable('am-table-wrap', merchants, 'all');
@@ -690,9 +697,9 @@ function renderAMKPIs(merchants, am, summary) {
   const fy25     = rows.reduce((s,r)=>s+(r.actual_25||0), 0);
   const openBdg  = rows.reduce((s,r)=>s+(r.remaining_budget||0), 0);
   const label    = am==='all' ? 'All AMs' : am;
-  const ytdRange = summary.ytd_months > 0 ? `Jan‚Äì${MONTHS[summary.ytd_months-1]} 2026` : '2026 YTD';
+  const ytdRange = summary.ytd_months > 0 ? `Jan–${MONTHS[summary.ytd_months-1]} 2026` : '2026 YTD';
   document.getElementById('am-kpi-bar').innerHTML = `
-    <div class="kpi"><div class="kpi-label">${label} ‚Äî Merchants</div>
+    <div class="kpi"><div class="kpi-label">${label} — Merchants</div>
       <div class="kpi-value">${rows.length}</div>
       <div class="kpi-sub">${rows.filter(r=>r.is_new_client).length} new clients</div></div>
     <div class="kpi"><div class="kpi-label">YTD Actual</div>
@@ -706,7 +713,7 @@ function renderAMKPIs(merchants, am, summary) {
       <div class="kpi-sub" style="color:var(--text2)">currently open across portfolio</div></div>`;
 }
 
-/* ‚îÄ‚îÄ New Clients Modal ‚îÄ‚îÄ */
+/* ── New Clients Modal ── */
 function openNewClientsModal() {
   if (!GDATA) return;
   const newClients = Object.entries(GDATA.merchants)
@@ -715,10 +722,10 @@ function openNewClientsModal() {
     .sort((a,b) => (b.actual_26||0) - (a.actual_26||0));
   const totalRev = newClients.reduce((s,m) => s+(m.actual_26||0), 0);
   const ytdRange = GDATA.summary.ytd_months > 0
-    ? `Jan‚Äì${MONTHS[GDATA.summary.ytd_months-1]} 2026`
+    ? `Jan–${MONTHS[GDATA.summary.ytd_months-1]} 2026`
     : '2026 YTD';
   document.getElementById('nc-modal-sub').textContent =
-    `${newClients.length} new clients ¬∑ ${ytdRange}`;
+    `${newClients.length} new clients · ${ytdRange}`;
   document.getElementById('nc-modal-body').innerHTML = `
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:20px">
       <div class="modal-kpi">
@@ -756,7 +763,7 @@ function closeNewClientsModal() {
   document.getElementById('nc-modal-overlay').classList.remove('open');
 }
 
-/* ‚îÄ‚îÄ Merchant Modal ‚îÄ‚îÄ */
+/* ── Merchant Modal ── */
 function openModal(merchantId) {
   const m = GDATA.merchants[merchantId];
   if (!m) return;
@@ -765,7 +772,7 @@ function openModal(merchantId) {
   const yoy   = m.actual_25>0 ? pct(s26, m.actual_25) : null;
   const yoyHtml = yoy!=null
     ? (yoy>=0 ? `<span class="pos">+${yoy}%</span>` : `<span class="neg">${yoy}%</span>`)
-    : '<span class="neu">‚Äî</span>';
+    : '<span class="neu">—</span>';
   document.getElementById('modal-title').textContent = merchantLabel(merchantId);
   document.getElementById('modal-sub').innerHTML =
     `<span class="am-pill">${m.am}</span>${m.is_new_client?' <span class="badge-new">new</span>':''}`;
@@ -778,16 +785,16 @@ function openModal(merchantId) {
     <div class="modal-kpi">
       <div class="modal-kpi-label">YTD Actual</div>
       <div class="modal-kpi-value" style="color:var(--green)">${fmt(m.actual_26)}</div>
-      <div class="modal-kpi-sub">${GDATA.summary.ytd_months>0?`Jan‚Äì${MONTHS[GDATA.summary.ytd_months-1]} 2026`:'2026 YTD'}</div>
+      <div class="modal-kpi-sub">${GDATA.summary.ytd_months>0?`Jan–${MONTHS[GDATA.summary.ytd_months-1]} 2026`:'2026 YTD'}</div>
     </div>
     <div class="modal-kpi">
       <div class="modal-kpi-label">FY 2025</div>
-      <div class="modal-kpi-value" style="color:var(--text2)">${m.actual_25>0?fmt(m.actual_25):'‚Äî'}</div>
+      <div class="modal-kpi-value" style="color:var(--text2)">${m.actual_25>0?fmt(m.actual_25):'—'}</div>
       <div class="modal-kpi-sub">YoY: ${yoyHtml}</div>
     </div>
     <div class="modal-kpi">
       <div class="modal-kpi-label">Remaining Budget</div>
-      <div class="modal-kpi-value" style="color:var(--purple)">${m.remaining_budget!=null?fmt(m.remaining_budget):'‚Äî'}</div>
+      <div class="modal-kpi-value" style="color:var(--purple)">${m.remaining_budget!=null?fmt(m.remaining_budget):'—'}</div>
       <div class="modal-kpi-sub">${bpct!=null?`${bpct}% consumed`:'no contract data'}</div>
     </div>`;
   document.getElementById('modal-chart-legend').innerHTML = `
@@ -846,18 +853,18 @@ function openModal(merchantId) {
       const isAct = i < ytdM;
       return `<tr>
         <td style="text-align:left;color:var(--text2)">${mo}</td>
-        <td class="past">${a25>0?fmt(a25):'‚Äì'}</td>
-        <td class="${isAct?'act26':'neu'}">${a26>0?fmt(a26):'‚Äì'}</td>
-        <td class="${!isAct?'proj26':'neu'}">${p26>0?fmt(p26):'‚Äì'}</td>
-        <td>${vs!=null?(vs>=0?`<span class="yoy-pos">+${vs}%</span>`:`<span class="yoy-neg">${vs}%</span>`):'‚Äì'}</td>
+        <td class="past">${a25>0?fmt(a25):'–'}</td>
+        <td class="${isAct?'act26':'neu'}">${a26>0?fmt(a26):'–'}</td>
+        <td class="${!isAct?'proj26':'neu'}">${p26>0?fmt(p26):'–'}</td>
+        <td>${vs!=null?(vs>=0?`<span class="yoy-pos">+${vs}%</span>`:`<span class="yoy-neg">${vs}%</span>`):'–'}</td>
       </tr>`;
     }).join('')}
     <tr style="border-top:1px solid var(--border);font-weight:600">
       <td style="text-align:left">Total</td>
-      <td class="past">${m.actual_25>0?fmt(m.actual_25):'‚Äì'}</td>
+      <td class="past">${m.actual_25>0?fmt(m.actual_25):'–'}</td>
       <td class="act26">${fmt(m.actual_26)}</td>
       <td class="proj26">${fmt(m.proj_26)}</td>
-      <td>${m.actual_25>0?pctStr(s26,m.actual_25):'‚Äì'}</td>
+      <td>${m.actual_25>0?pctStr(s26,m.actual_25):'–'}</td>
     </tr></tbody>`;
   document.getElementById('modal-note').innerHTML = isEstimated
     ? `<span style="opacity:.5;font-size:10px">~ Monthly figures estimated from portfolio seasonality</span>`
@@ -870,7 +877,7 @@ function closeModalDirect() {
   if (modalChart) { modalChart.destroy(); modalChart=null; }
 }
 
-/* ‚îÄ‚îÄ Bootstrap ‚îÄ‚îÄ */
+/* ── Bootstrap ── */
 const INLINE_DATA = {};
 
 fetch('./data.json').then(r=>r.json()).then(renderAll).catch(()=>renderAll(INLINE_DATA));
