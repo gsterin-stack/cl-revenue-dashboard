@@ -850,6 +850,10 @@ function merchantRows(merchants, amFilter) {
       let av, bv;
       if (sortCol==='name') return sortDir * merchantLabel(a.id).localeCompare(merchantLabel(b.id));
       if (sortCol==='am')   return sortDir * (a.am||'').localeCompare(b.am||'');
+      if (sortCol==='tier') {
+        const rank = {T1:1,T2:2,T3:3};
+        return sortDir * ((rank[TIER_MAP[a.id]]||9) - (rank[TIER_MAP[b.id]]||9));
+      }
       switch(sortCol) {
         case 'fy25':   av=a.actual_25||0;          bv=b.actual_25||0; break;
         case 'signed': av=a.signed||0;             bv=b.signed||0;    break;
@@ -875,7 +879,7 @@ function renderMerchantTable(wrapId, merchants) {
     <thead><tr>
       <th class="sortable ${cc('name')}" data-col="name" onclick="sortBy('name')">Merchant</th>
       <th class="sortable ${cc('am')}"   data-col="am"   onclick="sortBy('am')">AM</th>
-      <th>Tier</th>
+      <th class="sortable ${cc('tier')}" data-col="tier" onclick="sortBy('tier')">Tier</th>
       <th class="num sortable ${cc('fy25')}"   data-col="fy25"   style="color:var(--muted)" onclick="sortBy('fy25')">FY 2025</th>
       <th class="num sortable ${cc('signed')}" data-col="signed" onclick="sortBy('signed')">Signed 2026</th>
       <th class="num sortable ${cc('yoy')}"    data-col="yoy"    onclick="sortBy('yoy')">YoY</th>
@@ -909,7 +913,7 @@ function renderAMTable(wrapId, merchants, amFilter='all') {
     <thead><tr>
       <th class="sortable ${cc('name')}" data-col="name" onclick="sortBy('name')">Merchant</th>
       <th class="sortable ${cc('am')}"   data-col="am"   onclick="sortBy('am')">AM</th>
-      <th>Tier</th>
+      <th class="sortable ${cc('tier')}" data-col="tier" onclick="sortBy('tier')">Tier</th>
       <th>Type</th>
       <th class="num sortable ${cc('signed')}" data-col="signed" onclick="sortBy('signed')">Signed 2026</th>
       <th class="num sortable ${cc('ytd')}"    data-col="ytd"    onclick="sortBy('ytd')">YTD Actual</th>
