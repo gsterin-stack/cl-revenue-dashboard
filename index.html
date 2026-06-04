@@ -96,6 +96,10 @@
     /* ── Type badge ── */
     .type-capped   { font-size:10px; font-weight:600; color:var(--purple); background:rgba(146,84,227,.12); border:1px solid rgba(146,84,227,.3); border-radius:4px; padding:2px 6px; white-space:nowrap; }
     .type-uncapped { font-size:10px; font-weight:600; color:var(--yellow); background:rgba(228,250,98,.08); border:1px solid rgba(228,250,98,.25); border-radius:4px; padding:2px 6px; white-space:nowrap; }
+    .tier-t1 { font-size:10px; font-weight:700; color:var(--green);  background:rgba(100,231,106,.1);  border:1px solid rgba(100,231,106,.3);  border-radius:4px; padding:2px 6px; white-space:nowrap; }
+    .tier-t2 { font-size:10px; font-weight:700; color:#64B4FF;        background:rgba(100,180,255,.1);  border:1px solid rgba(100,180,255,.3);  border-radius:4px; padding:2px 6px; white-space:nowrap; }
+    .tier-t3 { font-size:10px; font-weight:700; color:var(--yellow);  background:rgba(228,250,98,.07);  border:1px solid rgba(228,250,98,.25);  border-radius:4px; padding:2px 6px; white-space:nowrap; }
+    .tier-nc { font-size:10px; font-weight:600; color:var(--muted);   background:transparent;           border:1px solid var(--border);         border-radius:4px; padding:2px 6px; white-space:nowrap; }
 
     /* ── AM View ── */
     .am-filter { display:flex; gap:8px; margin-bottom:14px; }
@@ -382,6 +386,14 @@ function signed26(m) {
   if (m.remaining_budget != null) return (m.actual_26||0) + m.remaining_budget;
   return (m.actual_26||0) + (m.proj_26||0);
 }
+/* ── Tier badge ── */
+function tierBadge(mid) {
+  const t = TIER_MAP[mid];
+  if (!t) return '<span class="tier-nc">—</span>';
+  const cls = t==='T1'?'tier-t1':t==='T2'?'tier-t2':'tier-t3';
+  return `<span class="${cls}">${t}</span>`;
+}
+
 /* ── Budget consumed % (actual / signed contract) ── */
 function budgetPct(m) {
   if (m.signed_26 == null && m.remaining_budget == null) return null;
@@ -863,6 +875,7 @@ function renderMerchantTable(wrapId, merchants) {
     <thead><tr>
       <th class="sortable ${cc('name')}" data-col="name" onclick="sortBy('name')">Merchant</th>
       <th class="sortable ${cc('am')}"   data-col="am"   onclick="sortBy('am')">AM</th>
+      <th>Tier</th>
       <th class="num sortable ${cc('fy25')}"   data-col="fy25"   style="color:var(--muted)" onclick="sortBy('fy25')">FY 2025</th>
       <th class="num sortable ${cc('signed')}" data-col="signed" onclick="sortBy('signed')">Signed 2026</th>
       <th class="num sortable ${cc('yoy')}"    data-col="yoy"    onclick="sortBy('yoy')">YoY</th>
@@ -875,6 +888,7 @@ function renderMerchantTable(wrapId, merchants) {
       return `<tr onclick="openModal('${r.id}')">
         <td class="merchant-name">${merchantLabel(r.id)}${r.is_new_client?'<span class="badge-new">new</span>':''}</td>
         <td><span class="am-pill">${r.am}</span></td>
+        <td>${tierBadge(r.id)}</td>
         <td class="num dim">${r.actual_25>0?fmt(r.actual_25):'—'}</td>
         <td class="num"><strong>${fmt(r.signed)}</strong></td>
         <td class="num">${yoy}</td>
@@ -895,6 +909,7 @@ function renderAMTable(wrapId, merchants, amFilter='all') {
     <thead><tr>
       <th class="sortable ${cc('name')}" data-col="name" onclick="sortBy('name')">Merchant</th>
       <th class="sortable ${cc('am')}"   data-col="am"   onclick="sortBy('am')">AM</th>
+      <th>Tier</th>
       <th>Type</th>
       <th class="num sortable ${cc('signed')}" data-col="signed" onclick="sortBy('signed')">Signed 2026</th>
       <th class="num sortable ${cc('ytd')}"    data-col="ytd"    onclick="sortBy('ytd')">YTD Actual</th>
@@ -917,6 +932,7 @@ function renderAMTable(wrapId, merchants, amFilter='all') {
       return `<tr onclick="openModal('${r.id}')">
         <td class="merchant-name">${merchantLabel(r.id)}${r.is_new_client?'<span class="badge-new">new</span>':''}</td>
         <td><span class="am-pill">${r.am}</span></td>
+        <td>${tierBadge(r.id)}</td>
         <td>${typeBadge}</td>
         <td class="num"><strong>${fmt(r.signed)}</strong></td>
         <td class="num">${fmt(r.actual_26)}</td>
