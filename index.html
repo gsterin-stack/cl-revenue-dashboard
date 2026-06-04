@@ -171,6 +171,13 @@
       <div class="section-sep"></div>
       <div class="table-wrap" id="q-table-wrap"></div>
     </div>
+
+    <div class="card">
+      <div class="card-title">Revenue by Tier</div>
+      <div class="chart-legend" id="tier-legend"></div>
+      <div style="margin-bottom:16px"><canvas id="tier-chart" style="height:200px!important;width:100%!important"></canvas></div>
+      <div class="table-wrap" id="tier-table-wrap"></div>
+    </div>
   </div>
 
   <!-- ═══ AM VIEW ═══ -->
@@ -246,9 +253,77 @@ const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov
 let GDATA    = null;
 let activeAM = 'all';
 let modalChart = null;
+let tierChart  = null;
 let sortCol  = 'signed';
 let sortDir  = -1;
 let modalMFChart = null;
+
+/* ── Tier map (Master Tab - Tiering all CL Logos, 261 merchants) ── */
+const TIER_MAP = {
+  "e-leclerc":"T1","intermarche":"T1","carrefour":"T1","supermarche-u":"T1","lidl":"T1",
+  "auchan":"T1","mcdonalds":"T1","action":"T1","leroy-merlin":"T1","vinted":"T1",
+  "uber-eats":"T1","aldi":"T1","decathlon":"T1","ikea":"T1","kiabi":"T1",
+  "burger-king":"T1","total":"T1","boulanger":"T1","zara":"T1","grand-frais":"T1",
+  "intersport":"T2","brico-depot":"T2","sephora":"T2","castorama":"T2","fnac":"T2",
+  "primark":"T2","monoprix":"T2","darty":"T2","h-and-m":"T2","electro-depot":"T2",
+  "but":"T2","gifi":"T2","habitat":"T2","uber":"T2","norauto":"T2","netto":"T2",
+  "conforama":"T2","deliveroo":"T2","cultura":"T2","b-and-m":"T2","picard":"T2",
+  "stokomani":"T2","back-market":"T2","nocibe":"T2","maxizoo":"T2","kfc":"T2",
+  "gemo":"T2","normal":"T2","chaussea":"T2","centrakor":"T2","le-bon-coin":"T2",
+  "smyths":"T2","la-foir-fouille":"T2","courir":"T2","bricomarche":"T2",
+  "marie-blachere":"T2","noz":"T2","supermarches-match":"T2","galeries-lafayette":"T2",
+  "la-halle":"T2","bershka":"T2","histoire-d-or":"T2","disneyland-paris":"T2",
+  "nike":"T2","franprix":"T2","uniqlo":"T2","adopt":"T2","engie":"T2",
+  "orchestra":"T2","maisons-du-monde":"T2","taxify":"T2","yves-rocher":"T2",
+  "king-jouet":"T2","feu-vert":"T2","chronodrive":"T2","rituals":"T2","aroma-zone":"T2",
+  "micromania":"T2","costco":"T2","quick":"T2","stradivarius":"T2","mango":"T2",
+  "new-yorker":"T2","buffalo-grill":"T2","undiz":"T2","weldom":"T2","shell":"T2",
+  "bricoman":"T2","gamm-vert":"T2","pull-and-bear":"T2","adidas":"T2","etam":"T2",
+  "foot-locker":"T2","printemps":"T2","joue-club":"T2","au-bureau":"T2","promod":"T2",
+  "vertbaudet":"T2","nespresso":"T2","fresh-prosol":"T2","starbucks":"T2",
+  "mr-bricolage":"T2","jardiland":"T2","kiko":"T2","o-tacos":"T2","sport-2000":"T2",
+  "zeeman":"T2","jd-sports":"T2",
+  "total-electricity":"T3","gaumont-pathe":"T3","dominos-pizza":"T3","bureau-vallee":"T3",
+  "flunch":"T3","picnic":"T3","point-p":"T3","vibs":"T3","spar":"T3","lego":"T3",
+  "pimkie":"T3","cache-cache":"T3","animalis":"T3","ultra-premium-direct":"T3",
+  "truffaut":"T3","subway":"T3","thiriet":"T3","birchbox":"T3","jules":"T3",
+  "celio":"T3","calzedonia":"T3","devred":"T3","easy-cash":"T3","del-arte":"T3",
+  "lacoste":"T3","biocoop":"T3","g20":"T3","atac":"T3","vival":"T3","botanic":"T3",
+  "zoomalia":"T3","okaidi":"T3","marionnaud":"T3","futuroscope":"T3","i-run":"T3",
+  "la-grande-recre":"T3","mie-caline":"T3","sezane":"T3","bizzbee":"T3",
+  "brico-cash":"T3","alain-afflelou":"T3","bricorama":"T3","armand-thiery":"T3",
+  "eni":"T3","snipes":"T3","choose-app":"T3","c-and-a":"T3","cgr":"T3","alinea":"T3",
+  "levis":"T3","emma-matelas":"T3","sarenza":"T3","coccimarket":"T3","casino":"T3",
+  "pandora":"T3","cabaia":"T3","ugc":"T3","hema":"T3","promocash":"T3",
+  "maxi-bazar":"T3","nature-decouvertes":"T3","lapeyre":"T3","the-bradery":"T3",
+  "gymshark":"T3","rougegorge":"T3","europa-park":"T3","bonobo":"T3",
+  "grain-de-malice":"T3","too-good-to-go":"T3","ldlc":"T3","jeff-de-bruges":"T3",
+  "dyson":"T3","id-market":"T3","boulangerie-ange":"T3","morgan":"T3",
+  "coccinelle":"T3","brioche-doree":"T3","prozis":"T3","beauty-success":"T3",
+  "jimmy-fairly":"T3","columbus-cafe":"T3","esprit":"T3","tedi":"T3","hermes":"T3",
+  "naumy":"T3","notino":"T3","fanatics":"T3","tape-a-l-oeil":"T3","five-guys":"T3",
+  "kinepolis":"T3","citadium":"T3","franck-provost":"T3","7-eleven":"T3",
+  "ralph-lauren":"T3","beauteprivee":"T3","privatesportshop":"T3","heetch":"T3",
+  "parc-asterix":"T3","bleu-libellule":"T3","hippopotamus":"T3","pokawa":"T3",
+  "eram":"T3","petit-bateau":"T3","spartoo":"T3","new-balance":"T3","claire-s":"T3",
+  "autogrill":"T3","newrest":"T3","dior":"T3","jack-and-jones":"T3","swarovski":"T3",
+  "leon-de-bruxelles":"T3","marc-orian":"T3","cleor":"T3","guess":"T3","izac":"T3",
+  "ekosport":"T3","bebe-boutik":"T3","puma":"T3","maje":"T3","leader-price":"T3",
+  "nicolas":"T3","lovisa":"T3","body-minute":"T3","typology":"T3","sushi-shop":"T3",
+  "yesstyle":"T3","blanche-porte":"T3","districenter":"T3","hugo-boss":"T3",
+  "eat-salad":"T3","lindt":"T3","palais-des-thes":"T3","popeyes":"T3",
+  "rue-du-commerce":"T3","crescendo":"T3","sostrene-grene":"T3","naturalia":"T3",
+  "pret-a-manger":"T3","le-bon-marche":"T3","la-vie-claire":"T3","pitaya":"T3",
+  "cineville":"T3","bhv":"T3","tommy-hilfiger":"T3","jott":"T3",
+  "la-chaise-longue":"T3","jonak":"T3","ikks":"T3","tezenis":"T3",
+  "birkenstock":"T3","paradis-du-fruit":"T3","8-a-huit":"T3",
+  "vente-privee":"T2","hellofresh":"T2","showroomprive":"T2","blablacar":"T3",
+  "certideal":"T3","damart":"T3","lalalab":"T3","krys":"T3","horace":"T3",
+  "zadig-et-voltaire":"T3","instant-gaming":"T3","allopneus":"T3","quitoque":"T3",
+  "stych":"T3","prismashop":"T3","le-closet":"T3","gambettes-box":"T3","feed":"T3",
+  "ulysse":"T3","les-raffineurs":"T3","natura-force":"T3","jules-et-jenn":"T3",
+  "darjeeling":"T3",
+};
 
 /* ── Merchant display names ── */
 const MERCHANT_LABELS = {
@@ -369,6 +444,7 @@ function renderAll(data) {
   renderMainChart(data.chart_arrays);
   renderMonthlyTable(data.chart_arrays, data.summary.ytd_months);
   renderQSection(data.quarterly, data.chart_arrays.R25);
+  renderTierSection(data.merchants, data.chart_arrays.R25);
   renderMerchantTable('merchants-table-wrap', data.merchants);
   document.getElementById('merchants-count').textContent = `${Object.keys(data.merchants).length} merchants`;
   renderAMView(data.merchants, data.summary);
@@ -626,6 +702,110 @@ function renderQSection(q, r25) {
             const c = v>=90?'var(--green)':v>=70?'var(--yellow)':'var(--red)';
             return `<td style="text-align:right;${sep}color:${c};font-weight:700">${v}%</td>`;
           }).join('')}
+        </tr>
+      </tbody>
+    </table>`;
+}
+
+/* ── Tier Section ── */
+function renderTierSection(merchants, r25Portfolio) {
+  const TIERS = ['T1','T2','T3'];
+  const TIER_COLORS = {
+    T1: { act:'rgba(100,231,106,.9)', proj:'rgba(100,231,106,.25)', border:'rgba(100,231,106,.5)', label:'var(--green)' },
+    T2: { act:'rgba(100,180,255,.9)', proj:'rgba(100,180,255,.25)', border:'rgba(100,180,255,.5)', label:'#64B4FF' },
+    T3: { act:'rgba(228,250,98,.85)', proj:'rgba(228,250,98,.2)',   border:'rgba(228,250,98,.4)',  label:'var(--yellow)' },
+  };
+
+  // Group merchants by tier
+  const groups = { T1:{a25:0,a26:0,p26:0,count:0}, T2:{a25:0,a26:0,p26:0,count:0},
+                   T3:{a25:0,a26:0,p26:0,count:0}, NC:{a25:0,a26:0,p26:0,count:0} };
+
+  for (const [mid, m] of Object.entries(merchants)) {
+    const tier = TIER_MAP[mid] || 'NC';
+    const g = groups[tier];
+    g.a25  += m.actual_25 || 0;
+    g.a26  += m.actual_26 || 0;
+    g.p26  += m.proj_26   || 0;
+    g.count++;
+  }
+
+  const labels = [...TIERS.map(t => `${t} (${groups[t].count})`), `Non classé (${groups.NC.count})`];
+  const keys   = [...TIERS, 'NC'];
+
+  // ── Chart ──
+  document.getElementById('tier-legend').innerHTML = `
+    <div class="legend-item"><div class="legend-dot" style="background:rgba(170,170,170,.5)"></div>2025</div>
+    <div class="legend-item"><div class="legend-dot" style="background:rgba(100,231,106,.9)"></div>2026 Actual</div>
+    <div class="legend-item"><div class="legend-dot" style="background:rgba(100,231,106,.22);border:1px solid rgba(100,231,106,.4)"></div>2026 Proj.</div>`;
+
+  if (tierChart) { tierChart.destroy(); tierChart = null; }
+  tierChart = new Chart(document.getElementById('tier-chart').getContext('2d'), {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [
+        { label:'2025',       data: keys.map(k=>groups[k].a25), backgroundColor:'rgba(170,170,170,.45)', borderRadius:3 },
+        { label:'2026 Act.',  data: keys.map(k=>groups[k].a26), backgroundColor:'rgba(100,231,106,.88)', stack:'s26', borderRadius:3 },
+        { label:'2026 Proj.', data: keys.map(k=>groups[k].p26), backgroundColor:'rgba(100,231,106,.2)', stack:'s26',
+          borderColor:'rgba(100,231,106,.4)', borderWidth:1, borderRadius:3 },
+      ]
+    },
+    options: { responsive:true, maintainAspectRatio:false,
+      plugins:{ legend:{display:false}, tooltip:ttip() },
+      scales: scalesXY(false) }
+  });
+
+  // ── Table ──
+  const allKeys = [...keys];
+  const totalA25 = allKeys.reduce((s,k)=>s+groups[k].a25, 0);
+  const totalA26 = allKeys.reduce((s,k)=>s+groups[k].a26, 0);
+  const totalP26 = allKeys.reduce((s,k)=>s+groups[k].p26, 0);
+  const totalCount = allKeys.reduce((s,k)=>s+groups[k].count, 0);
+
+  function tierRow(key, label, color) {
+    const g = groups[key];
+    const tot = g.a26 + g.p26;
+    const yoy = g.a25 > 0 ? Math.round((tot/g.a25-1)*100) : null;
+    const yoyHtml = yoy!=null ? `<span style="color:${yoy>=0?'var(--green)':'var(--red)'}">${yoy>=0?'+':''}${yoy}%</span>` : '—';
+    return `<tr>
+      <td style="font-weight:600;color:${color}">${label}</td>
+      <td style="text-align:center;color:var(--text2)">${g.count}</td>
+      <td class="num" style="color:var(--text2)">${g.a25>0?fmt(g.a25):'—'}</td>
+      <td class="num" style="color:var(--green)">${g.a26>0?fmt(g.a26):'—'}</td>
+      <td class="num" style="color:rgba(100,231,106,.55)">${g.p26>0?fmt(g.p26):'—'}</td>
+      <td class="num" style="font-weight:700">${tot>0?fmt(tot):'—'}</td>
+      <td class="num">${yoyHtml}</td>
+    </tr>`;
+  }
+
+  const totAP = totalA26 + totalP26;
+  const totYoy = totalA25 > 0 ? Math.round((totAP/totalA25-1)*100) : null;
+  const totYoyHtml = totYoy!=null ? `<span style="color:${totYoy>=0?'var(--green)':'var(--red)'};font-weight:700">${totYoy>=0?'+':''}${totYoy}%</span>` : '—';
+
+  document.getElementById('tier-table-wrap').innerHTML = `
+    <table>
+      <thead><tr>
+        <th>Tier</th>
+        <th style="text-align:center">Marchands</th>
+        <th class="num" style="color:var(--muted)">2025</th>
+        <th class="num">2026 Actual</th>
+        <th class="num" style="color:rgba(100,231,106,.55)">Projection</th>
+        <th class="num">Total A+P</th>
+        <th class="num">vs 2025</th>
+      </tr></thead>
+      <tbody>
+        ${tierRow('T1','T1','var(--green)')}
+        ${tierRow('T2','T2','#64B4FF')}
+        ${tierRow('T3','T3','var(--yellow)')}
+        ${tierRow('NC','Non classé','var(--muted)')}
+        <tr style="border-top:2px solid var(--border);font-weight:700">
+          <td>Total</td>
+          <td style="text-align:center;color:var(--text2)">${totalCount}</td>
+          <td class="num" style="color:var(--text2)">${fmt(totalA25)}</td>
+          <td class="num" style="color:var(--green)">${fmt(totalA26)}</td>
+          <td class="num" style="color:rgba(100,231,106,.55)">${fmt(totalP26)}</td>
+          <td class="num">${fmt(totAP)}</td>
+          <td class="num">${totYoyHtml}</td>
         </tr>
       </tbody>
     </table>`;
