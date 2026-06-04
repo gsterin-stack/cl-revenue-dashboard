@@ -433,16 +433,18 @@ function renderMonthlyTable(ca, ytdMonths) {
   const projs   = ca.R26P.map((v,i) => i < ytdMonths - 1 ? 0 : (v || 0));
   const okrs    = ca.OKR.map(v => v || 0);
 
+  const r25       = ca.R25.map(v => v || 0);
   const totalActual = actuals.reduce((a,b)=>a+b,0);
   const totalProj   = projs.reduce((a,b)=>a+b,0);
   const totalOkr    = okrs.reduce((a,b)=>a+b,0);
-  const grandTotal  = totalActual + totalProj;
+  const total25     = r25.reduce((a,b)=>a+b,0);
 
   // Build column arrays (12 months + Total)
   const cols     = [...MONTHS, 'Total'];
   const aRow     = [...actuals, totalActual];
   const pRow     = [...projs,   totalProj];
   const oRow     = [...okrs,    totalOkr];
+  const r25Row   = [...r25,     total25];
   const totRow   = aRow.map((a,i) => a + pRow[i]);
 
   function fmtCell(v, style) {
@@ -456,6 +458,13 @@ function renderMonthlyTable(ca, ytdMonths) {
         ${cols.map((c,i) => `<th${i===cols.length-1?' style="border-left:1px solid var(--border)"':''}>${c}</th>`).join('')}
       </tr></thead>
       <tbody>
+        <tr>
+          <td class="row-label" style="color:var(--muted)">2025</td>
+          ${r25Row.map((v,i) => {
+            const sep = i===12 ? 'border-left:1px solid var(--border);' : '';
+            return `<td style="text-align:right;${sep}color:var(--muted)">${v>0?fmt(v):'—'}</td>`;
+          }).join('')}
+        </tr>
         <tr>
           <td class="row-label" style="color:var(--muted)">OKR</td>
           ${oRow.map((v,i) => {
@@ -502,6 +511,16 @@ function renderMonthlyTable(ca, ytdMonths) {
             const v = Math.round(total/oRow[i]*100);
             const c = v>=90?'var(--green)':v>=70?'var(--yellow)':'var(--red)';
             return `<td style="text-align:right;${sep}color:${c};font-weight:700">${v}%</td>`;
+          }).join('')}
+        </tr>
+        <tr style="border-top:1px solid var(--border)">
+          <td class="row-label" style="color:var(--text2)">vs 2025 (A+P)</td>
+          ${totRow.map((total,i) => {
+            const sep = i===12 ? 'border-left:1px solid var(--border);' : '';
+            if (!r25Row[i] || !total) return `<td style="text-align:right;${sep}color:var(--muted)">—</td>`;
+            const v = Math.round((total/r25Row[i]-1)*100);
+            const c = v>=0?'var(--green)':'var(--red)';
+            return `<td style="text-align:right;${sep}color:${c};font-weight:600">${v>=0?'+':''}${v}%</td>`;
           }).join('')}
         </tr>
       </tbody>
