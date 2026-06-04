@@ -487,6 +487,23 @@ function renderMonthlyTable(ca, ytdMonths) {
             return `<td style="text-align:right;${sep}color:${c};font-weight:700">${v}%</td>`;
           }).join('')}
         </tr>
+        <tr style="border-top:2px solid var(--border)">
+          <td class="row-label" style="color:var(--text);font-weight:700">Total A+P</td>
+          ${totRow.map((v,i) => {
+            const sep = i===12 ? 'border-left:1px solid var(--border);' : '';
+            return `<td style="text-align:right;${sep}color:${v>0?'var(--text)':'var(--muted)'};font-weight:700">${v>0?fmt(v):'—'}</td>`;
+          }).join('')}
+        </tr>
+        <tr>
+          <td class="row-label" style="color:var(--text2)">vs OKR (A+P)</td>
+          ${totRow.map((total,i) => {
+            const sep = i===12 ? 'border-left:1px solid var(--border);' : '';
+            if (!oRow[i] || !total) return `<td style="text-align:right;${sep}color:var(--muted)">—</td>`;
+            const v = Math.round(total/oRow[i]*100);
+            const c = v>=90?'var(--green)':v>=70?'var(--yellow)':'var(--red)';
+            return `<td style="text-align:right;${sep}color:${c};font-weight:700">${v}%</td>`;
+          }).join('')}
+        </tr>
       </tbody>
     </table>`;
 }
@@ -566,6 +583,23 @@ function renderQSection(q, r25) {
         </tr>
         <tr>
           <td class="row-label" style="color:var(--text2)">vs OKR</td>
+          ${totRow.map((total,i) => {
+            const sep = i===4?'border-left:1px solid var(--border);':'';
+            if (!oRow[i] || !total) return `<td style="text-align:right;${sep}color:var(--muted)">—</td>`;
+            const v = Math.round(total/oRow[i]*100);
+            const c = v>=90?'var(--green)':v>=70?'var(--yellow)':'var(--red)';
+            return `<td style="text-align:right;${sep}color:${c};font-weight:700">${v}%</td>`;
+          }).join('')}
+        </tr>
+        <tr style="border-top:2px solid var(--border)">
+          <td class="row-label" style="color:var(--text);font-weight:700">Total A+P</td>
+          ${totRow.map((v,i) => {
+            const sep = i===4?'border-left:1px solid var(--border);':'';
+            return `<td style="text-align:right;${sep}color:${v>0?'var(--text)':'var(--muted)'};font-weight:700">${v>0?fmt(v):'—'}</td>`;
+          }).join('')}
+        </tr>
+        <tr>
+          <td class="row-label" style="color:var(--text2)">vs OKR (A+P)</td>
           ${totRow.map((total,i) => {
             const sep = i===4?'border-left:1px solid var(--border);':'';
             if (!oRow[i] || !total) return `<td style="text-align:right;${sep}color:var(--muted)">—</td>`;
@@ -893,7 +927,7 @@ function openModal(merchantId) {
   const mfSection = document.getElementById('modal-mf-section');
   const mf26 = m.monthly_mf_26;
   const mf25 = m.monthly_mf_25;
-  if (mf26 && mf26.some(v=>v>0)) {
+  if ((mf26 && mf26.some(v=>v>0)) || (mf25 && mf25.some(v=>v>0))) {
     mfSection.style.display = '';
     document.getElementById('modal-mf-legend').innerHTML = `
       <div class="legend-item"><div class="legend-dot" style="background:rgba(160,160,160,.5)"></div>2025</div>
