@@ -215,6 +215,15 @@
     <div class="modal-chart-wrap"><canvas id="modal-chart"></canvas></div>
     <table class="modal-table" id="modal-table"></table>
     <div class="modal-note" id="modal-note"></div>
+
+    <!-- Media Fees section (shown only if data available) -->
+    <div id="modal-mf-section" style="display:none">
+      <div style="height:1px;background:var(--border);margin:22px 0 16px"></div>
+      <div class="modal-chart-title">Monthly Media Fees 2025 · 2026</div>
+      <div class="modal-chart-legend" id="modal-mf-legend"></div>
+      <div class="modal-chart-wrap"><canvas id="modal-mf-chart"></canvas></div>
+      <table class="modal-table" id="modal-mf-table"></table>
+    </div>
   </div>
 </div>
 
@@ -239,6 +248,7 @@ let activeAM = 'all';
 let modalChart = null;
 let sortCol  = 'signed';
 let sortDir  = -1;
+let modalMFChart = null;
 
 /* ── Merchant display names ── */
 const MERCHANT_LABELS = {
@@ -277,6 +287,12 @@ function fmt(n, d=1) {
   if (abs>=1e6) return '€'+(n/1e6).toFixed(d)+'M';
   if (abs>=1e3) return '€'+(n/1e3).toFixed(abs>=100e3?0:1)+'K';
   return '€'+Math.round(n);
+}
+/* ── K€ formatter for KPI cards (always in thousands, French spacing) ── */
+function fmtK(n) {
+  if (n==null||isNaN(n)) return '—';
+  const k = Math.round(n/1e3);
+  return '€ '+k.toLocaleString('fr-FR')+' K';
 }
 function pct(v,b) { return b ? Math.round((v-b)/b*100) : null; }
 function pctStr(v,b) {
@@ -371,7 +387,7 @@ function renderKPIs(s) {
 
   const kpis = [
     { label:'YTD Actual',
-      value: fmt(s.ytd_actual),
+      value: fmtK(s.ytd_actual),
       sub: (ytdYoyHtml ? ytdYoyHtml + ' · ' : '') + `<span class="neu">${ytdRange}</span>`,
       clickable: false },
     { label:'New Client Revenue',
@@ -693,7 +709,10 @@ function filterAM(am, btn) {
 function renderAMKPIs(merchants, am, summary) {
   const rows     = merchantRows(merchants, am);
   const signed   = rows.reduce((s,r)=>s+r.signed, 0);
-  const ytd      = rows.reduce((s,r)=>s+(r.actual_26||0), 0);
+  // For "all AMs", use portfolio-level ytd_actual from summary (more accurate — includes
+  // revenue not yet attributed to a specific merchant in the merchant table).
+  // For a specific AM, sum that AM's merchants.
+  const ytd      = am==='all' ? summary.ytd_actual : rows.reduce((s,r)=>s+(r.actual_26||0), 0);
   const fy25     = rows.reduce((s,r)=>s+(r.actual_25||0), 0);
   const openBdg  = rows.reduce((s,r)=>s+(r.remaining_budget||0), 0);
   const label    = am==='all' ? 'All AMs' : am;
@@ -703,7 +722,7 @@ function renderAMKPIs(merchants, am, summary) {
       <div class="kpi-value">${rows.length}</div>
       <div class="kpi-sub">${rows.filter(r=>r.is_new_client).length} new clients</div></div>
     <div class="kpi"><div class="kpi-label">YTD Actual</div>
-      <div class="kpi-value">${fmt(ytd)}</div>
+      <div class="kpi-value">${fmtK(ytd)}</div>
       <div class="kpi-sub"><span class="neu">${ytdRange}</span></div></div>
     <div class="kpi"><div class="kpi-label">Signed 2026</div>
       <div class="kpi-value">${fmt(signed)}</div>
@@ -869,12 +888,69 @@ function openModal(merchantId) {
   document.getElementById('modal-note').innerHTML = isEstimated
     ? `<span style="opacity:.5;font-size:10px">~ Monthly figures estimated from portfolio seasonality</span>`
     : '';
+
+  /* ── Media Fees section ── */
+  const mfSection = document.getElementById('modal-mf-section');
+  const mf26 = m.monthly_mf_26;
+  const mf25 = m.monthly_mf_25;
+  if (mf26 && mf26.some(v=>v>0)) {
+    mfSection.style.display = '';
+    document.getElementById('modal-mf-legend').innerHTML = `
+      <div class="legend-item"><div class="legend-dot" style="background:rgba(160,160,160,.5)"></div>2025</div>
+      <div class="legend-item"><div class="legend-dot" style="background:rgba(146,84,227,.85)"></div>2026</div>`;
+    if (modalMFChart) { modalMFChart.destroy(); modalMFChart = null; }
+    modalMFChart = new Chart(document.getElementById('modal-mf-chart').getContext('2d'), {
+      type:'bar',
+      data:{ labels:MONTHS, datasets:[
+        {label:'Media Fees 2025', data: mf25||Array(12).fill(0),
+          backgroundColor:'rgba(160,160,160,.4)', borderRadius:3},
+        {label:'Media Fees 2026', data: mf26,
+          backgroundColor:'rgba(146,84,227,.75)', borderRadius:3},
+      ]},
+      options:{ responsive:true, maintainAspectRatio:false,
+        plugins:{ legend:{display:false},
+          tooltip:{ backgroundColor:'#1a1a1a', borderColor:'#333', borderWidth:1,
+            titleColor:'#fff', bodyColor:'#999', padding:10,
+            callbacks:{ label: c=>' '+c.dataset.label+': '+fmt(c.parsed.y) }}},
+        scales:{ x:{grid:{color:'transparent'},ticks:{color:'#555',font:{size:10}}},
+                 y:{grid:{color:'rgba(255,255,255,0.04)'},ticks:{color:'#555',font:{size:10},
+                   callback:v=>Math.abs(v)>=1e6?'€'+(v/1e6).toFixed(1)+'M':'€'+Math.round(v/1e3)+'K'}} }}
+    });
+    const mf25arr = mf25||Array(12).fill(0);
+    const totalMF26 = mf26.reduce((a,b)=>a+b,0);
+    const totalMF25 = mf25arr.reduce((a,b)=>a+b,0);
+    document.getElementById('modal-mf-table').innerHTML = `
+      <thead><tr>
+        <th style="text-align:left">Month</th>
+        <th>Media Fees 2025</th><th>Media Fees 2026</th><th>YoY</th>
+      </tr></thead>
+      <tbody>${MONTHS.map((mo,i)=>{
+        const v26 = mf26[i]||0, v25 = mf25arr[i]||0;
+        const yoy = v25>0 ? pct(v26,v25) : null;
+        return `<tr>
+          <td style="text-align:left;color:var(--text2)">${mo}</td>
+          <td class="past">${v25>0?fmt(v25):'–'}</td>
+          <td style="color:${v26>0?'var(--purple)':'var(--muted)'}">${v26>0?fmt(v26):'–'}</td>
+          <td>${yoy!=null?(yoy>=0?`<span class="yoy-pos">+${yoy}%</span>`:`<span class="yoy-neg">${yoy}%</span>`):'–'}</td>
+        </tr>`;
+      }).join('')}
+      <tr style="border-top:1px solid var(--border);font-weight:600">
+        <td style="text-align:left">Total</td>
+        <td class="past">${totalMF25>0?fmt(totalMF25):'–'}</td>
+        <td style="color:var(--purple)">${totalMF26>0?fmt(totalMF26):'–'}</td>
+        <td>${totalMF25>0?pctStr(totalMF26,totalMF25):'–'}</td>
+      </tr></tbody>`;
+  } else {
+    mfSection.style.display = 'none';
+  }
+
   document.getElementById('modal-overlay').classList.add('open');
 }
 function closeModal(e) { if(e.target===document.getElementById('modal-overlay')) closeModalDirect(); }
 function closeModalDirect() {
   document.getElementById('modal-overlay').classList.remove('open');
-  if (modalChart) { modalChart.destroy(); modalChart=null; }
+  if (modalChart)   { modalChart.destroy();   modalChart=null; }
+  if (modalMFChart) { modalMFChart.destroy(); modalMFChart=null; }
 }
 
 /* ── Bootstrap ── */
