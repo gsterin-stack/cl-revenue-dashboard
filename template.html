@@ -428,9 +428,9 @@ function renderMainChart(ca) {
 
 /* ── Monthly Performance Table (transposed: months = columns) ── */
 function renderMonthlyTable(ca, ytdMonths) {
-  // Fix: no projection for past months
+  // Pas de projection pour les mois complets passés ; projection visible pour le mois en cours et les mois futurs
   const actuals = ca.R26A.map(v => v || 0);
-  const projs   = ca.R26P.map((v,i) => i < ytdMonths ? 0 : (v || 0));
+  const projs   = ca.R26P.map((v,i) => i < ytdMonths - 1 ? 0 : (v || 0));
   const okrs    = ca.OKR.map(v => v || 0);
 
   const totalActual = actuals.reduce((a,b)=>a+b,0);
