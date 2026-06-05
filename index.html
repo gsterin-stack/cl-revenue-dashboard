@@ -631,12 +631,16 @@ function renderQSection(q, r25) {
     data:{ labels:quarters, datasets:[
       {label:'2025',   data:q25,                           backgroundColor:'rgba(150,150,150,.4)', borderRadius:3},
       {label:'Actual', data:quarters.map(k=>q[k].actual),  backgroundColor:'rgba(100,231,106,.85)', stack:'s26', borderRadius:3},
-      {label:'Proj.',  data:quarters.map(k=>q[k].proj),    backgroundColor:'rgba(100,231,106,.2)',  stack:'s26', borderRadius:3, borderColor:'rgba(100,231,106,.4)',borderWidth:1},
+      {label:'Proj.',  data:quarters.map(k=>q[k].proj),    backgroundColor:'rgba(100,231,106,.28)', stack:'s26', borderRadius:3, borderColor:'rgba(100,231,106,.45)',borderWidth:1},
       {label:'OKR',    data:quarters.map(k=>q[k].okr),     type:'line', borderColor:'#E4FA62', borderDash:[4,3], pointRadius:3, pointBackgroundColor:'#E4FA62', borderWidth:1.5, tension:0, fill:false, order:-1},
     ]},
     options:{ responsive:true, maintainAspectRatio:false,
       plugins:{legend:{display:false}, tooltip:ttip()},
-      scales:scalesXY(false) }
+      scales:{
+        x:{ stacked:true,  grid:{color:'transparent'}, ticks:{color:'#555',font:{size:10}} },
+        y:{ stacked:true,  grid:{color:'rgba(255,255,255,0.04)'}, ticks:{color:'#555',font:{size:10},
+          callback:v=>Math.abs(v)>=1e6?'€'+(v/1e6).toFixed(1)+'M':'€'+Math.round(v/1e3)+'K'} }
+      }}
   });
 
   // ── Transposed table ──
