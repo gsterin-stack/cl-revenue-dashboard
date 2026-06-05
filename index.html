@@ -182,6 +182,13 @@
       <div style="margin-bottom:16px"><canvas id="tier-chart" style="height:200px!important;width:100%!important"></canvas></div>
       <div class="table-wrap" id="tier-table-wrap"></div>
     </div>
+
+    <div class="card">
+      <div class="card-title">Media Fees Monthly</div>
+      <div class="chart-legend" id="mf-mgmt-legend"></div>
+      <div class="chart-full" style="margin-bottom:16px"><canvas id="mf-mgmt-chart"></canvas></div>
+      <div class="table-wrap" id="mf-mgmt-table-wrap"></div>
+    </div>
   </div>
 
   <!-- ═══ AM VIEW ═══ -->
@@ -261,6 +268,7 @@ let tierChart  = null;
 let sortCol  = 'signed';
 let sortDir  = -1;
 let modalMFChart = null;
+let mfMgmtChart  = null;
 
 /* ── Tier map (Master Tab - Tiering all CL Logos, 261 merchants) ── */
 const TIER_MAP = {
@@ -457,6 +465,7 @@ function renderAll(data) {
   renderMonthlyTable(data.chart_arrays, data.summary.ytd_months);
   renderQSection(data.quarterly, data.chart_arrays.R25);
   renderTierSection(data.merchants, data.chart_arrays.R25);
+  renderMFMgmtSection(data.merchants, data.summary.ytd_months);
   renderMerchantTable('merchants-table-wrap', data.merchants);
   document.getElementById('merchants-count').textContent = `${Object.keys(data.merchants).length} merchants`;
   renderAMView(data.merchants, data.summary);
@@ -831,6 +840,90 @@ function renderTierSection(merchants, r25Portfolio) {
           <td class="num">${fmt(totAP)}</td>
           <td class="num">${totYoyHtml}</td>
         </tr>
+      </tbody>
+    </table>`;
+}
+
+/* ── Media Fees Management Section ── */
+function renderMFMgmtSection(merchants, ytdMonths) {
+  // Agréger les media fees mensuelles de tous les marchands
+  const mf26 = new Array(12).fill(0);
+  const mf25 = new Array(12).fill(0);
+  for (const m of Object.values(merchants)) {
+    if (m.monthly_mf_26) m.monthly_mf_26.forEach((v,i) => { mf26[i] += v||0; });
+    if (m.monthly_mf_25) m.monthly_mf_25.forEach((v,i) => { mf25[i] += v||0; });
+  }
+
+  const okr26   = new Array(12).fill(0); // OKR à remplir plus tard
+  const proj26  = new Array(12).fill(0); // Projection future (vide pour l'instant)
+
+  const total25  = mf25.reduce((a,b)=>a+b,0);
+  const totalAct = mf26.reduce((a,b)=>a+b,0);
+  const totalProj= proj26.reduce((a,b)=>a+b,0);
+
+  // ── Légende ──
+  document.getElementById('mf-mgmt-legend').innerHTML = `
+    <div class="legend-item"><div class="legend-dot" style="background:rgba(170,170,170,.5)"></div>2025</div>
+    <div class="legend-item"><div class="legend-dot" style="background:rgba(146,84,227,.85)"></div>2026 Actual</div>
+    <div class="legend-item"><div class="legend-dot" style="background:rgba(146,84,227,.25);border:1px solid rgba(146,84,227,.5)"></div>2026 Proj.</div>`;
+
+  // ── Graphe ──
+  if (mfMgmtChart) { mfMgmtChart.destroy(); mfMgmtChart = null; }
+  mfMgmtChart = new Chart(document.getElementById('mf-mgmt-chart').getContext('2d'), {
+    type:'bar',
+    data:{ labels:MONTHS, datasets:[
+      { label:'2025',      data:mf25, backgroundColor:'rgba(170,170,170,.45)', borderRadius:2 },
+      { label:'2026 Act.', data:mf26, backgroundColor:'rgba(146,84,227,.82)',  stack:'mf26', borderRadius:2 },
+      { label:'2026 Proj.',data:proj26,backgroundColor:'rgba(146,84,227,.22)', stack:'mf26', borderRadius:2,
+        borderColor:'rgba(146,84,227,.5)', borderWidth:1 },
+    ]},
+    options:{ responsive:true, maintainAspectRatio:false,
+      plugins:{ legend:{display:false}, tooltip:{ backgroundColor:'#1a1a1a', borderColor:'#333', borderWidth:1,
+        titleColor:'#fff', bodyColor:'#999', padding:10,
+        callbacks:{ label: c=>' '+c.dataset.label+': '+fmt(c.parsed.y) }}},
+      scales:{
+        x:{ stacked:true, grid:{color:'transparent'}, ticks:{color:'#555',font:{size:10}} },
+        y:{ stacked:true, grid:{color:'rgba(255,255,255,0.04)'}, ticks:{color:'#555',font:{size:10},
+          callback:v=>Math.abs(v)>=1e6?'€'+(v/1e6).toFixed(1)+'M':'€'+Math.round(v/1e3)+'K'} }
+      }}
+  });
+
+  // ── Tableau ──
+  const cols   = [...MONTHS, 'Total'];
+  const r25Row = [...mf25, total25];
+  const okrRow = [...okr26, okr26.reduce((a,b)=>a+b,0)];
+  const actRow = [...mf26, totalAct];
+  const pRow   = [...proj26, totalProj];
+  const totRow = actRow.map((a,i) => a + pRow[i]);
+
+  function cell(v, color, bold=false) {
+    const sep = ''; // pas de Total séparateur ici
+    if (!v) return `<td style="text-align:right;color:var(--muted)">—</td>`;
+    return `<td style="text-align:right;color:${color};${bold?'font-weight:700':''}">${fmt(v)}</td>`;
+  }
+
+  const makeRow = (label, arr, color, bold=false) => `
+    <tr${bold?' style="border-top:2px solid var(--border)"':''}>
+      <td class="row-label" style="color:${color};${bold?'font-weight:700':''}">${label}</td>
+      ${arr.map((v,i) => {
+        const sep = i===12 ? 'border-left:1px solid var(--border);' : '';
+        if (!v) return `<td style="text-align:right;${sep}color:var(--muted)">—</td>`;
+        return `<td style="text-align:right;${sep}color:${color};${bold?'font-weight:700':''}">${fmt(v)}</td>`;
+      }).join('')}
+    </tr>`;
+
+  document.getElementById('mf-mgmt-table-wrap').innerHTML = `
+    <table class="perf-table">
+      <thead><tr>
+        <th class="row-label"></th>
+        ${cols.map((c,i) => `<th${i===12?' style="border-left:1px solid var(--border)"':''}>${c}</th>`).join('')}
+      </tr></thead>
+      <tbody>
+        ${makeRow('2025',     r25Row, 'var(--text2)')}
+        ${makeRow('OKR',      okrRow, 'var(--muted)')}
+        ${makeRow('Actual',   actRow, 'rgba(146,84,227,.9)')}
+        ${makeRow('Projection', pRow, 'rgba(146,84,227,.5)')}
+        ${makeRow('Total A+P',totRow, 'var(--text)', true)}
       </tbody>
     </table>`;
 }
