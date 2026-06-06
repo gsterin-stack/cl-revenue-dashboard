@@ -735,6 +735,16 @@ function renderQSection(q, r25) {
             return `<td style="text-align:right;${sep}color:${c};font-weight:700">${v}%</td>`;
           }).join('')}
         </tr>
+        <tr>
+          <td class="row-label" style="color:var(--text2)">vs 2025 (A+P)</td>
+          ${totRow.map((total,i) => {
+            const sep = i===4?'border-left:1px solid var(--border);':'';
+            if (!a25Row[i] || !total) return `<td style="text-align:right;${sep}color:var(--muted)">—</td>`;
+            const v = Math.round((total/a25Row[i]-1)*100);
+            const c = v>=0?'var(--green)':'var(--red)';
+            return `<td style="text-align:right;${sep}color:${c};font-weight:600">${v>=0?'+':''}${v}%</td>`;
+          }).join('')}
+        </tr>
       </tbody>
     </table>`;
 }
@@ -937,6 +947,46 @@ function renderMFMgmtSection(merchants, ytdMonths) {
             return `<td style="text-align:right;${sep}color:${c};font-weight:700">${v}%</td>`;
           }).join('')}
         </tr>
+      </tbody>
+    </table>
+
+    <div class="section-sep"></div>
+    <div class="card-title" style="margin-bottom:12px">Quarterly Media Fees</div>
+    <table>
+      <thead><tr>
+        <th></th>
+        <th class="num">Q1</th>
+        <th class="num">Q2</th>
+        <th class="num">Q3</th>
+        <th class="num">Q4</th>
+        <th class="num" style="border-left:1px solid var(--border)">Total</th>
+      </tr></thead>
+      <tbody>
+        ${[['2025','var(--text2)',[0,1,2],[3,4,5],[6,7,8],[9,10,11]],
+           ['Actual','rgba(146,84,227,.9)',[0,1,2],[3,4,5],[6,7,8],[9,10,11]]].map(([label,color,...qs]) => {
+          const src = label==='2025' ? mf25 : mf26;
+          const vals = qs.map(q => q.reduce((s,i)=>s+(src[i]||0),0));
+          const tot  = vals.reduce((a,b)=>a+b,0);
+          return `<tr>
+            <td style="font-weight:600;color:${color}">${label}</td>
+            ${vals.map(v=>`<td class="num" style="color:${color}">${v>0?fmt(v):'—'}</td>`).join('')}
+            <td class="num" style="border-left:1px solid var(--border);color:${color};font-weight:700">${tot>0?fmt(tot):'—'}</td>
+          </tr>`;
+        }).join('')}
+        ${(() => {
+          const qs = [[0,1,2],[3,4,5],[6,7,8],[9,10,11]];
+          const act25 = qs.map(q=>q.reduce((s,i)=>s+(mf25[i]||0),0));
+          const act26 = qs.map(q=>q.reduce((s,i)=>s+(mf26[i]||0),0));
+          const tot25 = act25.reduce((a,b)=>a+b,0);
+          const tot26 = act26.reduce((a,b)=>a+b,0);
+          const yoys  = act26.map((v,i)=>act25[i]>0?Math.round((v/act25[i]-1)*100):null);
+          const totYoy= tot25>0?Math.round((tot26/tot25-1)*100):null;
+          return `<tr>
+            <td style="color:var(--text2)">vs 2025</td>
+            ${yoys.map(v=>`<td class="num" style="color:${v==null?'var(--muted)':v>=0?'var(--green)':'var(--red)'}">${v==null?'—':(v>=0?'+':'')+v+'%'}</td>`).join('')}
+            <td class="num" style="border-left:1px solid var(--border);color:${totYoy==null?'var(--muted)':totYoy>=0?'var(--green)':'var(--red)'};font-weight:700">${totYoy==null?'—':(totYoy>=0?'+':'')+totYoy+'%'}</td>
+          </tr>`;
+        })()}
       </tbody>
     </table>`;
 }
