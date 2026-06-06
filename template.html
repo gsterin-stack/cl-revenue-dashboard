@@ -896,8 +896,9 @@ function renderMFMgmtSection(merchants, ytdMonths) {
         callbacks:{ label: c=>' '+c.dataset.label+': '+fmt(c.parsed.y) }}},
       scales:{
         x:{ stacked:true, grid:{color:'transparent'}, ticks:{color:'#555',font:{size:10}} },
-        y:{ stacked:true, grid:{color:'rgba(255,255,255,0.04)'}, ticks:{color:'#555',font:{size:10},
-          callback:v=>Math.abs(v)>=1e6?'€'+(v/1e6).toFixed(1)+'M':'€'+Math.round(v/1e3)+'K'} }
+        y:{ stacked:true, grid:{color:'rgba(255,255,255,0.04)'},
+          ticks:{color:'#555',font:{size:10},maxTicksLimit:6,
+          callback:v=>Math.abs(v)>=1e6?'€'+(v/1e6).toFixed(1)+'M':Math.abs(v)>=1e3?'€'+Math.round(v/1e3)+'K':'€'+Math.round(v)} }
       }}
   });
 
@@ -1334,8 +1335,8 @@ function openModal(merchantId) {
             titleColor:'#fff', bodyColor:'#999', padding:10,
             callbacks:{ label: c=>' '+c.dataset.label+': '+fmt(c.parsed.y) }}},
         scales:{ x:{grid:{color:'transparent'},ticks:{color:'#555',font:{size:10}}},
-                 y:{grid:{color:'rgba(255,255,255,0.04)'},ticks:{color:'#555',font:{size:10},
-                   callback:v=>Math.abs(v)>=1e6?'€'+(v/1e6).toFixed(1)+'M':'€'+Math.round(v/1e3)+'K'}} }}
+                 y:{grid:{color:'rgba(255,255,255,0.04)'},ticks:{color:'#555',font:{size:10},maxTicksLimit:6,
+                   callback:v=>Math.abs(v)>=1e6?'€'+(v/1e6).toFixed(1)+'M':Math.abs(v)>=1e3?'€'+Math.round(v/1e3)+'K':'€'+Math.round(v)}} }}
     });
     const mf25arr = mf25||Array(12).fill(0);
     const totalMF26 = mf26.reduce((a,b)=>a+b,0);
