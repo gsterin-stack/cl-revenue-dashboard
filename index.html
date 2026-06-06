@@ -371,11 +371,14 @@ function merchantLabel(id) {
 }
 
 /* ── Number helpers ── */
-function fmt(n, d=1) {
+function fmt(n) {
   if (n==null||isNaN(n)) return '—';
   const abs = Math.abs(n);
-  if (abs>=1e6) return '€'+(n/1e6).toFixed(d)+'M';
-  if (abs>=1e3) return '€'+(n/1e3).toFixed(abs>=100e3?0:1)+'K';
+  if (abs>=1e3) {
+    const k = Math.round(n/1e3);
+    // séparateur milliers : espace fine (U+202F)
+    return '€'+k.toString().replace(/\B(?=(\d{3})+(?!\d))/g,' ')+'K';
+  }
   return '€'+Math.round(n);
 }
 /* ── K€ formatter for KPI cards (always in thousands, French spacing) ── */
@@ -447,7 +450,7 @@ function scalesXY(stacked=false) {
   return {
     x: { stacked, grid:{color:'transparent'}, ticks:{color:'#555',font:{size:10}} },
     y: { stacked:false, grid:{color:'rgba(255,255,255,0.04)'}, ticks:{color:'#555',font:{size:10},
-      callback:v=>Math.abs(v)>=1e6?'€'+(v/1e6).toFixed(1)+'M':'€'+Math.round(v/1e3)+'K' }}
+      callback:v=>Math.abs(v)>=1e3?'€'+Math.round(v/1e3)+'K':'€'+Math.round(v) }}
   };
 }
 
@@ -525,7 +528,7 @@ function renderMainChart(ca) {
       scales:{
         x:{ stacked:true,  grid:{color:'transparent'}, ticks:{color:'#555',font:{size:10}} },
         y:{ stacked:true,  grid:{color:'rgba(255,255,255,0.04)'}, ticks:{color:'#555',font:{size:10},
-          callback:v=>Math.abs(v)>=1e6?'€'+(v/1e6).toFixed(1)+'M':'€'+Math.round(v/1e3)+'K'} }
+          callback:v=>Math.abs(v)>=1e3?'€'+Math.round(v/1e3)+'K':'€'+Math.round(v)} }
       }}
   });
 }
@@ -655,7 +658,7 @@ function renderQSection(q, r25) {
       scales:{
         x:{ stacked:true,  grid:{color:'transparent'}, ticks:{color:'#555',font:{size:10}} },
         y:{ stacked:true,  grid:{color:'rgba(255,255,255,0.04)'}, ticks:{color:'#555',font:{size:10},
-          callback:v=>Math.abs(v)>=1e6?'€'+(v/1e6).toFixed(1)+'M':'€'+Math.round(v/1e3)+'K'} }
+          callback:v=>Math.abs(v)>=1e3?'€'+Math.round(v/1e3)+'K':'€'+Math.round(v)} }
       }}
   });
 
@@ -797,7 +800,7 @@ function renderTierSection(merchants, r25Portfolio) {
       scales:{
         x:{ stacked:true,  grid:{color:'transparent'}, ticks:{color:'#555',font:{size:10}} },
         y:{ stacked:true,  grid:{color:'rgba(255,255,255,0.04)'}, ticks:{color:'#555',font:{size:10},
-          callback:v=>Math.abs(v)>=1e6?'€'+(v/1e6).toFixed(1)+'M':'€'+Math.round(v/1e3)+'K'} }
+          callback:v=>Math.abs(v)>=1e3?'€'+Math.round(v/1e3)+'K':'€'+Math.round(v)} }
       }}
   });
 
@@ -898,7 +901,7 @@ function renderMFMgmtSection(merchants, ytdMonths) {
         x:{ stacked:true, grid:{color:'transparent'}, ticks:{color:'#555',font:{size:10}} },
         y:{ stacked:true, grid:{color:'rgba(255,255,255,0.04)'},
           ticks:{color:'#555',font:{size:10},maxTicksLimit:6,
-          callback:v=>Math.abs(v)>=1e6?'€'+(v/1e6).toFixed(1)+'M':Math.abs(v)>=1e3?'€'+Math.round(v/1e3)+'K':'€'+Math.round(v)} }
+          callback:v=>Math.abs(v)>=1e3?'€'+Math.round(v/1e3)+'K':'€'+Math.round(v)} }
       }}
   });
 
@@ -1336,7 +1339,7 @@ function openModal(merchantId) {
             callbacks:{ label: c=>' '+c.dataset.label+': '+fmt(c.parsed.y) }}},
         scales:{ x:{grid:{color:'transparent'},ticks:{color:'#555',font:{size:10}}},
                  y:{grid:{color:'rgba(255,255,255,0.04)'},ticks:{color:'#555',font:{size:10},maxTicksLimit:6,
-                   callback:v=>Math.abs(v)>=1e6?'€'+(v/1e6).toFixed(1)+'M':Math.abs(v)>=1e3?'€'+Math.round(v/1e3)+'K':'€'+Math.round(v)}} }}
+                   callback:v=>Math.abs(v)>=1e3?'€'+Math.round(v/1e3)+'K':'€'+Math.round(v)}} }}
     });
     const mf25arr = mf25||Array(12).fill(0);
     const totalMF26 = mf26.reduce((a,b)=>a+b,0);
