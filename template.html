@@ -1252,16 +1252,22 @@ function openTierModal(tier) {
   document.getElementById('tier-modal-body').innerHTML = `
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px">
       <div>
-        <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">
-          <span style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--green)">▲ Tops</span>
-          <span style="font-size:11px;color:var(--muted)">${tops.length} marchands</span>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+          <div style="display:flex;align-items:center;gap:8px">
+            <span style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--green)">▲ Tops</span>
+            <span style="font-size:11px;color:var(--muted)">${tops.length} marchands</span>
+          </div>
+          <span style="font-size:13px;font-weight:700;color:var(--green)">${fmt(tops.reduce((s,r)=>s+r.delta,0))}</span>
         </div>
         ${makeCol(tops, false)}
       </div>
       <div>
-        <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">
-          <span style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--red)">▼ Flops</span>
-          <span style="font-size:11px;color:var(--muted)">${flops.length} marchands</span>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+          <div style="display:flex;align-items:center;gap:8px">
+            <span style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--red)">▼ Flops</span>
+            <span style="font-size:11px;color:var(--muted)">${flops.length} marchands</span>
+          </div>
+          <span style="font-size:13px;font-weight:700;color:var(--red)">${fmt(flops.reduce((s,r)=>s+r.delta,0))}</span>
         </div>
         ${makeCol(flops, true)}
       </div>
