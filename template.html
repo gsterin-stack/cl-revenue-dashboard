@@ -1079,7 +1079,6 @@ function sortBy(col) {
     if (t.dataset.col===col) t.classList.add(sortDir>0?'sort-asc':'sort-desc');
   });
   renderMerchantTable('merchants-table-wrap', GDATA.merchants, activeMerchantsAM);
-  renderAMTable('am-table-wrap', GDATA.merchants, activeAM);
 }
 
 /* ── Normalize string for comparison (strips accents, lowercases) ── */
