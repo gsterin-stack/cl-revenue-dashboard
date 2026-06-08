@@ -248,11 +248,7 @@
 
   <!-- ═══ AM VIEW ═══ -->
   <div id="tab-am" class="tab-content">
-    <div class="am-select-bar" id="am-select-bar">
-      <button class="am-select-btn active" onclick="selectAMView('Eva',this)">Eva</button>
-      <button class="am-select-btn" onclick="selectAMView('Eloïse',this)">Eloïse</button>
-      <button class="am-select-btn" onclick="selectAMView('Raphaëlle',this)">Raphaëlle</button>
-    </div>
+    <div class="am-select-bar" id="am-select-bar"><!-- generated dynamically --></div>
     <div id="am-q-kpi-bar" class="am-q-kpi-bar" style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:14px"></div>
     <div id="am-mf-alerts" style="margin-bottom:14px"></div>
     <div class="card">
@@ -263,12 +259,7 @@
 
   <!-- ═══ MERCHANTS ═══ -->
   <div id="tab-merchants" class="tab-content">
-    <div class="am-filter" id="merchants-am-filter">
-      <button class="am-btn active" onclick="filterMerchantsAM('all',this)">All</button>
-      <button class="am-btn" onclick="filterMerchantsAM('Eva',this)">Eva</button>
-      <button class="am-btn" onclick="filterMerchantsAM('Eloïse',this)">Eloïse</button>
-      <button class="am-btn" onclick="filterMerchantsAM('Raphaëlle',this)">Raphaëlle</button>
-    </div>
+    <div class="am-filter" id="merchants-am-filter"><!-- generated dynamically --></div>
     <div class="am-kpi-bar" id="merchants-kpi-bar"></div>
     <div class="card">
       <div class="table-wrap" id="merchants-table-wrap"></div>
@@ -537,6 +528,8 @@ function switchTab(id, btn) {
 function renderAll(data) {
   GDATA = data;
   document.getElementById('updated-at').textContent = 'Updated: '+data.updated_at;
+  // Boutons AM dynamiques — doit être appelé avant les renders qui utilisent activeAMView
+  renderAMButtons(data.summary.ams || buildAMsFromMerchants(data.merchants));
   renderKPIs(data.summary);
   renderMainChart(data.chart_arrays);
   renderMonthlyTable(data.chart_arrays, data.summary.ytd_months);
@@ -546,6 +539,13 @@ function renderAll(data) {
   renderMerchantsKPIs(data.merchants, 'all', data.summary);
   renderMerchantTable('merchants-table-wrap', data.merchants, 'all');
   renderAMView(data.merchants, data.summary);
+}
+
+// Fallback si n8n n'envoie pas encore summary.ams : extraire depuis les merchants
+function buildAMsFromMerchants(merchants) {
+  const ams = new Set();
+  Object.values(merchants).forEach(m => { if (m.am) ams.add(m.am); });
+  return [...ams].sort();
 }
 
 /* ── KPI Bar (3 cards, no month range in label) ── */
@@ -1174,14 +1174,47 @@ function amQRevenue(merchants, am, q) {
   }, 0);
 }
 
-/* ── Hardcoded quarterly OKRs — fill when available ── */
-const AM_OKR = {
+/* ── Quarterly OKRs — renseigner quand disponible, nouveaux AMs = null auto ── */
+const AM_OKR_DATA = {
+  /* Format: 'Prénom': { Q1: €, Q2: €, Q3: €, Q4: € }  — laisser null si inconnu */
   'Eva':       { Q1: null, Q2: null, Q3: null, Q4: null },
   'Eloïse':    { Q1: null, Q2: null, Q3: null, Q4: null },
   'Raphaëlle': { Q1: null, Q2: null, Q3: null, Q4: null },
+  'Théo':      { Q1: null, Q2: null, Q3: null, Q4: null },
+  'Romain':    { Q1: null, Q2: null, Q3: null, Q4: null },
 };
+// Fallback propre pour tout AM non listé (nouveau, etc.)
+function getAMOkr(am) {
+  return AM_OKR_DATA[am] || { Q1: null, Q2: null, Q3: null, Q4: null };
+}
 
-let activeAMView = 'Eva';
+let activeAMView = null; // sera défini dynamiquement au premier renderAMButtons
+
+/* ── Génération dynamique des boutons AM ──────────────────────────────────────
+   Appelé depuis renderAll avec data.summary.ams = ['Eva','Eloïse','Théo',...]
+   Gère l'AM View (am-select-bar) ET le filtre Merchants (merchants-am-filter).
+   ─────────────────────────────────────────────────────────────────────────── */
+function renderAMButtons(ams) {
+  if (!ams || !ams.length) return;
+
+  // Initialise l'AM actif au premier de la liste si pas encore défini
+  if (!activeAMView || !ams.includes(activeAMView)) activeAMView = ams[0];
+
+  // ── AM View select bar ──
+  document.getElementById('am-select-bar').innerHTML = ams.map(am =>
+    `<button class="am-select-btn${am===activeAMView?' active':''}"
+       onclick="selectAMView('${am}',this)">${am}</button>`
+  ).join('');
+
+  // ── Merchants tab filter ──
+  document.getElementById('merchants-am-filter').innerHTML =
+    `<button class="am-btn${activeMerchantsAM==='all'?' active':''}"
+       onclick="filterMerchantsAM('all',this)">All</button>` +
+    ams.map(am =>
+      `<button class="am-btn${am===activeMerchantsAM?' active':''}"
+         onclick="filterMerchantsAM('${am}',this)">${am}</button>`
+    ).join('');
+}
 
 function selectAMView(am, btn) {
   activeAMView = am;
@@ -1205,16 +1238,15 @@ function renderAMQKPIs(merchants, am, summary) {
   const q      = currentQ();
   const wk     = weekInQ(q);
   const qRev   = amQRevenue(merchants, am, q);
-  const qOkr   = AM_OKR[am] ? AM_OKR[am][qLabel(q)] : null;
+  const amOkr  = getAMOkr(am);
+  const qOkr   = amOkr[qLabel(q)] ?? null;
   const qPct   = qOkr ? Math.round(qRev/qOkr*100) : null;
   const qColor = qPct==null?'var(--text)':qPct>=90?'var(--green)':qPct>=70?'var(--yellow)':'var(--red)';
 
   // YTD vs cumulative OKR (Q1+Q2+… through current Q)
   const rows      = merchantRows(merchants, am);
   const ytd       = rows.reduce((s,r)=>s+(r.actual_26||0), 0);
-  const ytdOkrSum = AM_OKR[am]
-    ? Array.from({length:q},(_,i)=>AM_OKR[am][qLabel(i+1)]||0).reduce((s,v)=>s+v,0)
-    : null;
+  const ytdOkrSum = Array.from({length:q},(_,i)=>amOkr[qLabel(i+1)]||0).reduce((s,v)=>s+v,0) || null;
   const ytdPct  = ytdOkrSum ? Math.round(ytd/ytdOkrSum*100) : null;
   const ytdColor= ytdPct==null?'var(--text)':ytdPct>=90?'var(--green)':ytdPct>=70?'var(--yellow)':'var(--red)';
 
