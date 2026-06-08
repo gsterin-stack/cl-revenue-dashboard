@@ -125,6 +125,42 @@
     .am-btn { padding:6px 16px; border-radius:8px; font-size:12px; font-weight:600; cursor:pointer; border:1px solid var(--border); background:var(--s2); color:var(--text2); transition:all .15s; }
     .am-btn.active { background:var(--green); color:#000; border-color:var(--green); }
 
+    /* ── AM View Redesign ── */
+    .am-select-bar { display:flex; gap:6px; margin-bottom:18px; }
+    .am-select-btn { padding:9px 28px; border-radius:9px; font-size:13px; font-weight:600; cursor:pointer; border:1px solid var(--border); background:var(--s2); color:var(--text2); transition:all .15s; }
+    .am-select-btn.active { background:var(--green); color:#000; border-color:var(--green); }
+
+    /* Q-progress inside KPI card */
+    .q-progress-wrap { margin-top:9px; }
+    .q-progress-track { height:3px; background:var(--border); border-radius:2px; margin-bottom:5px; position:relative; }
+    .q-progress-fill { height:100%; border-radius:2px; transition:width .3s; }
+    .q-progress-ticks { display:flex; justify-content:space-between; }
+    .q-progress-tick  { font-size:9px; color:var(--muted); }
+
+    /* MF alert section */
+    .mf-alert-card { background:var(--s1); border:1px solid rgba(228,250,98,.2); border-radius:var(--radius); padding:16px 18px; }
+    .mf-alert-head  { display:flex; align-items:center; gap:10px; margin-bottom:14px; }
+    .mf-alert-title { font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.6px; color:var(--yellow); }
+    .mf-alert-badge { font-size:10px; font-weight:700; background:rgba(228,250,98,.1); border:1px solid rgba(228,250,98,.25); color:var(--yellow); border-radius:4px; padding:2px 8px; }
+    .mf-alert-none  { font-size:12px; color:var(--muted); padding:4px 0; }
+    .mf-alert-row   { display:flex; align-items:center; gap:12px; padding:8px 10px; margin-bottom:6px;
+                       background:rgba(228,250,98,.03); border:1px solid rgba(228,250,98,.1); border-radius:8px; cursor:pointer; transition:background .1s; }
+    .mf-alert-row:hover { background:rgba(228,250,98,.07); }
+    .mf-alert-name  { flex:1; font-weight:500; font-size:12px; }
+    .mf-alert-chip  { font-size:11px; color:var(--text2); white-space:nowrap; }
+    .mf-alert-warn  { font-size:11px; font-weight:600; color:var(--yellow); white-space:nowrap; }
+
+    /* Delivery table WoW sparkline */
+    .spark-cell     { display:flex; align-items:center; gap:7px; justify-content:flex-end; }
+    .spark-bars     { display:flex; align-items:flex-end; gap:2px; height:22px; flex-shrink:0; }
+    .spark-bar      { width:8px; border-radius:2px 2px 0 0; min-height:2px; }
+    .wow-nums       { text-align:right; }
+    .wow-val        { font-size:12px; font-weight:600; display:block; font-variant-numeric:tabular-nums; white-space:nowrap; }
+    .wow-pct        { font-size:10px; display:block; font-variant-numeric:tabular-nums; white-space:nowrap; }
+    .driver-mf      { font-size:10px; font-weight:600; color:var(--purple); background:rgba(146,84,227,.12); border:1px solid rgba(146,84,227,.3); border-radius:4px; padding:2px 6px; white-space:nowrap; }
+    .driver-boost   { font-size:10px; font-weight:600; color:var(--yellow); background:rgba(228,250,98,.08); border:1px solid rgba(228,250,98,.25); border-radius:4px; padding:2px 6px; white-space:nowrap; }
+    .driver-none    { font-size:10px; color:var(--muted); }
+
     /* ── Modal ── */
     .modal-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,.75); z-index:500; align-items:center; justify-content:center; }
     .modal-overlay.open { display:flex; }
@@ -212,15 +248,16 @@
 
   <!-- ═══ AM VIEW ═══ -->
   <div id="tab-am" class="tab-content">
-    <div class="am-filter">
-      <button class="am-btn active" onclick="filterAM('all',this)">All</button>
-      <button class="am-btn" onclick="filterAM('Eva',this)">Eva</button>
-      <button class="am-btn" onclick="filterAM('Eloïse',this)">Eloïse</button>
-      <button class="am-btn" onclick="filterAM('Raphaëlle',this)">Raphaëlle</button>
+    <div class="am-select-bar" id="am-select-bar">
+      <button class="am-select-btn active" onclick="selectAMView('Eva',this)">Eva</button>
+      <button class="am-select-btn" onclick="selectAMView('Eloïse',this)">Eloïse</button>
+      <button class="am-select-btn" onclick="selectAMView('Raphaëlle',this)">Raphaëlle</button>
     </div>
-    <div class="am-kpi-bar" id="am-kpi-bar"></div>
+    <div id="am-q-kpi-bar" class="am-q-kpi-bar" style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:14px"></div>
+    <div id="am-mf-alerts" style="margin-bottom:14px"></div>
     <div class="card">
-      <div class="table-wrap" id="am-table-wrap"></div>
+      <div class="card-title" id="am-delivery-title">DELIVERY — Portfolio</div>
+      <div class="table-wrap" id="am-delivery-table-wrap"></div>
     </div>
   </div>
 
@@ -1114,86 +1151,254 @@ function renderMerchantTable(wrapId, merchants, amFilter) {
   </table>`;
 }
 
-/* ── AM View table ── */
-function renderAMTable(wrapId, merchants, amFilter='all') {
-  const rows = merchantRows(merchants, amFilter);
-  const cc = col => col===sortCol ? (sortDir>0?'sort-asc':'sort-desc') : '';
+/* ═══════════════════════════════════════════════
+   AM VIEW — Delivery Tracker (full redesign)
+   ═══════════════════════════════════════════════ */
 
-  document.getElementById(wrapId).innerHTML = `<table>
-    <thead><tr>
-      <th class="sortable ${cc('name')}" data-col="name" onclick="sortBy('name')">Merchant</th>
-      <th class="sortable ${cc('am')}"   data-col="am"   onclick="sortBy('am')">AM</th>
-      <th class="sortable ${cc('tier')}" data-col="tier" onclick="sortBy('tier')">Tier</th>
-      <th>Type</th>
-      <th class="num sortable ${cc('signed')}" data-col="signed" onclick="sortBy('signed')">Signed 2026</th>
-      <th class="num sortable ${cc('ytd')}"    data-col="ytd"    onclick="sortBy('ytd')">YTD Actual</th>
-      <th class="num sortable ${cc('open')}"   data-col="open"   onclick="sortBy('open')">Open Budget</th>
-      <th class="num sortable ${cc('avb')}"    data-col="avb"    onclick="sortBy('avb')">Actual vs Budget</th>
-    </tr></thead>
-    <tbody>${rows.map(r => {
-      const isCapped = r.signed_26 != null || r.remaining_budget != null;
-      const typeBadge = isCapped
-        ? `<span class="type-capped">Capped</span>`
-        : `<span class="type-uncapped">Uncapped</span>`;
-      const openBudget = r.remaining_budget != null
-        ? `<span style="color:var(--purple)">${fmt(r.remaining_budget)}</span>`
-        : '<span class="neu">—</span>';
-      const avb = actualVsOpenBudget(r);
-      const avbColor = avb==null?'var(--muted)':avb>=80?'var(--red)':avb>=50?'var(--yellow)':'var(--green)';
-      const avbHtml = avb!=null
-        ? `<span style="color:${avbColor};font-weight:600">${avb}%</span>`
-        : '<span class="neu">—</span>';
-      return `<tr onclick="openModal('${r.id}')">
-        <td class="merchant-name">${merchantLabel(r.id)}${r.is_new_client?'<span class="badge-new">new</span>':''}</td>
-        <td><span class="am-pill">${r.am}</span></td>
-        <td>${tierBadge(r.id)}</td>
-        <td>${typeBadge}</td>
-        <td class="num"><strong>${fmt(r.signed)}</strong></td>
-        <td class="num">${fmt(r.actual_26)}</td>
-        <td class="num">${openBudget}</td>
-        <td class="num">${avbHtml}</td>
-      </tr>`;
-    }).join('')}</tbody>
-  </table>`;
+/* ── Quarter utilities ── */
+const Q_MONTHS = [[1,2,3],[4,5,6],[7,8,9],[10,11,12]];
+const Q_NAMES  = ['Q1','Q2','Q3','Q4'];
+function currentQ()  { return Math.ceil((new Date().getMonth()+1)/3); }
+function qLabel(q)   { return Q_NAMES[q-1]; }
+function qRange(q)   { const m=Q_MONTHS[q-1]; return `${MONTHS[m[0]-1]}–${MONTHS[m[2]-1]}`; }
+function weekInQ(q)  {
+  const now = new Date();
+  const start = new Date(now.getFullYear(),(q-1)*3,1);
+  return Math.max(1,Math.min(Math.floor((now-start)/(7*24*36e5))+1,13));
+}
+// Revenue for an AM in a given quarter (using per-merchant monthly_26 arrays)
+function amQRevenue(merchants, am, q) {
+  const mos = Q_MONTHS[q-1];
+  return merchantRows(merchants, am).reduce((sum, r) => {
+    if (!r.monthly_26) return sum + (q===currentQ() ? (r.actual_26||0) : 0); // fallback
+    return sum + mos.reduce((s,mo) => s+(r.monthly_26[mo-1]||0), 0);
+  }, 0);
 }
 
-/* ── AM View ── */
-function renderAMView(merchants, summary) {
-  renderAMKPIs(merchants, 'all', summary);
-  renderAMTable('am-table-wrap', merchants, 'all');
-}
-function filterAM(am, btn) {
-  activeAM = am;
-  document.querySelectorAll('.am-btn').forEach(b=>b.classList.remove('active'));
+/* ── Hardcoded quarterly OKRs — fill when available ── */
+const AM_OKR = {
+  'Eva':       { Q1: null, Q2: null, Q3: null, Q4: null },
+  'Eloïse':    { Q1: null, Q2: null, Q3: null, Q4: null },
+  'Raphaëlle': { Q1: null, Q2: null, Q3: null, Q4: null },
+};
+
+let activeAMView = 'Eva';
+
+function selectAMView(am, btn) {
+  activeAMView = am;
+  document.querySelectorAll('#am-select-bar .am-select-btn').forEach(b=>b.classList.remove('active'));
   btn.classList.add('active');
-  renderAMKPIs(GDATA.merchants, am, GDATA.summary);
-  renderAMTable('am-table-wrap', GDATA.merchants, am);
+  renderAMViewFull(GDATA.merchants, GDATA.summary);
 }
-function renderAMKPIs(merchants, am, summary) {
-  const rows     = merchantRows(merchants, am);
-  const signed   = rows.reduce((s,r)=>s+r.signed, 0);
-  // For "all AMs", use portfolio-level ytd_actual from summary (more accurate — includes
-  // revenue not yet attributed to a specific merchant in the merchant table).
-  // For a specific AM, sum that AM's merchants.
-  const ytd      = am==='all' ? summary.ytd_actual : rows.reduce((s,r)=>s+(r.actual_26||0), 0);
-  const fy25     = rows.reduce((s,r)=>s+(r.actual_25||0), 0);
-  const openBdg  = rows.reduce((s,r)=>s+(r.remaining_budget||0), 0);
-  const label    = am==='all' ? 'All AMs' : am;
-  const ytdRange = summary.ytd_months > 0 ? `Jan–${MONTHS[summary.ytd_months-1]} 2026` : '2026 YTD';
-  document.getElementById('am-kpi-bar').innerHTML = `
-    <div class="kpi"><div class="kpi-label">${label} — Merchants</div>
+
+function renderAMView(merchants, summary) {
+  renderAMViewFull(merchants, summary);
+}
+
+function renderAMViewFull(merchants, summary) {
+  renderAMQKPIs(merchants, activeAMView, summary);
+  renderAMMFAlerts(merchants, activeAMView);
+  renderAMDeliveryTable(merchants, activeAMView, summary);
+}
+
+/* ── Q-aware KPI strip ── */
+function renderAMQKPIs(merchants, am, summary) {
+  const q      = currentQ();
+  const wk     = weekInQ(q);
+  const qRev   = amQRevenue(merchants, am, q);
+  const qOkr   = AM_OKR[am] ? AM_OKR[am][qLabel(q)] : null;
+  const qPct   = qOkr ? Math.round(qRev/qOkr*100) : null;
+  const qColor = qPct==null?'var(--text)':qPct>=90?'var(--green)':qPct>=70?'var(--yellow)':'var(--red)';
+
+  // YTD vs cumulative OKR (Q1+Q2+… through current Q)
+  const rows      = merchantRows(merchants, am);
+  const ytd       = rows.reduce((s,r)=>s+(r.actual_26||0), 0);
+  const ytdOkrSum = AM_OKR[am]
+    ? Array.from({length:q},(_,i)=>AM_OKR[am][qLabel(i+1)]||0).reduce((s,v)=>s+v,0)
+    : null;
+  const ytdPct  = ytdOkrSum ? Math.round(ytd/ytdOkrSum*100) : null;
+  const ytdColor= ytdPct==null?'var(--text)':ytdPct>=90?'var(--green)':ytdPct>=70?'var(--yellow)':'var(--red)';
+
+  // MF alert count
+  const mfAlerts = rows.filter(r => (r.media_fees_ly||0)>0 && (r.media_fees_ytd||0)===0).length;
+
+  // Open budget
+  const openBdg = rows.reduce((s,r)=>s+(r.remaining_budget||0),0);
+
+  const qProgressHtml = `
+    <div class="q-progress-wrap">
+      <div class="q-progress-track">
+        <div class="q-progress-fill" style="width:${Math.round(wk/13*100)}%;background:${qColor}"></div>
+      </div>
+      <div class="q-progress-ticks">
+        <span class="q-progress-tick">${qRange(q)}</span>
+        <span class="q-progress-tick">W${wk}/13</span>
+      </div>
+    </div>`;
+
+  const okrPlaceholder = `<span style="font-size:11px;color:var(--muted);font-style:italic">OKR à renseigner</span>`;
+
+  document.getElementById('am-q-kpi-bar').innerHTML = `
+    <div class="kpi">
+      <div class="kpi-label">${qLabel(q)} Achievement</div>
+      <div class="kpi-value" style="color:${qColor}">${qOkr ? fmtK(qRev) : fmtK(qRev)}</div>
+      <div class="kpi-sub">${qOkr
+        ? `<span style="color:${qColor};font-weight:700">${qPct}%</span> <span class="neu">vs ${fmtK(qOkr)} OKR</span>`
+        : okrPlaceholder}</div>
+      ${qProgressHtml}
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">YTD vs Q1–${qLabel(q)} OKR</div>
+      <div class="kpi-value" style="color:${ytdColor}">${fmtK(ytd)}</div>
+      <div class="kpi-sub">${ytdOkrSum
+        ? `<span style="color:${ytdColor};font-weight:700">${ytdPct}%</span> <span class="neu">vs ${fmtK(ytdOkrSum)} cible</span>`
+        : okrPlaceholder}</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">Merchants · ${am}</div>
       <div class="kpi-value">${rows.length}</div>
-      <div class="kpi-sub">${rows.filter(r=>r.is_new_client).length} new clients</div></div>
-    <div class="kpi"><div class="kpi-label">YTD Actual</div>
-      <div class="kpi-value">${fmtK(ytd)}</div>
-      <div class="kpi-sub"><span class="neu">${ytdRange}</span></div></div>
-    <div class="kpi"><div class="kpi-label">Signed 2026</div>
-      <div class="kpi-value">${fmt(signed)}</div>
-      <div class="kpi-sub">${pctStr(signed,fy25)} vs FY25</div></div>
-    <div class="kpi"><div class="kpi-label">Open Budget</div>
+      <div class="kpi-sub">${rows.filter(r=>r.is_new_client).length} new clients · ${rows.filter(r=>(r.actual_26||0)>0).length} actifs</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">Budget restant ouvert</div>
       <div class="kpi-value" style="color:var(--purple)">${fmt(openBdg)}</div>
-      <div class="kpi-sub" style="color:var(--text2)">currently open across portfolio</div></div>`;
+      <div class="kpi-sub">${mfAlerts>0
+        ? `<span style="color:var(--yellow)">⚠ ${mfAlerts} alerte${mfAlerts>1?'s':''} MF</span>`
+        : '<span class="neu">0 alerte MF</span>'}</div>
+    </div>`;
 }
+
+/* ── Media Fees alert section ── */
+function renderAMMFAlerts(merchants, am) {
+  const q   = currentQ();
+  const rows = merchantRows(merchants, am)
+    .filter(r => (r.media_fees_ly||0) > 0 && (r.media_fees_ytd||0) === 0)
+    .sort((a,b) => (b.media_fees_ly||0) - (a.media_fees_ly||0));
+
+  const wrap = document.getElementById('am-mf-alerts');
+  if (!rows.length) {
+    wrap.innerHTML = '';
+    return;
+  }
+  wrap.innerHTML = `
+    <div class="mf-alert-card">
+      <div class="mf-alert-head">
+        <span class="mf-alert-title">⚠ Alertes Media Fees</span>
+        <span class="mf-alert-badge">${rows.length} marchand${rows.length>1?'s':''}</span>
+        <span style="font-size:11px;color:var(--muted)">avaient des MF en 2025 mais rien en 2026 YTD</span>
+      </div>
+      ${rows.map(r => `
+        <div class="mf-alert-row" onclick="openModal('${r.id}')">
+          ${tierBadge(r.id)}
+          <span class="mf-alert-name">${merchantLabel(r.id)}</span>
+          <span class="mf-alert-chip">MF 2025 : <strong>${fmt(r.media_fees_ly)}</strong></span>
+          <span class="mf-alert-chip">MF 2026 : <span style="color:var(--muted)">—</span></span>
+          <span class="mf-alert-warn">À relancer ${qLabel(q)}</span>
+        </div>`).join('')}
+    </div>`;
+}
+
+/* ── WoW sparkline (uses r.weekly_revenue = [w-4,w-3,w-2,w-1] if available) ── */
+function sparkline(weeks) {
+  if (!weeks || !weeks.length) return '<span class="neu" style="font-size:11px">—</span>';
+  const max = Math.max(...weeks, 1);
+  const bars = weeks.map((v,i) => {
+    const h = Math.round(Math.max(v,0)/max*18)+2;
+    const isLast = i===weeks.length-1;
+    const col = isLast ? 'var(--green)' : 'rgba(100,231,106,.3)';
+    return `<div class="spark-bar" style="height:${h}px;background:${col}"></div>`;
+  }).join('');
+  return `<div class="spark-bars">${bars}</div>`;
+}
+function wowCell(r) {
+  const w = r.weekly_revenue;
+  if (!w || w.length < 2) {
+    return `<div class="spark-cell"><span class="neu" style="font-size:11px">— données hebdo à venir</span></div>`;
+  }
+  const last = w[w.length-1];
+  const prev = w[w.length-2];
+  const delta = last - prev;
+  const dpct  = prev > 0 ? Math.round(delta/prev*100) : null;
+  const color = delta >= 0 ? 'var(--green)' : 'var(--red)';
+  const sign  = delta >= 0 ? '+' : '';
+
+  // Driver detection
+  let driver = '';
+  if (r.wow_drivers) {
+    if (r.wow_drivers.mf && delta > 0)    driver = '<span class="driver-mf">MF</span>';
+    else if (r.wow_drivers.boost && delta > 0) driver = '<span class="driver-boost">Boost</span>';
+  }
+
+  return `<div class="spark-cell">
+    ${sparkline(w)}
+    <div class="wow-nums">
+      <span class="wow-val" style="color:${color}">${sign}${fmt(delta)}</span>
+      <span class="wow-pct" style="color:${color}">${dpct!=null?sign+dpct+'%':'—'}</span>
+    </div>
+    ${driver}
+  </div>`;
+}
+
+/* ── Delivery table ── */
+function renderAMDeliveryTable(merchants, am, summary) {
+  const rows = merchantRows(merchants, am)
+    .sort((a,b) => (b.actual_26||0) - (a.actual_26||0));
+  document.getElementById('am-delivery-title').textContent = `DELIVERY — ${am}`;
+
+  if (!rows.length) {
+    document.getElementById('am-delivery-table-wrap').innerHTML =
+      '<p style="color:var(--muted);padding:12px">Aucun merchant pour cet AM.</p>';
+    return;
+  }
+
+  document.getElementById('am-delivery-table-wrap').innerHTML = `
+    <table>
+      <thead><tr>
+        <th>Merchant</th>
+        <th>Tier</th>
+        <th class="num">Signé YTD</th>
+        <th class="num">Budget en cours</th>
+        <th class="num" style="color:var(--purple)">Restant</th>
+        <th class="num">Actual vs Budget</th>
+        <th class="num" style="min-width:180px">WoW (4 semaines)</th>
+        <th class="num">Media Fees YTD</th>
+      </tr></thead>
+      <tbody>${rows.map(r => {
+        const avb = actualVsOpenBudget(r);
+        const avbColor = avb==null?'var(--muted)':avb>=80?'var(--red)':avb>=50?'var(--yellow)':'var(--green)';
+        const remColor = r.remaining_budget==null ? 'var(--muted)'
+          : r.remaining_budget < 5000 ? 'var(--red)'
+          : r.remaining_budget < 20000 ? 'var(--yellow)' : 'var(--purple)';
+        const mfHtml = r.media_fees_ytd > 0
+          ? `<span style="color:var(--purple);font-weight:600">${fmt(r.media_fees_ytd)}</span>`
+          : ((r.media_fees_ly||0) > 0
+            ? `<span style="color:var(--yellow)">—</span>`
+            : `<span class="neu">—</span>`);
+        return `<tr onclick="openModal('${r.id}')">
+          <td class="merchant-name">${merchantLabel(r.id)}${r.is_new_client?'<span class="badge-new">new</span>':''}</td>
+          <td>${tierBadge(r.id)}</td>
+          <td class="num"><strong>${fmt(r.signed)}</strong></td>
+          <td class="num">${r.remaining_budget!=null ? fmt((r.actual_26||0)+r.remaining_budget) : '<span class="neu">—</span>'}</td>
+          <td class="num" style="color:${remColor}">${r.remaining_budget!=null ? fmt(r.remaining_budget) : '<span class="neu">—</span>'}</td>
+          <td class="num">${avb!=null ? `${budgetGauge(avb)} ` : '<span class="neu">—</span>'}</td>
+          <td class="num">${wowCell(r)}</td>
+          <td class="num">${mfHtml}</td>
+        </tr>`;
+      }).join('')}
+      <tr style="border-top:2px solid var(--border);font-weight:700;cursor:default" onclick="">
+        <td>Total ${am}</td>
+        <td></td>
+        <td class="num">${fmt(rows.reduce((s,r)=>s+r.signed,0))}</td>
+        <td class="num">${fmt(rows.reduce((s,r)=>s+(r.remaining_budget!=null?(r.actual_26||0)+r.remaining_budget:0),0)||null)}</td>
+        <td class="num" style="color:var(--purple)">${fmt(rows.reduce((s,r)=>s+(r.remaining_budget||0),0))}</td>
+        <td></td><td></td>
+        <td class="num" style="color:var(--purple)">${rows.some(r=>r.media_fees_ytd>0)?fmt(rows.reduce((s,r)=>s+(r.media_fees_ytd||0),0)):'<span class="neu">—</span>'}</td>
+      </tr></tbody>
+    </table>`;
+}
+
+/* ── Legacy filterAM (Merchants tab still uses am-btn class — no longer needed for AM view) ── */
+function filterAM(am, btn) { /* unused — kept for safety */ }
 
 /* ── Tier Modal ── */
 function openTierModal(tier) {
