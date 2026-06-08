@@ -6,7 +6,23 @@
   <meta http-equiv="cache-control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="pragma" content="no-cache">
   <meta http-equiv="expires" content="0">
+  <meta name="build-time" content="BUILD_TIMESTAMP_PLACEHOLDER">
   <title>Joko — CL Revenue Dashboard</title>
+  <script>
+    // Cache-buster: si la page en cache a plus de 2h, force un rechargement frais
+    (function() {
+      try {
+        var bt = document.querySelector('meta[name="build-time"]');
+        if (!bt || bt.content === 'BUILD_TIMESTAMP_PLACEHOLDER') return;
+        var age = Date.now() - new Date(bt.content).getTime();
+        var url = new URL(window.location.href);
+        if (age > 2 * 3600 * 1000 && !url.searchParams.has('_v')) {
+          url.searchParams.set('_v', bt.content.replace(/\D/g,'').slice(0,12));
+          window.location.replace(url.toString());
+        }
+      } catch(e) {}
+    })();
+  </script>
   <link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
   <style>
