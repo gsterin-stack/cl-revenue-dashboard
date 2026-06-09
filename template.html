@@ -478,8 +478,14 @@ function budgetPct(m) {
   const p = Math.round((m.actual_26||0) / s * 100);
   return p > 110 ? null : p;
 }
-/* ── Actual vs currently-open budget : actual / (actual + remaining) ── */
+/* ── Actual vs currently-open budget ── */
 function actualVsOpenBudget(m) {
+  // Prefer: (open_budget - remaining) / open_budget
+  if (m.open_budget != null && m.open_budget > 0) {
+    const rem = m.remaining_budget ?? 0;
+    return Math.round((m.open_budget - rem) / m.open_budget * 100);
+  }
+  // Fallback: actual / (actual + remaining)
   if (m.remaining_budget == null) return null;
   const opened = (m.actual_26||0) + m.remaining_budget;
   if (opened <= 0) return null;
@@ -1366,14 +1372,14 @@ function renderAMDeliveryTable(merchants, am, summary) {
     let av, bv;
     switch(amSortCol) {
       case 'name':    return amSortDir * merchantLabel(a.id).localeCompare(merchantLabel(b.id));
+      case 'am':      return amSortDir * (a.am||'').localeCompare(b.am||'');
       case 'tier':    { const r={T1:1,T2:2,T3:3}; return amSortDir*((r[TIER_MAP[a.id]]||9)-(r[TIER_MAP[b.id]]||9)); }
-      case 'signed':  av=a.budget_type==='capped'?a.signed:0; bv=b.budget_type==='capped'?b.signed:0; break;
-      case 'budget':  av=a.budget_type==='capped'&&a.remaining_budget!=null?(a.actual_26||0)+a.remaining_budget:0;
-                      bv=b.budget_type==='capped'&&b.remaining_budget!=null?(b.actual_26||0)+b.remaining_budget:0; break;
+      case 'signed':  av=a.signed_26??0; bv=b.signed_26??0; break;
+      case 'budget':  av=a.open_budget??0; bv=b.open_budget??0; break;
       case 'rem':     av=a.remaining_budget??-1; bv=b.remaining_budget??-1; break;
       case 'avb':     av=a.budget_type==='capped'?actualVsOpenBudget(a)??-1:-1;
                       bv=b.budget_type==='capped'?actualVsOpenBudget(b)??-1:-1; break;
-      case 'mf':      av=a.media_fees_ytd||0; bv=b.media_fees_ytd||0; break;
+      case 'mf':      av=a.media_fees_q||0; bv=b.media_fees_q||0; break;
       case 'ytd':
       default:        av=a.actual_26||0; bv=b.actual_26||0;
     }
@@ -1390,18 +1396,21 @@ function renderAMDeliveryTable(merchants, am, summary) {
 
   const sc = col => amSortCol===col ? `<span style="color:var(--green)">${amSortDir>0?' ↑':' ↓'}</span>` : '';
   const sh = (col,label,color='') =>
-    `<th class="num" style="cursor:pointer;user-select:none;white-space:nowrap${color?' ;color:'+color:''}" onclick="amSortBy('${col}')">${label}${sc(col)}</th>`;
+    `<th class="num" style="cursor:pointer;user-select:none;white-space:nowrap${color?';color:'+color:''}" onclick="amSortBy('${col}')">${label}${sc(col)}</th>`;
   document.getElementById('am-delivery-table-wrap').innerHTML = `
     <table>
       <thead><tr>
         <th style="cursor:pointer;user-select:none" onclick="amSortBy('name')">Merchant${sc('name')}</th>
+        <th style="cursor:pointer;user-select:none" onclick="amSortBy('am')">AM${sc('am')}</th>
         <th style="cursor:pointer;user-select:none" onclick="amSortBy('tier')">Tier${sc('tier')}</th>
-        ${sh('signed','Signé YTD')}
-        ${sh('budget','Budget en cours')}
-        ${sh('rem','Restant','var(--purple)')}
-        ${sh('avb','Actual vs Budget')}
+        <th>Budget</th>
+        ${sh('signed','Signed 2026')}
         ${sh('ytd','YTD Actual')}
-        ${sh('mf','Media Fees YTD')}
+        ${sh('budget','Open Budget')}
+        ${sh('rem','Remaining','var(--purple)')}
+        ${sh('avb','Actual vs Budget')}
+        <th class="num" style="min-width:160px">WoW</th>
+        ${sh('mf','Q MF','var(--purple)')}
       </tr></thead>
       <tbody>${rows.map(r => {
         const isCapped = r.budget_type === 'capped';
@@ -1409,16 +1418,18 @@ function renderAMDeliveryTable(merchants, am, summary) {
         const remColor = r.remaining_budget==null ? 'var(--muted)'
           : r.remaining_budget < 5000 ? 'var(--red)'
           : r.remaining_budget < 20000 ? 'var(--yellow)' : 'var(--purple)';
-        const mfHtml = r.media_fees_ytd > 0
-          ? `<span style="color:var(--purple);font-weight:600">${fmt(r.media_fees_ytd)}</span>`
-          : ((r.media_fees_ly||0) > 0
-            ? `<span style="color:var(--yellow)">—</span>`
-            : `<span class="neu">—</span>`);
-        const signedCell = isCapped
-          ? `<strong>${fmt(r.signed)}</strong>`
-          : `<span class="type-uncapped" style="font-size:10px">Open Budget</span>`;
-        const budgetCell = isCapped && r.remaining_budget!=null
-          ? fmt((r.actual_26||0)+r.remaining_budget)
+        const mfQ = r.media_fees_q || 0;
+        const mfHtml = mfQ > 0
+          ? `<span style="color:var(--purple);font-weight:600">${fmt(mfQ)}</span>`
+          : `<span class="neu">—</span>`;
+        const budgeBadge = isCapped
+          ? '<span class="type-capped">Capped</span>'
+          : '<span class="type-uncapped">Open</span>';
+        const signedCell = isCapped && r.signed_26!=null
+          ? `<strong>${fmt(r.signed_26)}</strong>`
+          : '<span class="neu">—</span>';
+        const openBudgetCell = isCapped && r.open_budget!=null
+          ? fmt(r.open_budget)
           : '<span class="neu">—</span>';
         const remCell = isCapped && r.remaining_budget!=null
           ? `<span style="color:${remColor}">${fmt(r.remaining_budget)}</span>`
@@ -1428,24 +1439,27 @@ function renderAMDeliveryTable(merchants, am, summary) {
           : '<span class="neu">—</span>';
         return `<tr onclick="openModal('${r.id}')">
           <td class="merchant-name">${merchantLabel(r.id)}${r.is_new_client?'<span class="badge-new">new</span>':''}</td>
+          <td><span class="am-pill">${r.am||'—'}</span></td>
           <td>${tierBadge(r.id)}</td>
+          <td>${budgeBadge}</td>
           <td class="num">${signedCell}</td>
-          <td class="num">${budgetCell}</td>
+          <td class="num"><strong>${fmt(r.actual_26)}</strong></td>
+          <td class="num">${openBudgetCell}</td>
           <td class="num">${remCell}</td>
           <td class="num">${avbCell}</td>
-          <td class="num"><strong>${fmt(r.actual_26)}</strong></td>
+          <td class="num">${wowCell(r)}</td>
           <td class="num">${mfHtml}</td>
         </tr>`;
       }).join('')}
       <tr style="border-top:2px solid var(--border);font-weight:700;cursor:default" onclick="">
         <td>Total ${am==='all'?'All':am}</td>
-        <td></td>
-        <td class="num">${fmt(rows.filter(r=>r.budget_type==='capped').reduce((s,r)=>s+r.signed,0))}</td>
-        <td class="num">${fmt(rows.filter(r=>r.budget_type==='capped'&&r.remaining_budget!=null).reduce((s,r)=>s+(r.actual_26||0)+r.remaining_budget,0)||null)}</td>
-        <td class="num" style="color:var(--purple)">${fmt(rows.filter(r=>r.budget_type==='capped').reduce((s,r)=>s+(r.remaining_budget||0),0))}</td>
-        <td></td>
+        <td></td><td></td><td></td>
+        <td class="num">${fmt(rows.filter(r=>r.budget_type==='capped'&&r.signed_26!=null).reduce((s,r)=>s+(r.signed_26||0),0))}</td>
         <td class="num">${fmt(rows.reduce((s,r)=>s+(r.actual_26||0),0))}</td>
-        <td class="num" style="color:var(--purple)">${rows.some(r=>r.media_fees_ytd>0)?fmt(rows.reduce((s,r)=>s+(r.media_fees_ytd||0),0)):'<span class="neu">—</span>'}</td>
+        <td class="num">${fmt(rows.filter(r=>r.open_budget!=null).reduce((s,r)=>s+(r.open_budget||0),0)||null)}</td>
+        <td class="num" style="color:var(--purple)">${fmt(rows.filter(r=>r.budget_type==='capped').reduce((s,r)=>s+(r.remaining_budget||0),0))}</td>
+        <td></td><td></td>
+        <td class="num" style="color:var(--purple)">${rows.some(r=>(r.media_fees_q||0)>0)?fmt(rows.reduce((s,r)=>s+(r.media_fees_q||0),0)):'<span class="neu">—</span>'}</td>
       </tr></tbody>
     </table>`;
 }
