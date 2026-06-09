@@ -349,6 +349,16 @@ let sortDir  = -1;
 let modalMFChart = null;
 let mfMgmtChart  = null;
 let wowModalChart = null;
+let wowQMFChart   = null;
+
+/* ── ISO week number ── */
+function isoWeek(date) {
+  const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+  const day = d.getUTCDay() || 7;
+  d.setUTCDate(d.getUTCDate() + 4 - day);
+  const y0 = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+  return Math.ceil((((d - y0) / 86400000) + 1) / 7);
+}
 
 /* ── Tier map (Master Tab - Tiering all CL Logos, 261 merchants) ── */
 const TIER_MAP = {
@@ -1406,53 +1416,105 @@ function openWowModal(mid) {
   const color = delta >= 0 ? 'var(--green)' : 'var(--red)';
   const sign  = delta >= 0 ? '+' : '';
   const n = w.length;
-  const weekLabels = Array.from({length:n}, (_,i) => i===n-1 ? 'Last week' : `W-${n-1-i}`);
+
+  // Calendar week numbers (last complete week = current ISO week - 1)
+  const lastWeekNum = isoWeek(new Date()) - 1;
+  const weekLabels = Array.from({length:n}, (_,i) => `W${lastWeekNum - (n-1-i)}`);
+
+  // Quarterly MF data
+  const now = new Date();
+  const qStart = [0,0,0,3,3,3,6,6,6,9,9,9][now.getMonth()];
+  const qMonthIdxs = [qStart, qStart+1, qStart+2];
+  const qNum = Math.floor(qStart/3)+1;
+  const mf26 = m.monthly_mf_26 || [];
+  const mf25 = m.monthly_mf_25 || [];
+  const qMF26 = qMonthIdxs.map(i => Math.round((mf26[i]||0)/1000));
+  const qMF25 = qMonthIdxs.map(i => Math.round((mf25[i]||0)/1000));
+  const qLabels = qMonthIdxs.map(i => MONTHS[i]);
+  const hasMF = qMF26.some(v=>v>0) || qMF25.some(v=>v>0);
 
   body.innerHTML = `
     <div style="display:flex;gap:16px;margin-bottom:20px">
       <div style="background:var(--s2);border:1px solid var(--border);border-radius:9px;padding:12px 18px;flex:1;text-align:center">
-        <div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:var(--text2);margin-bottom:4px">Last Week</div>
+        <div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:var(--text2);margin-bottom:4px">W${lastWeekNum}</div>
         <div style="font-size:22px;font-weight:700">${fmt(last)}</div>
       </div>
       <div style="background:var(--s2);border:1px solid var(--border);border-radius:9px;padding:12px 18px;flex:1;text-align:center">
         <div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:var(--text2);margin-bottom:4px">WoW Change</div>
-        <div style="font-size:22px;font-weight:700;color:${color}">${sign}${fmt(delta)}</div>
+        <div style="font-size:22px;font-weight:700;color:${color}">${fmtCK(delta)}</div>
         <div style="font-size:12px;color:${color}">${dpct!=null?sign+dpct+'%':'—'}</div>
       </div>
     </div>
-    <div style="position:relative;height:180px;width:100%"><canvas id="wow-modal-chart"></canvas></div>`;
+    <div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.6px;color:var(--text2);margin-bottom:8px">4-Week Revenue Trend</div>
+    <div style="position:relative;height:160px;width:100%;margin-bottom:${hasMF?'24px':'0'}"><canvas id="wow-modal-chart"></canvas></div>
+    ${hasMF ? `
+    <div style="border-top:1px solid var(--border);padding-top:16px">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+        <div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.6px;color:var(--text2)">Media Fees — Q${qNum}</div>
+        <div style="display:flex;gap:10px">
+          <div style="display:flex;align-items:center;gap:4px"><div style="width:8px;height:8px;border-radius:2px;background:#555"></div><span style="font-size:10px;color:var(--text2)">2025</span></div>
+          <div style="display:flex;align-items:center;gap:4px"><div style="width:8px;height:8px;border-radius:2px;background:rgba(146,84,227,.8)"></div><span style="font-size:10px;color:var(--text2)">2026</span></div>
+        </div>
+      </div>
+      <div style="position:relative;height:130px;width:100%"><canvas id="wow-mf-chart"></canvas></div>
+    </div>` : ''}`;
 
   if (wowModalChart) { wowModalChart.destroy(); wowModalChart = null; }
+  if (wowQMFChart)   { wowQMFChart.destroy();   wowQMFChart   = null; }
+  document.getElementById('wow-modal-overlay').classList.add('open');
   requestAnimationFrame(() => {
     const ctx = document.getElementById('wow-modal-chart');
-    if (!ctx) return;
-    wowModalChart = new Chart(ctx.getContext('2d'), {
-      type: 'bar',
-      data: {
-        labels: weekLabels,
-        datasets: [{
-          label: 'Revenue',
-          data: w.map(v => Math.round(v/1000)),
-          backgroundColor: w.map((_,i) => i===w.length-1 ? 'rgba(100,231,106,.85)' : 'rgba(100,231,106,.3)'),
-          borderRadius: 5,
-          barThickness: 36,
-        }]
-      },
-      options: {
-        responsive:true, maintainAspectRatio:false,
-        plugins:{ legend:{display:false}, tooltip:{ callbacks:{ label: c=>`€${c.parsed.y}K` } } },
-        scales:{
-          x:{ grid:{display:false}, ticks:{color:'#888',font:{size:11}} },
-          y:{ grid:{color:'#1a1a1a'}, ticks:{color:'#888',font:{size:10}, callback:v=>`€${v}K`} }
+    if (ctx) {
+      wowModalChart = new Chart(ctx.getContext('2d'), {
+        type: 'bar',
+        data: {
+          labels: weekLabels,
+          datasets: [{
+            label: 'Revenue',
+            data: w.map(v => Math.round(v/1000)),
+            backgroundColor: w.map((_,i) => i===w.length-1 ? 'rgba(100,231,106,.85)' : 'rgba(100,231,106,.3)'),
+            borderRadius: 5, barThickness: 40,
+          }]
+        },
+        options: {
+          responsive:true, maintainAspectRatio:false,
+          plugins:{ legend:{display:false}, tooltip:{ callbacks:{ label: c=>`€${c.parsed.y}K` } } },
+          scales:{
+            x:{ grid:{display:false}, ticks:{color:'#888',font:{size:11}} },
+            y:{ grid:{color:'#1a1a1a'}, ticks:{color:'#888',font:{size:10}, callback:v=>`€${v}K`} }
+          }
         }
+      });
+    }
+    if (hasMF) {
+      const mfCtx = document.getElementById('wow-mf-chart');
+      if (mfCtx) {
+        wowQMFChart = new Chart(mfCtx.getContext('2d'), {
+          type: 'bar',
+          data: {
+            labels: qLabels,
+            datasets: [
+              { label:'2025', data: qMF25, backgroundColor:'rgba(100,100,100,.5)', borderRadius:4, barThickness:22 },
+              { label:'2026', data: qMF26, backgroundColor:'rgba(146,84,227,.75)',  borderRadius:4, barThickness:22 },
+            ]
+          },
+          options: {
+            responsive:true, maintainAspectRatio:false,
+            plugins:{ legend:{display:false}, tooltip:{ callbacks:{ label: c=>`${c.dataset.label}: €${c.parsed.y}K` } } },
+            scales:{
+              x:{ grid:{display:false}, ticks:{color:'#888',font:{size:11}} },
+              y:{ grid:{color:'#1a1a1a'}, ticks:{color:'#888',font:{size:10}, callback:v=>`€${v}K`} }
+            }
+          }
+        });
       }
-    });
+    }
   });
-  document.getElementById('wow-modal-overlay').classList.add('open');
 }
 function closeWowModal() {
   document.getElementById('wow-modal-overlay').classList.remove('open');
   if (wowModalChart) { wowModalChart.destroy(); wowModalChart=null; }
+  if (wowQMFChart)   { wowQMFChart.destroy();   wowQMFChart=null; }
 }
 
 /* ── AM delivery sort ── */
@@ -1513,7 +1575,7 @@ function renderAMDeliveryTable(merchants, am, summary) {
         ${sh('budget','Open Budget')}
         ${sh('rem','Remaining','var(--purple)')}
         ${sh('avb','Actual vs Budget')}
-        ${sh('wow','WoW')}
+        <th style="cursor:pointer;user-select:none;text-align:center;white-space:nowrap" onclick="amSortBy('wow')">WoW${sc('wow')}</th>
         ${sh('mf','Q MF','var(--purple)')}
       </tr></thead>
       <tbody>${rows.map(r => {
@@ -1551,7 +1613,7 @@ function renderAMDeliveryTable(merchants, am, summary) {
           <td class="num">${openBudgetCell}</td>
           <td class="num">${remCell}</td>
           <td class="num">${avbCell}</td>
-          <td class="num">${wowCell(r)}</td>
+          <td style="text-align:center">${wowCell(r)}</td>
           <td class="num">${mfHtml}</td>
         </tr>`;
       }).join('')}
