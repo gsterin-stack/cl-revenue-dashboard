@@ -1096,6 +1096,7 @@ function merchantRows(merchants, amFilter) {
       let av, bv;
       if (sortCol==='name') return sortDir * merchantLabel(a.id).localeCompare(merchantLabel(b.id));
       if (sortCol==='am')   return sortDir * (a.am||'').localeCompare(b.am||'');
+      if (sortCol==='budget_type') return sortDir * (a.budget_type||'open').localeCompare(b.budget_type||'open');
       if (sortCol==='tier') {
         const rank = {T1:1,T2:2,T3:3};
         return sortDir * ((rank[TIER_MAP[a.id]]||9) - (rank[TIER_MAP[b.id]]||9));
@@ -1126,6 +1127,7 @@ function renderMerchantTable(wrapId, merchants, amFilter) {
       <th class="sortable ${cc('name')}" data-col="name" onclick="sortBy('name')">Merchant</th>
       <th class="sortable ${cc('am')}"   data-col="am"   onclick="sortBy('am')">AM</th>
       <th class="sortable ${cc('tier')}" data-col="tier" onclick="sortBy('tier')">Tier</th>
+      <th class="sortable ${cc('budget_type')}" data-col="budget_type" onclick="sortBy('budget_type')">Budget</th>
       <th class="num sortable ${cc('fy25')}"   data-col="fy25"   style="color:var(--muted)" onclick="sortBy('fy25')">FY 2025</th>
       <th class="num sortable ${cc('signed')}" data-col="signed" onclick="sortBy('signed')">Signed 2026</th>
       <th class="num sortable ${cc('yoy')}"    data-col="yoy"    onclick="sortBy('yoy')">YoY</th>
@@ -1139,8 +1141,9 @@ function renderMerchantTable(wrapId, merchants, amFilter) {
         <td class="merchant-name">${merchantLabel(r.id)}${r.is_new_client?'<span class="badge-new">new</span>':''}</td>
         <td><span class="am-pill">${r.am}</span></td>
         <td>${tierBadge(r.id)}</td>
+        <td>${r.budget_type==='capped'?'<span class="type-capped">Capped</span>':'<span class="type-uncapped">Open</span>'}</td>
         <td class="num dim">${r.actual_25>0?fmt(r.actual_25):'—'}</td>
-        <td class="num"><strong>${fmt(r.signed)}</strong></td>
+        <td class="num">${r.budget_type==='capped'?`<strong>${fmt(r.signed)}</strong>`:'<span class="neu">—</span>'}</td>
         <td class="num">${yoy}</td>
         <td class="num">${fmt(r.actual_26)}</td>
         <td class="num">${r.media_fees_ytd>0?fmt(r.media_fees_ytd):'<span class="neu">—</span>'}</td>
@@ -1395,8 +1398,8 @@ function renderAMDeliveryTable(merchants, am, summary) {
         <th class="num">Media Fees YTD</th>
       </tr></thead>
       <tbody>${rows.map(r => {
-        const avb = actualVsOpenBudget(r);
-        const avbColor = avb==null?'var(--muted)':avb>=80?'var(--red)':avb>=50?'var(--yellow)':'var(--green)';
+        const isCapped = r.budget_type === 'capped';
+        const avb = isCapped ? actualVsOpenBudget(r) : null;
         const remColor = r.remaining_budget==null ? 'var(--muted)'
           : r.remaining_budget < 5000 ? 'var(--red)'
           : r.remaining_budget < 20000 ? 'var(--yellow)' : 'var(--purple)';
@@ -1405,13 +1408,25 @@ function renderAMDeliveryTable(merchants, am, summary) {
           : ((r.media_fees_ly||0) > 0
             ? `<span style="color:var(--yellow)">—</span>`
             : `<span class="neu">—</span>`);
+        const signedCell = isCapped
+          ? `<strong>${fmt(r.signed)}</strong>`
+          : `<span class="type-uncapped" style="font-size:10px">Open Budget</span>`;
+        const budgetCell = isCapped && r.remaining_budget!=null
+          ? fmt((r.actual_26||0)+r.remaining_budget)
+          : '<span class="neu">—</span>';
+        const remCell = isCapped && r.remaining_budget!=null
+          ? `<span style="color:${remColor}">${fmt(r.remaining_budget)}</span>`
+          : '<span class="neu">—</span>';
+        const avbCell = isCapped && avb!=null
+          ? `${budgetGauge(avb)} `
+          : '<span class="neu">—</span>';
         return `<tr onclick="openModal('${r.id}')">
           <td class="merchant-name">${merchantLabel(r.id)}${r.is_new_client?'<span class="badge-new">new</span>':''}</td>
           <td>${tierBadge(r.id)}</td>
-          <td class="num"><strong>${fmt(r.signed)}</strong></td>
-          <td class="num">${r.remaining_budget!=null ? fmt((r.actual_26||0)+r.remaining_budget) : '<span class="neu">—</span>'}</td>
-          <td class="num" style="color:${remColor}">${r.remaining_budget!=null ? fmt(r.remaining_budget) : '<span class="neu">—</span>'}</td>
-          <td class="num">${avb!=null ? `${budgetGauge(avb)} ` : '<span class="neu">—</span>'}</td>
+          <td class="num">${signedCell}</td>
+          <td class="num">${budgetCell}</td>
+          <td class="num">${remCell}</td>
+          <td class="num">${avbCell}</td>
           <td class="num">${wowCell(r)}</td>
           <td class="num">${mfHtml}</td>
         </tr>`;
@@ -1419,9 +1434,9 @@ function renderAMDeliveryTable(merchants, am, summary) {
       <tr style="border-top:2px solid var(--border);font-weight:700;cursor:default" onclick="">
         <td>Total ${am}</td>
         <td></td>
-        <td class="num">${fmt(rows.reduce((s,r)=>s+r.signed,0))}</td>
-        <td class="num">${fmt(rows.reduce((s,r)=>s+(r.remaining_budget!=null?(r.actual_26||0)+r.remaining_budget:0),0)||null)}</td>
-        <td class="num" style="color:var(--purple)">${fmt(rows.reduce((s,r)=>s+(r.remaining_budget||0),0))}</td>
+        <td class="num">${fmt(rows.filter(r=>r.budget_type==='capped').reduce((s,r)=>s+r.signed,0))}</td>
+        <td class="num">${fmt(rows.filter(r=>r.budget_type==='capped'&&r.remaining_budget!=null).reduce((s,r)=>s+(r.actual_26||0)+r.remaining_budget,0)||null)}</td>
+        <td class="num" style="color:var(--purple)">${fmt(rows.filter(r=>r.budget_type==='capped').reduce((s,r)=>s+(r.remaining_budget||0),0))}</td>
         <td></td><td></td>
         <td class="num" style="color:var(--purple)">${rows.some(r=>r.media_fees_ytd>0)?fmt(rows.reduce((s,r)=>s+(r.media_fees_ytd||0),0)):'<span class="neu">—</span>'}</td>
       </tr></tbody>
