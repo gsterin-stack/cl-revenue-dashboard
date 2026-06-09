@@ -1334,13 +1334,7 @@ function renderAMQKPIs(merchants, am, summary) {
       <div class="kpi-value">${rows.length}</div>
       <div class="kpi-sub">${rows.filter(r=>r.is_new_client).length} new clients · ${rows.filter(r=>(r.actual_26||0)>0).length} actifs</div>
     </div>
-    <div class="kpi">
-      <div class="kpi-label">Open Remaining Budget</div>
-      <div class="kpi-value" style="color:var(--purple)">${fmt(openBdg)}</div>
-      <div class="kpi-sub">${mfAlerts>0
-        ? `<span style="color:var(--yellow)">⚠ ${mfAlerts} alerte${mfAlerts>1?'s':''} MF</span>`
-        : '<span class="neu">0 alerte MF</span>'}</div>
-    </div>`;
+    `;
 }
 
 /* ── Media Fees alert section — désactivé ── */
