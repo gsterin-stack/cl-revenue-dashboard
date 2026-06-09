@@ -1558,7 +1558,7 @@ function openTierModal(tier) {
       </div>
     </div>
     <div style="border-top:1px solid var(--border);padding-top:20px">
-      <div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.6px;color:var(--text2);margin-bottom:12px">Performance par Quarter</div>
+      <div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.6px;color:var(--text2);margin-bottom:12px">Quarterly Performance</div>
       <div style="display:flex;gap:12px;margin-bottom:12px">
         <div style="display:flex;align-items:center;gap:5px"><div style="width:9px;height:9px;border-radius:2px;background:var(--green)"></div><span style="font-size:11px;color:var(--text2)">2026</span></div>
         <div style="display:flex;align-items:center;gap:5px"><div style="width:9px;height:9px;border-radius:2px;background:#555"></div><span style="font-size:11px;color:var(--text2)">2025</span></div>
@@ -1575,8 +1575,8 @@ function openTierModal(tier) {
       data: {
         labels: ['Q1','Q2','Q3','Q4'],
         datasets: [
-          { label:'2026', data: tierQ26.map(v=>Math.round(v/1000)), backgroundColor:'rgba(100,231,106,.75)', borderRadius:4 },
-          { label:'2025', data: tierQ25.map(v=>Math.round(v/1000)), backgroundColor:'rgba(100,100,100,.5)', borderRadius:4 },
+          { label:'2026', data: tierQ26.map(v=>Math.round(v/1000)), backgroundColor:'rgba(100,231,106,.75)', borderRadius:4, barThickness:24 },
+          { label:'2025', data: tierQ25.map(v=>Math.round(v/1000)), backgroundColor:'rgba(100,100,100,.5)', borderRadius:4, barThickness:24 },
         ]
       },
       options: {
