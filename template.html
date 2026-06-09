@@ -512,9 +512,14 @@ function budgetPct(m) {
 }
 /* ── Actual vs currently-open budget ── */
 function actualVsOpenBudget(m) {
-  // actual_26 / signed_26 — remaining est calculé depuis Snowflake donc cohérent
+  // (open_budget - remaining) / open_budget
+  if (m.open_budget != null && m.open_budget > 0 && m.remaining_budget != null) {
+    return Math.round((m.open_budget - m.remaining_budget) / m.open_budget * 100);
+  }
+  // Fallback : actual / signed
   if (m.signed_26 != null && m.signed_26 > 0) {
-    return Math.round((m.actual_26||0) / m.signed_26 * 100);
+    const p = Math.round((m.actual_26||0) / m.signed_26 * 100);
+    return p > 150 ? null : p; // masque les valeurs aberrantes
   }
   return null;
 }
