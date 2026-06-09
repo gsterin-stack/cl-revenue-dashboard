@@ -151,7 +151,7 @@
     .mf-alert-warn  { font-size:11px; font-weight:600; color:var(--yellow); white-space:nowrap; }
 
     /* Delivery table WoW sparkline */
-    .spark-cell     { display:flex; align-items:center; gap:7px; justify-content:flex-end; }
+    .spark-cell     { display:flex; align-items:center; gap:7px; justify-content:center; }
     .spark-bars     { display:flex; align-items:flex-end; gap:2px; height:22px; flex-shrink:0; }
     .spark-bar      { width:8px; border-radius:2px 2px 0 0; min-height:2px; }
     .wow-nums       { text-align:right; }
@@ -421,7 +421,7 @@ const TIER_MAP = {
 const MERCHANT_LABELS = {
   'leroy-merlin':'Leroy Merlin','uber-eats':'Uber Eats','uber':'Uber',
   'carrefour':'Carrefour','hellofresh':'HelloFresh','kiabi':'Kiabi',
-  'castorama':'Castorama','vente-privee':'Vente-Privée','boulanger':'Boulanger',
+  'castorama':'Castorama','vente-privee':'Veepee','boulanger':'Boulanger',
   'sephora':'Sephora','nocibe':'Nocibé','etam':'Etam','kfc':'KFC',
   'maisons-du-monde':'Maisons du Monde','adopt':'Adopt','showroomprive':'Showroomprivé',
   'chaussea':'Chaussea','bricomarche':'Bricomarché','monoprix':'Monoprix',
@@ -463,6 +463,13 @@ function fmtK(n) {
   if (n==null||isNaN(n)) return '—';
   const k = Math.round(n/1e3);
   return '€ '+k.toLocaleString('fr-FR')+' K';
+}
+/* compact K€ — always in K, 1 decimal if |v|<10K */
+function fmtCK(n) {
+  if (n==null||isNaN(n)) return '—';
+  const k = n/1000;
+  const s = n>=0?'+':'';
+  return s+(Math.abs(k)<10 ? k.toFixed(1) : Math.round(k))+'K€';
 }
 function pct(v,b) { return b ? Math.round((v-b)/b*100) : null; }
 function pctStr(v,b) {
@@ -1365,7 +1372,7 @@ function wowCell(r) {
   return `<div class="spark-cell">
     ${sparkline(w)}
     <div class="wow-nums">
-      <span class="wow-val" style="color:${color}">${sign}${fmt(delta)}</span>
+      <span class="wow-val" style="color:${color}">${fmtCK(delta)}</span>
       <span class="wow-pct" style="color:${color}">${dpct!=null?sign+dpct+'%':'—'}</span>
     </div>
     ${driver}
@@ -1413,7 +1420,7 @@ function openWowModal(mid) {
         <div style="font-size:12px;color:${color}">${dpct!=null?sign+dpct+'%':'—'}</div>
       </div>
     </div>
-    <canvas id="wow-modal-chart" style="height:180px!important;width:100%!important"></canvas>`;
+    <div style="position:relative;height:180px;width:100%"><canvas id="wow-modal-chart"></canvas></div>`;
 
   if (wowModalChart) { wowModalChart.destroy(); wowModalChart = null; }
   requestAnimationFrame(() => {
@@ -1471,6 +1478,12 @@ function renderAMDeliveryTable(merchants, am, summary) {
       case 'avb':     av=a.budget_type==='capped'?actualVsOpenBudget(a)??-1:-1;
                       bv=b.budget_type==='capped'?actualVsOpenBudget(b)??-1:-1; break;
       case 'mf':      av=a.media_fees_q||0; bv=b.media_fees_q||0; break;
+      case 'wow': {
+        const wa=a.weekly_revenue, wb=b.weekly_revenue;
+        av = wa&&wa.length>=2 ? wa[wa.length-1]-wa[wa.length-2] : -Infinity;
+        bv = wb&&wb.length>=2 ? wb[wb.length-1]-wb[wb.length-2] : -Infinity;
+        break;
+      }
       case 'ytd':
       default:        av=a.actual_26||0; bv=b.actual_26||0;
     }
@@ -1500,7 +1513,7 @@ function renderAMDeliveryTable(merchants, am, summary) {
         ${sh('budget','Open Budget')}
         ${sh('rem','Remaining','var(--purple)')}
         ${sh('avb','Actual vs Budget')}
-        <th class="num" style="min-width:160px">WoW</th>
+        ${sh('wow','WoW')}
         ${sh('mf','Q MF','var(--purple)')}
       </tr></thead>
       <tbody>${rows.map(r => {
@@ -1523,7 +1536,7 @@ function renderAMDeliveryTable(merchants, am, summary) {
           ? fmt(r.open_budget)
           : '<span class="neu">—</span>';
         const remCell = isCapped && r.remaining_budget!=null
-          ? `<span style="color:${remColor}">${fmt(r.remaining_budget)}</span>`
+          ? `<span style="color:${remColor}">${fmtK(r.remaining_budget)}</span>`
           : '<span class="neu">—</span>';
         const avbCell = isCapped && avb!=null
           ? `${budgetGauge(avb)} `
@@ -1670,8 +1683,8 @@ function openTierModal(tier) {
       data: {
         labels: ['Q1','Q2','Q3','Q4'],
         datasets: [
-          { label:'2026', data: tierQ26.map(v=>Math.round(v/1000)), backgroundColor:'rgba(100,231,106,.75)', borderRadius:4, barThickness:24 },
           { label:'2025', data: tierQ25.map(v=>Math.round(v/1000)), backgroundColor:'rgba(100,100,100,.5)', borderRadius:4, barThickness:24 },
+          { label:'2026', data: tierQ26.map(v=>Math.round(v/1000)), backgroundColor:'rgba(100,231,106,.75)', borderRadius:4, barThickness:24 },
         ]
       },
       options: {
