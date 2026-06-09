@@ -512,16 +512,11 @@ function budgetPct(m) {
 }
 /* ── Actual vs currently-open budget ── */
 function actualVsOpenBudget(m) {
-  // Prefer: (open_budget - remaining) / open_budget
-  if (m.open_budget != null && m.open_budget > 0) {
-    const rem = m.remaining_budget ?? 0;
-    return Math.round((m.open_budget - rem) / m.open_budget * 100);
+  // actual_26 / signed_26 — remaining est calculé depuis Snowflake donc cohérent
+  if (m.signed_26 != null && m.signed_26 > 0) {
+    return Math.round((m.actual_26||0) / m.signed_26 * 100);
   }
-  // Fallback: actual / (actual + remaining)
-  if (m.remaining_budget == null) return null;
-  const opened = (m.actual_26||0) + m.remaining_budget;
-  if (opened <= 0) return null;
-  return Math.round((m.actual_26||0) / opened * 100);
+  return null;
 }
 function budgetGauge(p, color) {
   if (p == null) return '<span class="neu">—</span>';
