@@ -309,6 +309,20 @@
   </div>
 </div>
 
+<!-- ═══ WoW TREND MODAL ═══ -->
+<div class="modal-overlay" id="wow-modal-overlay" onclick="if(event.target===this)closeWowModal()">
+  <div class="modal" style="width:min(520px,96vw)">
+    <div class="modal-header">
+      <div>
+        <div class="modal-title" id="wow-modal-title">—</div>
+        <div class="modal-sub" id="wow-modal-sub"></div>
+      </div>
+      <button class="modal-close" onclick="closeWowModal()">✕</button>
+    </div>
+    <div id="wow-modal-body"></div>
+  </div>
+</div>
+
 <!-- ═══ NEW CLIENTS MODAL ═══ -->
 <div class="modal-overlay" id="nc-modal-overlay" onclick="if(event.target===this)closeNewClientsModal()">
   <div class="modal" style="width:min(640px,96vw)">
@@ -334,6 +348,7 @@ let sortCol  = 'signed';
 let sortDir  = -1;
 let modalMFChart = null;
 let mfMgmtChart  = null;
+let wowModalChart = null;
 
 /* ── Tier map (Master Tab - Tiering all CL Logos, 261 merchants) ── */
 const TIER_MAP = {
@@ -895,7 +910,7 @@ function renderTierSection(merchants, r25Portfolio) {
     const yoyHtml = yoy!=null ? `<span style="color:${yoy>=0?'var(--green)':'var(--red)'}">${yoy>=0?'+':''}${yoy}%</span>` : '—';
     const isClickable = key==='T1'||key==='T2'||key==='T3';
     const rowAttrs = isClickable
-      ? `style="cursor:pointer" onclick="openTierModal('${key}')" title="Voir détail ${key}"`
+      ? `style="cursor:pointer" onclick="openTierModal('${key}')" title="View ${key} details"`
       : '';
     return `<tr ${rowAttrs}>
       <td style="font-weight:600;color:${color}">${label}${isClickable?' <span style="opacity:.35;font-size:9px">↗</span>':''}</td>
@@ -1303,7 +1318,7 @@ function renderAMQKPIs(merchants, am, summary) {
       <div class="kpi-sub">${rows.filter(r=>r.is_new_client).length} new clients · ${rows.filter(r=>(r.actual_26||0)>0).length} actifs</div>
     </div>
     <div class="kpi">
-      <div class="kpi-label">Budget restant ouvert</div>
+      <div class="kpi-label">Open Remaining Budget</div>
       <div class="kpi-value" style="color:var(--purple)">${fmt(openBdg)}</div>
       <div class="kpi-sub">${mfAlerts>0
         ? `<span style="color:var(--yellow)">⚠ ${mfAlerts} alerte${mfAlerts>1?'s':''} MF</span>`
@@ -1331,7 +1346,7 @@ function sparkline(weeks) {
 function wowCell(r) {
   const w = r.weekly_revenue;
   if (!w || w.length < 2) {
-    return `<div class="spark-cell"><span class="neu" style="font-size:11px">— données hebdo à venir</span></div>`;
+    return `<div class="spark-cell"><span class="neu" style="font-size:10px;white-space:nowrap">Campaign ended &gt; 4w</span></div>`;
   }
   const last = w[w.length-1];
   const prev = w[w.length-2];
@@ -1355,6 +1370,82 @@ function wowCell(r) {
     </div>
     ${driver}
   </div>`;
+}
+
+/* ── WoW Trend Modal ── */
+function openWowModal(mid) {
+  if (!GDATA) return;
+  const m = GDATA.merchants[mid];
+  const name = merchantLabel(mid);
+  document.getElementById('wow-modal-title').textContent = name;
+  document.getElementById('wow-modal-sub').innerHTML =
+    `<span class="am-pill">${m?.am||'—'}</span> ${tierBadge(mid)}`;
+
+  const w = m?.weekly_revenue;
+  const body = document.getElementById('wow-modal-body');
+
+  if (!w || w.length < 2) {
+    body.innerHTML = `<div style="padding:32px 0;text-align:center;color:var(--text2);font-size:13px">
+      No weekly data — campaign ended more than 4 weeks ago.
+    </div>`;
+    document.getElementById('wow-modal-overlay').classList.add('open');
+    return;
+  }
+
+  const last  = w[w.length-1];
+  const prev  = w[w.length-2];
+  const delta = last - prev;
+  const dpct  = prev > 0 ? Math.round(delta/prev*100) : null;
+  const color = delta >= 0 ? 'var(--green)' : 'var(--red)';
+  const sign  = delta >= 0 ? '+' : '';
+  const n = w.length;
+  const weekLabels = Array.from({length:n}, (_,i) => i===n-1 ? 'Last week' : `W-${n-1-i}`);
+
+  body.innerHTML = `
+    <div style="display:flex;gap:16px;margin-bottom:20px">
+      <div style="background:var(--s2);border:1px solid var(--border);border-radius:9px;padding:12px 18px;flex:1;text-align:center">
+        <div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:var(--text2);margin-bottom:4px">Last Week</div>
+        <div style="font-size:22px;font-weight:700">${fmt(last)}</div>
+      </div>
+      <div style="background:var(--s2);border:1px solid var(--border);border-radius:9px;padding:12px 18px;flex:1;text-align:center">
+        <div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:var(--text2);margin-bottom:4px">WoW Change</div>
+        <div style="font-size:22px;font-weight:700;color:${color}">${sign}${fmt(delta)}</div>
+        <div style="font-size:12px;color:${color}">${dpct!=null?sign+dpct+'%':'—'}</div>
+      </div>
+    </div>
+    <canvas id="wow-modal-chart" style="height:180px!important;width:100%!important"></canvas>`;
+
+  if (wowModalChart) { wowModalChart.destroy(); wowModalChart = null; }
+  requestAnimationFrame(() => {
+    const ctx = document.getElementById('wow-modal-chart');
+    if (!ctx) return;
+    wowModalChart = new Chart(ctx.getContext('2d'), {
+      type: 'bar',
+      data: {
+        labels: weekLabels,
+        datasets: [{
+          label: 'Revenue',
+          data: w.map(v => Math.round(v/1000)),
+          backgroundColor: w.map((_,i) => i===w.length-1 ? 'rgba(100,231,106,.85)' : 'rgba(100,231,106,.3)'),
+          borderRadius: 5,
+          barThickness: 36,
+        }]
+      },
+      options: {
+        responsive:true, maintainAspectRatio:false,
+        plugins:{ legend:{display:false}, tooltip:{ callbacks:{ label: c=>`€${c.parsed.y}K` } } },
+        scales:{
+          x:{ grid:{display:false}, ticks:{color:'#888',font:{size:11}} },
+          y:{ grid:{color:'#1a1a1a'}, ticks:{color:'#888',font:{size:10}, callback:v=>`€${v}K`} }
+        }
+      }
+    });
+  });
+  document.getElementById('wow-modal-overlay').classList.add('open');
+}
+function closeWowModal() {
+  document.getElementById('wow-modal-overlay').classList.remove('open');
+  if (wowModalChart) { wowModalChart.destroy(); wowModalChart=null; }
 }
 
 /* ── AM delivery sort ── */
@@ -1390,7 +1481,7 @@ function renderAMDeliveryTable(merchants, am, summary) {
 
   if (!rows.length) {
     document.getElementById('am-delivery-table-wrap').innerHTML =
-      '<p style="color:var(--muted);padding:12px">Aucun merchant pour cet AM.</p>';
+      '<p style="color:var(--muted);padding:12px">No merchants for this AM.</p>';
     return;
   }
 
@@ -1437,7 +1528,7 @@ function renderAMDeliveryTable(merchants, am, summary) {
         const avbCell = isCapped && avb!=null
           ? `${budgetGauge(avb)} `
           : '<span class="neu">—</span>';
-        return `<tr onclick="openModal('${r.id}')">
+        return `<tr style="cursor:pointer" onclick="openWowModal('${r.id}')">
           <td class="merchant-name">${merchantLabel(r.id)}${r.is_new_client?'<span class="badge-new">new</span>':''}</td>
           <td><span class="am-pill">${r.am||'—'}</span></td>
           <td>${tierBadge(r.id)}</td>
@@ -1492,10 +1583,10 @@ function openTierModal(tier) {
   document.getElementById('tier-modal-title').innerHTML =
     `<span style="color:${tc.label}">${tier}</span> — Tops & Flops`;
   document.getElementById('tier-modal-sub').textContent =
-    `${list.length} marchands · critère: évolution K€ vs 2025`;
+    `${list.length} merchants · ranked by revenue delta vs 2025`;
 
   function makeCol(items, isFlop) {
-    if (!items.length) return `<div style="color:var(--muted);font-size:12px;padding:12px 0">Aucun marchand</div>`;
+    if (!items.length) return `<div style="color:var(--muted);font-size:12px;padding:12px 0">No merchants</div>`;
     return `<table style="width:100%;border-collapse:collapse;font-size:12px">
       <thead><tr>
         <th style="text-align:left;padding:6px 8px;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.4px;color:var(--text2);border-bottom:1px solid var(--border)">Marchand</th>
@@ -1540,7 +1631,7 @@ function openTierModal(tier) {
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
           <div style="display:flex;align-items:center;gap:8px">
             <span style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--green)">▲ Tops</span>
-            <span style="font-size:11px;color:var(--muted)">${tops.length} marchands</span>
+            <span style="font-size:11px;color:var(--muted)">${tops.length} merchants</span>
           </div>
           <span style="font-size:13px;font-weight:700;color:var(--green)">${fmt(tops.reduce((s,r)=>s+r.delta,0))}</span>
         </div>
@@ -1550,7 +1641,7 @@ function openTierModal(tier) {
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
           <div style="display:flex;align-items:center;gap:8px">
             <span style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--red)">▼ Flops</span>
-            <span style="font-size:11px;color:var(--muted)">${flops.length} marchands</span>
+            <span style="font-size:11px;color:var(--muted)">${flops.length} merchants</span>
           </div>
           <span style="font-size:13px;font-weight:700;color:var(--red)">${fmt(flops.reduce((s,r)=>s+r.delta,0))}</span>
         </div>
