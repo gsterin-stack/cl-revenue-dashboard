@@ -1654,11 +1654,15 @@ function openTierModal(tier) {
         <div style="display:flex;align-items:center;gap:5px"><div style="width:9px;height:9px;border-radius:2px;background:var(--green)"></div><span style="font-size:11px;color:var(--text2)">2026</span></div>
         <div style="display:flex;align-items:center;gap:5px"><div style="width:9px;height:9px;border-radius:2px;background:#555"></div><span style="font-size:11px;color:var(--text2)">2025</span></div>
       </div>
-      <canvas id="tier-q-chart" style="height:160px!important;width:100%!important"></canvas>
+      <div style="position:relative;height:160px;width:100%">
+        <canvas id="tier-q-chart"></canvas>
+      </div>
     </div>`;
 
   // Render quarterly chart
   if (tierModalChart) { tierModalChart.destroy(); tierModalChart = null; }
+  document.getElementById('tier-modal-overlay').classList.add('open');
+  requestAnimationFrame(() => {
   const ctx = document.getElementById('tier-q-chart');
   if (ctx) {
     tierModalChart = new Chart(ctx.getContext('2d'), {
@@ -1680,11 +1684,11 @@ function openTierModal(tier) {
       }
     });
   }
-
-  document.getElementById('tier-modal-overlay').classList.add('open');
+  }); // end requestAnimationFrame
 }
 function closeTierModal() {
   document.getElementById('tier-modal-overlay').classList.remove('open');
+  if (tierModalChart) { tierModalChart.destroy(); tierModalChart = null; }
 }
 
 /* ── Merchants AM filter ── */
