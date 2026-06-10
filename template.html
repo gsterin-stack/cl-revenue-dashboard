@@ -25,6 +25,7 @@
   </script>
   <link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0/dist/chartjs-plugin-datalabels.min.js"></script>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     :root {
@@ -348,8 +349,9 @@ let sortCol  = 'signed';
 let sortDir  = -1;
 let modalMFChart = null;
 let mfMgmtChart  = null;
-let wowModalChart = null;
-let wowQMFChart   = null;
+let wowModalChart  = null;
+let wowQMFChart    = null;
+let wowQRevChart   = null;
 
 /* ── ISO week number ── */
 function isoWeek(date) {
@@ -1415,32 +1417,63 @@ function openWowModal(mid) {
   const lastWeekNum = isoWeek(new Date()) - 1;
   const weekLabels = Array.from({length:n}, (_,i) => `W${lastWeekNum - (n-1-i)}`);
 
-  // Quarterly MF data
-  const now = new Date();
-  const qStart = [0,0,0,3,3,3,6,6,6,9,9,9][now.getMonth()];
+  // Quarter data
+  const now2 = new Date();
+  const qStart = [0,0,0,3,3,3,6,6,6,9,9,9][now2.getMonth()];
   const qMonthIdxs = [qStart, qStart+1, qStart+2];
   const qNum = Math.floor(qStart/3)+1;
-  const mf26 = m.monthly_mf_26 || [];
-  const mf25 = m.monthly_mf_25 || [];
-  const qMF26 = qMonthIdxs.map(i => Math.round((mf26[i]||0)/1000));
-  const qMF25 = qMonthIdxs.map(i => Math.round((mf25[i]||0)/1000));
+  const ytdM = GDATA.summary.ytd_months;
+
+  const rev26 = qMonthIdxs.map(i => Math.round((m.monthly_26[i]||0)/1000*10)/10);
+  const rev25 = qMonthIdxs.map(i => Math.round((m.monthly_25[i]||0)/1000*10)/10);
+  const qRev26 = qMonthIdxs.reduce((s,i) => s+(m.monthly_26[i]||0), 0);
+  const qRev25 = qMonthIdxs.reduce((s,i) => s+(m.monthly_25[i]||0), 0);
+  const qDiff  = qRev26 - qRev25;
+  const bg26   = qMonthIdxs.map(i => (i+1) <= ytdM ? 'rgba(100,231,106,.85)' : 'rgba(100,231,106,.4)');
   const qLabels = qMonthIdxs.map(i => MONTHS[i]);
+
+  // Media Fees
+  const mf26arr = m.monthly_mf_26 || [];
+  const mf25arr = m.monthly_mf_25 || [];
+  const qMF26 = qMonthIdxs.map(i => Math.round((mf26arr[i]||0)/1000));
+  const qMF25 = qMonthIdxs.map(i => Math.round((mf25arr[i]||0)/1000));
   const hasMF = qMF26.some(v=>v>0) || qMF25.some(v=>v>0);
 
+  const qDiffColor = qDiff >= 0 ? 'var(--green)' : 'var(--red)';
+  const qDiffStr   = (qDiff>=0?'+':'')+fmt(qDiff);
+  const hasWoW = !!(w && w.length >= 2);
+
   body.innerHTML = `
-    <div style="display:flex;gap:16px;margin-bottom:20px">
-      <div style="background:var(--s2);border:1px solid var(--border);border-radius:9px;padding:12px 18px;flex:1;text-align:center">
-        <div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:var(--text2);margin-bottom:4px">W${lastWeekNum}</div>
-        <div style="font-size:22px;font-weight:700">${fmt(last)}</div>
+    <!-- Quarter KPI -->
+    <div style="display:flex;gap:12px;margin-bottom:20px">
+      <div style="background:var(--s2);border:1px solid var(--border);border-radius:9px;padding:12px 16px;flex:1;text-align:center">
+        <div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:var(--text2);margin-bottom:4px">Q${qNum} Projected</div>
+        <div style="font-size:20px;font-weight:700;color:var(--green)">${fmt(qRev26)}</div>
+        <div style="font-size:11px;color:${qDiffColor};margin-top:2px">${qDiffStr} vs 2025</div>
       </div>
-      <div style="background:var(--s2);border:1px solid var(--border);border-radius:9px;padding:12px 18px;flex:1;text-align:center">
-        <div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:var(--text2);margin-bottom:4px">WoW Change</div>
-        <div style="font-size:22px;font-weight:700;color:${color}">${fmtCK(delta)}</div>
-        <div style="font-size:12px;color:${color}">${dpct!=null?sign+dpct+'%':'—'}</div>
+      ${hasWoW ? `
+      <div style="background:var(--s2);border:1px solid var(--border);border-radius:9px;padding:12px 16px;flex:1;text-align:center">
+        <div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:var(--text2);margin-bottom:4px">W${lastWeekNum}</div>
+        <div style="font-size:20px;font-weight:700">${fmt(last)}</div>
+        <div style="font-size:11px;color:${color};margin-top:2px">${fmtCK(delta)} ${dpct!=null?'('+sign+dpct+'%)':''}</div>
+      </div>` : ''}
+    </div>
+    <!-- Monthly Q chart -->
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+      <div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.6px;color:var(--text2)">Q${qNum} Revenue by Month</div>
+      <div style="display:flex;gap:10px">
+        <div style="display:flex;align-items:center;gap:4px"><div style="width:8px;height:8px;border-radius:2px;background:#555"></div><span style="font-size:10px;color:var(--text2)">2025</span></div>
+        <div style="display:flex;align-items:center;gap:4px"><div style="width:8px;height:8px;border-radius:2px;background:rgba(100,231,106,.85)"></div><span style="font-size:10px;color:var(--text2)">2026</span></div>
       </div>
     </div>
-    <div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.6px;color:var(--text2);margin-bottom:8px">4-Week Revenue Trend</div>
-    <div style="position:relative;height:160px;width:100%;margin-bottom:${hasMF?'24px':'0'}"><canvas id="wow-modal-chart"></canvas></div>
+    <div style="position:relative;height:180px;width:100%;margin-bottom:20px"><canvas id="wow-qrev-chart"></canvas></div>
+    <!-- WoW 4-week trend -->
+    ${hasWoW ? `
+    <div style="border-top:1px solid var(--border);padding-top:16px;margin-bottom:20px">
+      <div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.6px;color:var(--text2);margin-bottom:8px">4-Week Revenue Trend</div>
+      <div style="position:relative;height:140px;width:100%"><canvas id="wow-modal-chart"></canvas></div>
+    </div>` : ''}
+    <!-- Media Fees -->
     ${hasMF ? `
     <div style="border-top:1px solid var(--border);padding-top:16px">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
@@ -1450,29 +1483,43 @@ function openWowModal(mid) {
           <div style="display:flex;align-items:center;gap:4px"><div style="width:8px;height:8px;border-radius:2px;background:rgba(146,84,227,.8)"></div><span style="font-size:10px;color:var(--text2)">2026</span></div>
         </div>
       </div>
-      <div style="position:relative;height:130px;width:100%"><canvas id="wow-mf-chart"></canvas></div>
+      <div style="position:relative;height:120px;width:100%"><canvas id="wow-mf-chart"></canvas></div>
     </div>` : ''}`;
 
   if (wowModalChart) { wowModalChart.destroy(); wowModalChart = null; }
   if (wowQMFChart)   { wowQMFChart.destroy();   wowQMFChart   = null; }
+  if (wowQRevChart)  { wowQRevChart.destroy();  wowQRevChart  = null; }
   document.getElementById('wow-modal-overlay').classList.add('open');
+
   requestAnimationFrame(() => {
-    const ctx = document.getElementById('wow-modal-chart');
-    if (ctx) {
-      wowModalChart = new Chart(ctx.getContext('2d'), {
+    // ── Q Revenue chart (with datalabels on 2026) ──
+    const qRevCtx = document.getElementById('wow-qrev-chart');
+    if (qRevCtx) {
+      wowQRevChart = new Chart(qRevCtx.getContext('2d'), {
         type: 'bar',
+        plugins: [ChartDataLabels],
         data: {
-          labels: weekLabels,
-          datasets: [{
-            label: 'Revenue',
-            data: w.map(v => Math.round(v/1000)),
-            backgroundColor: w.map((_,i) => i===w.length-1 ? 'rgba(100,231,106,.85)' : 'rgba(100,231,106,.3)'),
-            borderRadius: 5, barThickness: 40,
-          }]
+          labels: qLabels,
+          datasets: [
+            { label:'2025', data: rev25, backgroundColor:'rgba(100,100,100,.45)', borderRadius:4, barThickness:24,
+              datalabels:{ display:false } },
+            { label:'2026', data: rev26, backgroundColor: bg26, borderRadius:4, barThickness:24,
+              datalabels:{
+                anchor:'end', align:'end',
+                formatter: v => v>0 ? `€${v}K` : '',
+                color:'rgba(100,231,106,.9)', font:{ size:10, weight:'600' }
+              }
+            },
+          ]
         },
         options: {
           responsive:true, maintainAspectRatio:false,
-          plugins:{ legend:{display:false}, tooltip:{ callbacks:{ label: c=>`€${c.parsed.y}K` } } },
+          layout:{ padding:{ top:20 } },
+          plugins:{
+            legend:{ display:false },
+            tooltip:{ callbacks:{ label: c=>`${c.dataset.label}: €${c.parsed.y}K` } },
+            datalabels:{ display:true }
+          },
           scales:{
             x:{ grid:{display:false}, ticks:{color:'#888',font:{size:11}} },
             y:{ grid:{color:'#1a1a1a'}, ticks:{color:'#888',font:{size:10}, callback:v=>`€${v}K`} }
@@ -1480,21 +1527,50 @@ function openWowModal(mid) {
         }
       });
     }
+    // ── 4-week WoW chart ──
+    if (hasWoW) {
+      const ctx = document.getElementById('wow-modal-chart');
+      if (ctx) {
+        wowModalChart = new Chart(ctx.getContext('2d'), {
+          type: 'bar',
+          data: {
+            labels: weekLabels,
+            datasets: [{
+              label:'Revenue',
+              data: w.map(v => Math.round(v/1000)),
+              backgroundColor: w.map((_,i) => i===w.length-1?'rgba(100,231,106,.85)':'rgba(100,231,106,.3)'),
+              borderRadius:5, barThickness:38,
+            }]
+          },
+          options: {
+            responsive:true, maintainAspectRatio:false,
+            plugins:{ legend:{display:false}, datalabels:{display:false},
+              tooltip:{ callbacks:{ label: c=>`€${c.parsed.y}K` } } },
+            scales:{
+              x:{ grid:{display:false}, ticks:{color:'#888',font:{size:11}} },
+              y:{ grid:{color:'#1a1a1a'}, ticks:{color:'#888',font:{size:10}, callback:v=>`€${v}K`} }
+            }
+          }
+        });
+      }
+    }
+    // ── Media Fees chart ──
     if (hasMF) {
       const mfCtx = document.getElementById('wow-mf-chart');
       if (mfCtx) {
         wowQMFChart = new Chart(mfCtx.getContext('2d'), {
-          type: 'bar',
-          data: {
+          type:'bar',
+          data:{
             labels: qLabels,
-            datasets: [
-              { label:'2025', data: qMF25, backgroundColor:'rgba(100,100,100,.5)', borderRadius:4, barThickness:22 },
-              { label:'2026', data: qMF26, backgroundColor:'rgba(146,84,227,.75)',  borderRadius:4, barThickness:22 },
+            datasets:[
+              { label:'2025', data:qMF25, backgroundColor:'rgba(100,100,100,.5)', borderRadius:4, barThickness:22 },
+              { label:'2026', data:qMF26, backgroundColor:'rgba(146,84,227,.75)',  borderRadius:4, barThickness:22 },
             ]
           },
-          options: {
+          options:{
             responsive:true, maintainAspectRatio:false,
-            plugins:{ legend:{display:false}, tooltip:{ callbacks:{ label: c=>`${c.dataset.label}: €${c.parsed.y}K` } } },
+            plugins:{ legend:{display:false}, datalabels:{display:false},
+              tooltip:{ callbacks:{ label: c=>`${c.dataset.label}: €${c.parsed.y}K` } } },
             scales:{
               x:{ grid:{display:false}, ticks:{color:'#888',font:{size:11}} },
               y:{ grid:{color:'#1a1a1a'}, ticks:{color:'#888',font:{size:10}, callback:v=>`€${v}K`} }
@@ -1509,6 +1585,7 @@ function closeWowModal() {
   document.getElementById('wow-modal-overlay').classList.remove('open');
   if (wowModalChart) { wowModalChart.destroy(); wowModalChart=null; }
   if (wowQMFChart)   { wowQMFChart.destroy();   wowQMFChart=null; }
+  if (wowQRevChart)  { wowQRevChart.destroy();  wowQRevChart=null; }
 }
 
 /* ── AM delivery sort ── */
