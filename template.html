@@ -1712,9 +1712,11 @@ function openTierModal(tier) {
   const list = Object.entries(GDATA.merchants)
     .filter(([id]) => TIER_MAP[id] === tier)
     .map(([id, m]) => {
-      const ap = (m.actual_26||0) + (m.proj_26||0);
-      const delta = ap - (m.actual_25||0);
-      return { id, m, ap, delta };
+      const ytdM = GDATA.summary.ytd_months;
+      const ytd25 = (m.monthly_25||[]).slice(0, ytdM).reduce((s,v)=>s+v, 0);
+      const ap = m.actual_26||0;
+      const delta = ap - ytd25;
+      return { id, m, ap, delta, ytd25 };
     });
 
   const tops  = list.filter(r => r.delta >= 0).sort((a,b) => b.delta - a.delta);
@@ -1723,15 +1725,15 @@ function openTierModal(tier) {
   document.getElementById('tier-modal-title').innerHTML =
     `<span style="color:${tc.label}">${tier}</span> — Tops & Flops`;
   document.getElementById('tier-modal-sub').textContent =
-    `${list.length} merchants · ranked by revenue delta vs 2025`;
+    `${list.length} merchants · YTD ${GDATA.summary.ytd_months>0?'Jan–'+['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][GDATA.summary.ytd_months-1]:''} 2026 vs same period 2025`;
 
   function makeCol(items, isFlop) {
     if (!items.length) return `<div style="color:var(--muted);font-size:12px;padding:12px 0">No merchants</div>`;
     return `<table style="width:100%;border-collapse:collapse;font-size:12px">
       <thead><tr>
         <th style="text-align:left;padding:6px 8px;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.4px;color:var(--text2);border-bottom:1px solid var(--border)">Marchand</th>
-        <th style="text-align:right;padding:6px 8px;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.4px;color:var(--text2);border-bottom:1px solid var(--border)">A+P 2026</th>
-        <th style="text-align:right;padding:6px 8px;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.4px;color:var(--text2);border-bottom:1px solid var(--border)">vs 2025</th>
+        <th style="text-align:right;padding:6px 8px;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.4px;color:var(--text2);border-bottom:1px solid var(--border)">YTD 2026</th>
+        <th style="text-align:right;padding:6px 8px;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.4px;color:var(--text2);border-bottom:1px solid var(--border)">YTD vs LY</th>
       </tr></thead>
       <tbody>${items.map((r,i) => {
         const rank = i+1;
