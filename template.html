@@ -1531,7 +1531,7 @@ function openWowModal(mid) {
             labels: weekLabels,
             datasets: [{
               label:'Revenue',
-              data: w.map(v => Math.round(v/1000)),
+              data: w.map(v => Math.round(v/100)/10),
               backgroundColor: w.map((_,i) => i===w.length-1?'rgba(100,231,106,.85)':'rgba(100,231,106,.3)'),
               borderRadius:5, barThickness:38,
             }]
