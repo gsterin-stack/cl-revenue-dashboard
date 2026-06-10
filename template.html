@@ -1311,7 +1311,7 @@ function renderAMQKPIs(merchants, am, summary) {
       </div>
     </div>`;
 
-  const okrPlaceholder = `<span style="font-size:11px;color:var(--muted);font-style:italic">OKR à renseigner</span>`;
+  const okrPlaceholder = `<span style="font-size:11px;color:var(--muted);font-style:italic">OKR not set</span>`;
 
   document.getElementById('am-q-kpi-bar').innerHTML = `
     <div class="kpi">
@@ -1332,7 +1332,7 @@ function renderAMQKPIs(merchants, am, summary) {
     <div class="kpi">
       <div class="kpi-label">Merchants · ${am}</div>
       <div class="kpi-value">${rows.length}</div>
-      <div class="kpi-sub">${rows.filter(r=>r.is_new_client).length} new clients · ${rows.filter(r=>(r.actual_26||0)>0).length} actifs</div>
+      <div class="kpi-sub">${rows.filter(r=>r.is_new_client).length} new clients · ${rows.filter(r=>(r.actual_26||0)>0).length} active</div>
     </div>
     `;
 }
