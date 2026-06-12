@@ -1182,7 +1182,7 @@ function renderMerchantTable(wrapId, merchants, amFilter) {
       const yoy = r.actual_25>0 ? pctStr(r.signed, r.actual_25) : '<span class="neu">—</span>';
       const ytdM = GDATA.summary.ytd_months;
       const ytd25 = (r.monthly_25||[]).slice(0, ytdM).reduce((s,v)=>s+v, 0);
-      const ytdVsLy = ytd25 > 0 ? Math.round(((r.actual_26||0) / ytd25 - 1) * 100) : null;
+      const ytdVsLy = ytd25 >= 1000 ? Math.round(((r.actual_26||0) / ytd25 - 1) * 100) : null;
       const ytdVsLyHtml = ytdVsLy != null
         ? `<span class="${ytdVsLy>=0?'yoy-pos':'yoy-neg'}">${ytdVsLy>=0?'+':''}${ytdVsLy}%</span>`
         : '<span class="neu">—</span>';
