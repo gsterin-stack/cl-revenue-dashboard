@@ -6,7 +6,7 @@
   <meta http-equiv="cache-control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="pragma" content="no-cache">
   <meta http-equiv="expires" content="0">
-  <meta name="build-time" content="2026-06-12T06:34:41.381Z">
+  <meta name="build-time" content="2026-06-12T11:34:14.567Z">
   <title>Joko — CL Revenue Dashboard</title>
   <script>
     // Cache-buster: si la page en cache a plus de 2h, force un rechargement frais
@@ -1142,6 +1142,14 @@ function merchantRows(merchants, amFilter) {
                        bv=b.actual_25>0?pct(b.signed,b.actual_25):null;
                        av=av??-999; bv=bv??-999; break;
         case 'ytd':    av=a.actual_26||0;          bv=b.actual_26||0; break;
+        case 'ytd_vs_ly': {
+          const ytdM = GDATA.summary.ytd_months;
+          const ay = (a.monthly_25||[]).slice(0,ytdM).reduce((s,v)=>s+v,0);
+          const by = (b.monthly_25||[]).slice(0,ytdM).reduce((s,v)=>s+v,0);
+          av = ay>0 ? (a.actual_26||0)/ay : -999;
+          bv = by>0 ? (b.actual_26||0)/by : -999;
+          break;
+        }
         case 'open':   av=a.remaining_budget??-1;  bv=b.remaining_budget??-1; break;
         case 'avb':    av=actualVsOpenBudget(a)??-1; bv=actualVsOpenBudget(b)??-1; break;
         case 'mf_ytd': av=a.media_fees_ytd||0;    bv=b.media_fees_ytd||0; break;
@@ -1166,11 +1174,18 @@ function renderMerchantTable(wrapId, merchants, amFilter) {
       <th class="num sortable ${cc('signed')}" data-col="signed" onclick="sortBy('signed')">Signed 2026</th>
       <th class="num sortable ${cc('yoy')}"    data-col="yoy"    onclick="sortBy('yoy')">YoY</th>
       <th class="num sortable ${cc('ytd')}"    data-col="ytd"    onclick="sortBy('ytd')">YTD Actual</th>
+      <th class="num sortable ${cc('ytd_vs_ly')}" data-col="ytd_vs_ly" onclick="sortBy('ytd_vs_ly')">YTD vs LY</th>
       <th class="num sortable ${cc('mf_ytd')}" data-col="mf_ytd" onclick="sortBy('mf_ytd')">Media Fees YTD</th>
       <th class="num sortable ${cc('mf_ly')}"  data-col="mf_ly"  onclick="sortBy('mf_ly')">Media Fees LY</th>
     </tr></thead>
     <tbody>${rows.map(r=>{
       const yoy = r.actual_25>0 ? pctStr(r.signed, r.actual_25) : '<span class="neu">—</span>';
+      const ytdM = GDATA.summary.ytd_months;
+      const ytd25 = (r.monthly_25||[]).slice(0, ytdM).reduce((s,v)=>s+v, 0);
+      const ytdVsLy = ytd25 > 0 ? Math.round(((r.actual_26||0) / ytd25 - 1) * 100) : null;
+      const ytdVsLyHtml = ytdVsLy != null
+        ? `<span class="${ytdVsLy>=0?'yoy-pos':'yoy-neg'}">${ytdVsLy>=0?'+':''}${ytdVsLy}%</span>`
+        : '<span class="neu">—</span>';
       return `<tr onclick="openModal('${r.id}')">
         <td class="merchant-name">${merchantLabel(r.id)}${r.is_new_client?'<span class="badge-new">new</span>':''}</td>
         <td><span class="am-pill">${r.am}</span></td>
@@ -1180,6 +1195,7 @@ function renderMerchantTable(wrapId, merchants, amFilter) {
         <td class="num">${r.budget_type==='capped'?`<strong>${fmt(r.signed)}</strong>`:'<span class="neu">—</span>'}</td>
         <td class="num">${yoy}</td>
         <td class="num">${fmt(r.actual_26)}</td>
+        <td class="num">${ytdVsLyHtml}</td>
         <td class="num">${r.media_fees_ytd>0?fmt(r.media_fees_ytd):'<span class="neu">—</span>'}</td>
         <td class="num dim">${r.media_fees_ly>0?fmt(r.media_fees_ly):'—'}</td>
       </tr>`;
