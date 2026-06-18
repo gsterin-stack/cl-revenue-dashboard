@@ -30,7 +30,7 @@
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     :root {
       --bg: #000; --s1: #111; --s2: #1a1a1a; --s3: #222;
-      --border: #222; --muted: #555; --text2: #888; --text: #fff;
+      --border: #222; --muted: #777; --text2: #888; --text: #fff;
       --green: #64E76A; --purple: #9254E3; --yellow: #E4FA62;
       --red: #ff5555; --radius: 12px;
       --font: 'Instrument Sans','Inter',sans-serif;
@@ -245,6 +245,13 @@
       <div class="chart-full" style="margin-bottom:16px"><canvas id="mf-mgmt-chart"></canvas></div>
       <div class="table-wrap" id="mf-mgmt-table-wrap"></div>
     </div>
+
+    <div class="card">
+      <div class="card-title">Revenue by Vertical</div>
+      <div class="chart-legend" id="vertical-legend"></div>
+      <div style="margin-bottom:16px"><canvas id="vertical-chart" style="height:220px!important;width:100%!important"></canvas></div>
+      <div class="table-wrap" id="vertical-table-wrap"></div>
+    </div>
   </div>
 
   <!-- ═══ AM VIEW ═══ -->
@@ -263,6 +270,13 @@
     <div class="am-filter" id="merchants-am-filter"><!-- generated dynamically --></div>
     <div class="am-kpi-bar" id="merchants-kpi-bar"></div>
     <div class="card">
+      <div style="display:flex;align-items:center;justify-content:flex-end;margin-bottom:10px">
+        <input type="text" id="merchants-search" placeholder="Search merchant…"
+          oninput="filterMerchantsSearch(this.value)"
+          style="background:var(--s2);border:1px solid var(--border);border-radius:8px;color:var(--text);padding:6px 12px;font-size:12px;width:220px;outline:none;font-family:var(--font);transition:border-color .15s"
+          onfocus="this.style.borderColor='rgba(100,231,106,.5)'"
+          onblur="this.style.borderColor='var(--border)'">
+      </div>
       <div class="table-wrap" id="merchants-table-wrap"></div>
     </div>
   </div>
@@ -352,6 +366,8 @@ let mfMgmtChart  = null;
 let wowModalChart  = null;
 let wowQMFChart    = null;
 let wowQRevChart   = null;
+let verticalChart  = null;
+let merchantSearchQuery = '';
 
 /* ── ISO week number ── */
 function isoWeek(date) {
@@ -427,6 +443,96 @@ const TIER_MAP = {
   "stych":"T3","prismashop":"T3","le-closet":"T3","gambettes-box":"T3","feed":"T3",
   "ulysse":"T3","les-raffineurs":"T3","natura-force":"T3","jules-et-jenn":"T3",
   "darjeeling":"T3",
+};
+
+/* ── Vertical map ── */
+const VERTICAL_MAP = {
+  'e-leclerc':'Alimentaire','intermarche':'Alimentaire','carrefour':'Alimentaire',
+  'supermarche-u':'Alimentaire','lidl':'Alimentaire','auchan':'Alimentaire',
+  'action':'Alimentaire','grand-frais':'Alimentaire','aldi':'Alimentaire',
+  'monoprix':'Alimentaire','picard':'Alimentaire','casino':'Alimentaire',
+  'g20':'Alimentaire','atac':'Alimentaire','vival':'Alimentaire',
+  'coccimarket':'Alimentaire','franprix':'Alimentaire','netto':'Alimentaire',
+  'leader-price':'Alimentaire','biocoop':'Alimentaire','spar':'Alimentaire',
+  'naturalia':'Alimentaire','8-a-huit':'Alimentaire','promocash':'Alimentaire',
+  'supermarches-match':'Alimentaire','picnic':'Alimentaire','chronodrive':'Alimentaire',
+  'fresh-prosol':'Alimentaire',
+  'kiabi':'Mode','zara':'Mode','h-and-m':'Mode','primark':'Mode',
+  'etam':'Mode','gemo':'Mode','chaussea':'Mode','la-halle':'Mode',
+  'bershka':'Mode','stradivarius':'Mode','mango':'Mode','pull-and-bear':'Mode',
+  'new-yorker':'Mode','undiz':'Mode','promod':'Mode','vertbaudet':'Mode',
+  'pimkie':'Mode','jules':'Mode','celio':'Mode','bizzbee':'Mode',
+  'devred':'Mode','armand-thiery':'Mode','morgan':'Mode','esprit':'Mode',
+  'zadig-et-voltaire':'Mode','maje':'Mode','izac':'Mode',
+  'hugo-boss':'Mode','tommy-hilfiger':'Mode','petit-bateau':'Mode','c-and-a':'Mode',
+  'jack-and-jones':'Mode','okaidi':'Mode','tape-a-l-oeil':'Mode','ikks':'Mode',
+  'rougegorge':'Mode','jott':'Mode','darjeeling':'Mode','beaumanoir':'Mode',
+  'calzedonia':'Mode','levis':'Mode','lacoste':'Mode','adidas':'Mode',
+  'nike':'Mode','new-balance':'Mode','puma':'Mode','ralph-lauren':'Mode',
+  'districenter':'Mode','the-bradery':'Mode','blanche-porte':'Mode',
+  'grain-de-malice':'Mode','vente-privee':'Mode','showroomprive':'Mode',
+  'sephora':'Beauté','nocibe':'Beauté','yves-rocher':'Beauté','adopt':'Beauté',
+  'kiko':'Beauté','aroma-zone':'Beauté','marionnaud':'Beauté','birchbox':'Beauté',
+  'beauteprivee':'Beauté','beauty-success':'Beauté','bleu-libellule':'Beauté',
+  'typology':'Beauté','horace':'Beauté','rituals':'Beauté',
+  'alain-afflelou':'Beauté','krys':'Beauté','pandora':'Beauté',
+  'swarovski':'Beauté','histoire-d-or':'Beauté','marc-orian':'Beauté','cleor':'Beauté',
+  'lovisa':'Beauté','notino':'Beauté','cabaia':'Beauté','jimmy-fairly':'Beauté',
+  'dior':'Beauté','hermes':'Beauté',
+  'leroy-merlin':'Maison','castorama':'Maison','brico-depot':'Maison',
+  'ikea':'Maison','maisons-du-monde':'Maison','alinea':'Maison',
+  'but':'Maison','conforama':'Maison','habitat':'Maison',
+  'lapeyre':'Maison','weldom':'Maison','bricoman':'Maison',
+  'brico-cash':'Maison','bricomarche':'Maison','mr-bricolage':'Maison',
+  'bricorama':'Maison','gamm-vert':'Maison','jardiland':'Maison',
+  'botanic':'Maison','truffaut':'Maison','la-chaise-longue':'Maison',
+  'point-p':'Maison','joue-club':'Maison','king-jouet':'Maison',
+  'smyths':'Maison','la-foir-fouille':'Maison','maxi-bazar':'Maison',
+  'nature-decouvertes':'Maison','sostrene-grene':'Maison',
+  'uber':'Mobilité','uber-eats':'Mobilité','blablacar':'Mobilité',
+  'heetch':'Mobilité','taxify':'Mobilité','total':'Mobilité',
+  'shell':'Mobilité','eni':'Mobilité','total-electricity':'Mobilité',
+  'allopneus':'Mobilité','norauto':'Mobilité','feu-vert':'Mobilité',
+  'deliveroo':'Mobilité',
+  'mcdonalds':'Restauration','burger-king':'Restauration','kfc':'Restauration',
+  'quick':'Restauration','subway':'Restauration','flunch':'Restauration',
+  'dominos-pizza':'Restauration','o-tacos':'Restauration','five-guys':'Restauration',
+  'popeyes':'Restauration','buffalo-grill':'Restauration','hippopotamus':'Restauration',
+  'del-arte':'Restauration','au-bureau':'Restauration','crescendo':'Restauration',
+  'brioche-doree':'Restauration','mie-caline':'Restauration','boulangerie-ange':'Restauration',
+  'starbucks':'Restauration','columbus-cafe':'Restauration','jeff-de-bruges':'Restauration',
+  'pokawa':'Restauration','eat-salad':'Restauration','pitaya':'Restauration',
+  'leon':'Restauration','sushi-shop':'Restauration','palais-des-thes':'Restauration',
+  'paradis-du-fruit':'Restauration','7-eleven':'Restauration',
+  'autogrill':'Restauration','newrest':'Restauration','nespresso':'Restauration',
+  'decathlon':'Sport','intersport':'Sport','sport-2000':'Sport','courir':'Sport',
+  'foot-locker':'Sport','jd-sports':'Sport','snipes':'Sport','ekosport':'Sport',
+  'privatesportshop':'Sport','i-run':'Sport','gymshark':'Sport',
+  'boulanger':'High-Tech','fnac':'High-Tech','darty':'High-Tech',
+  'back-market':'High-Tech','micromania':'High-Tech','ldlc':'High-Tech',
+  'instant-gaming':'High-Tech','certideal':'High-Tech','bureau-vallee':'High-Tech',
+  'lego':'High-Tech','rue-du-commerce':'High-Tech','id-market':'High-Tech',
+  'disneyland-paris':'Loisirs','gaumont-pathe':'Loisirs','cgr':'Loisirs',
+  'ugc':'Loisirs','kinepolis':'Loisirs','futuroscope':'Loisirs',
+  'europa-park':'Loisirs','parc-asterix':'Loisirs','cineville':'Loisirs','cultura':'Loisirs',
+  'hellofresh':'E-commerce','quitoque':'E-commerce','le-closet':'E-commerce',
+  'lalalab':'E-commerce','stych':'E-commerce','gambettes-box':'E-commerce',
+  'zoomalia':'E-commerce','maxizoo':'E-commerce','animalis':'E-commerce',
+  'ulysse':'E-commerce','les-raffineurs':'E-commerce','jules-et-jenn':'E-commerce',
+  'yesstyle':'E-commerce','fanatics':'E-commerce','sarenza':'E-commerce',
+  'spartoo':'E-commerce','choose-app':'E-commerce','vinted':'E-commerce',
+  'le-bon-coin':'E-commerce','damart':'E-commerce','prismashop':'E-commerce',
+  'costco':'E-commerce','zeeman':'E-commerce','ultra-premium-direct':'E-commerce',
+  'too-good-to-go':'E-commerce',
+  'emma-matelas':'Bien-être','prozis':'Bien-être','natura-force':'Bien-être',
+  'feed':'Bien-être','dyson':'Bien-être','body-minute':'Bien-être',
+  'franck-provost':'Bien-être','engie':'Bien-être',
+};
+const VERTICAL_LABEL_COLORS = {
+  'Alimentaire':'var(--green)', 'Mode':'#FF9650', 'Beauté':'#FF78B4',
+  'Maison':'#64B4FF', 'Mobilité':'var(--yellow)', 'Restauration':'#FF6464',
+  'Sport':'var(--purple)', 'High-Tech':'#50C8FF', 'Loisirs':'#FFC83C',
+  'E-commerce':'#B4FFC8', 'Bien-être':'#C896FF', 'Autres':'var(--muted)',
 };
 
 /* ── Merchant display names ── */
@@ -570,6 +676,7 @@ function renderAll(data) {
   renderQSection(data.quarterly, data.chart_arrays.R25);
   renderTierSection(data.merchants, data.chart_arrays.R25);
   renderMFMgmtSection(data.merchants, data.summary.ytd_months);
+  renderVerticalSection(data.merchants);
   renderMerchantsKPIs(data.merchants, 'all', data.summary);
   renderMerchantTable('merchants-table-wrap', data.merchants, 'all');
   renderAMView(data.merchants, data.summary);
@@ -1104,6 +1211,91 @@ function renderMFMgmtSection(merchants, ytdMonths) {
     </table>`;
 }
 
+/* ── Revenue by Vertical ── */
+function renderVerticalSection(merchants) {
+  const VORDER = ['Alimentaire','Mode','Beauté','Maison','Mobilité',
+    'Restauration','Sport','High-Tech','Loisirs','E-commerce','Bien-être'];
+  const groups = {};
+  [...VORDER,'Autres'].forEach(v => { groups[v]={a25:0,a26:0,p26:0,count:0}; });
+  for (const [mid,m] of Object.entries(merchants)) {
+    const v = VERTICAL_MAP[mid]||'Autres';
+    const g = groups[v]||groups['Autres'];
+    g.a25 += m.actual_25||0; g.a26 += m.actual_26||0; g.p26 += m.proj_26||0; g.count++;
+  }
+  const active = [...VORDER,'Autres'].filter(v=>(groups[v].a26+groups[v].p26+groups[v].a25)>0);
+  active.sort((a,b)=>(groups[b].a26+groups[b].p26)-(groups[a].a26+groups[a].p26));
+  const labels = active.map(v=>`${v} (${groups[v].count})`);
+
+  document.getElementById('vertical-legend').innerHTML = `
+    <div class="legend-item"><div class="legend-dot" style="background:rgba(170,170,170,.5)"></div>2025</div>
+    <div class="legend-item"><div class="legend-dot" style="background:rgba(100,231,106,.9)"></div>2026 Actual</div>
+    <div class="legend-item"><div class="legend-dot" style="background:rgba(100,231,106,.22);border:1px solid rgba(100,231,106,.4)"></div>2026 Proj.</div>`;
+
+  if (verticalChart) { verticalChart.destroy(); verticalChart=null; }
+  verticalChart = new Chart(document.getElementById('vertical-chart').getContext('2d'),{
+    type:'bar',
+    data:{ labels, datasets:[
+      {label:'2025',       data:active.map(v=>groups[v].a25), backgroundColor:'rgba(170,170,170,.45)', borderRadius:3},
+      {label:'2026 Act.',  data:active.map(v=>groups[v].a26), backgroundColor:'rgba(100,231,106,.88)', stack:'s26', borderRadius:3},
+      {label:'2026 Proj.', data:active.map(v=>groups[v].p26), backgroundColor:'rgba(100,231,106,.28)', stack:'s26',
+        borderColor:'rgba(100,231,106,.45)', borderWidth:1, borderRadius:3},
+    ]},
+    options:{ responsive:true, maintainAspectRatio:false,
+      plugins:{legend:{display:false},tooltip:ttip()},
+      scales:{
+        x:{stacked:true,grid:{color:'transparent'},ticks:{color:'#555',font:{size:10}}},
+        y:{stacked:true,grid:{color:'rgba(255,255,255,0.04)'},ticks:{color:'#555',font:{size:10},
+          callback:v=>Math.abs(v)>=1e3?'€'+Math.round(v/1e3)+'K':'€'+Math.round(v)}}
+      }}
+  });
+
+  const totA25=active.reduce((s,v)=>s+groups[v].a25,0);
+  const totA26=active.reduce((s,v)=>s+groups[v].a26,0);
+  const totP26=active.reduce((s,v)=>s+groups[v].p26,0);
+  const totCount=active.reduce((s,v)=>s+groups[v].count,0);
+  const totAP=totA26+totP26;
+  const totYoy=totA25>0?Math.round((totAP/totA25-1)*100):null;
+  const totYoyHtml=totYoy!=null?`<span style="color:${totYoy>=0?'var(--green)':'var(--red)'};font-weight:700">${totYoy>=0?'+':''}${totYoy}%</span>`:'—';
+  document.getElementById('vertical-table-wrap').innerHTML=`
+    <table>
+      <thead><tr>
+        <th>Vertical</th>
+        <th style="text-align:center">Marchands</th>
+        <th class="num" style="color:var(--muted)">2025</th>
+        <th class="num">2026 Actual</th>
+        <th class="num" style="color:rgba(100,231,106,.55)">Projection</th>
+        <th class="num">Total A+P</th>
+        <th class="num">vs 2025</th>
+      </tr></thead>
+      <tbody>
+        ${active.map(v=>{
+          const g=groups[v]; const tot=g.a26+g.p26;
+          const yoy=g.a25>0?Math.round((tot/g.a25-1)*100):null;
+          const yoyHtml=yoy!=null?`<span style="color:${yoy>=0?'var(--green)':'var(--red)'}">${yoy>=0?'+':''}${yoy}%</span>`:'—';
+          const color=VERTICAL_LABEL_COLORS[v]||'var(--muted)';
+          return `<tr>
+            <td style="font-weight:600;color:${color}">${v}</td>
+            <td style="text-align:center;color:var(--text2)">${g.count}</td>
+            <td class="num" style="color:var(--text2)">${g.a25>0?fmt(g.a25):'—'}</td>
+            <td class="num" style="color:var(--green)">${g.a26>0?fmt(g.a26):'—'}</td>
+            <td class="num" style="color:rgba(100,231,106,.55)">${g.p26>0?fmt(g.p26):'—'}</td>
+            <td class="num" style="font-weight:700">${tot>0?fmt(tot):'—'}</td>
+            <td class="num">${yoyHtml}</td>
+          </tr>`;
+        }).join('')}
+        <tr style="border-top:2px solid var(--border);font-weight:700">
+          <td>Total</td>
+          <td style="text-align:center;color:var(--text2)">${totCount}</td>
+          <td class="num" style="color:var(--text2)">${fmt(totA25)}</td>
+          <td class="num" style="color:var(--green)">${fmt(totA26)}</td>
+          <td class="num" style="color:rgba(100,231,106,.55)">${fmt(totP26)}</td>
+          <td class="num">${fmt(totAP)}</td>
+          <td class="num">${totYoyHtml}</td>
+        </tr>
+      </tbody>
+    </table>`;
+}
+
 /* ── Sort state ── */
 function sortBy(col) {
   if (sortCol===col) sortDir = -sortDir;
@@ -1154,6 +1346,15 @@ function merchantRows(merchants, amFilter) {
         case 'avb':    av=actualVsOpenBudget(a)??-1; bv=actualVsOpenBudget(b)??-1; break;
         case 'mf_ytd': av=a.media_fees_ytd||0;    bv=b.media_fees_ytd||0; break;
         case 'mf_ly':  av=a.media_fees_ly||0;     bv=b.media_fees_ly||0; break;
+        case 'yoy_val': av=a.actual_25>0?(a.signed||0)-a.actual_25:-999999; bv=b.actual_25>0?(b.signed||0)-b.actual_25:-999999; break;
+        case 'ytd_val': {
+          const ytdMv = GDATA.summary.ytd_months;
+          const ay25v = (a.monthly_25||[]).slice(0,ytdMv).reduce((s,v)=>s+v,0);
+          const by25v = (b.monthly_25||[]).slice(0,ytdMv).reduce((s,v)=>s+v,0);
+          av = ay25v>=1000 ? (a.actual_26||0)-ay25v : -999999;
+          bv = by25v>=1000 ? (b.actual_26||0)-by25v : -999999;
+          break;
+        }
         default:       av=a.signed||0;             bv=b.signed||0;
       }
       return sortDir * (av-bv);
@@ -1162,45 +1363,68 @@ function merchantRows(merchants, amFilter) {
 
 /* ── Merchants tab table ── */
 function renderMerchantTable(wrapId, merchants, amFilter) {
-  const rows = merchantRows(merchants, amFilter || activeMerchantsAM || 'all');
+  let rows = merchantRows(merchants, amFilter || activeMerchantsAM || 'all');
+  const sq = merchantSearchQuery.toLowerCase().trim();
+  if (sq) rows = rows.filter(r => merchantLabel(r.id).toLowerCase().includes(sq) || r.id.includes(sq));
   const cc = col => col===sortCol ? (sortDir>0?'sort-asc':'sort-desc') : '';
   document.getElementById(wrapId).innerHTML = `<table>
     <thead><tr>
-      <th class="sortable ${cc('name')}" data-col="name" onclick="sortBy('name')">Merchant</th>
+      <th class="sortable ${cc('name')}" data-col="name" onclick="sortBy('name')" style="border-right:1px solid var(--border)">Merchant</th>
+      <th>Vertical</th>
       <th class="sortable ${cc('am')}"   data-col="am"   onclick="sortBy('am')">AM</th>
       <th class="sortable ${cc('tier')}" data-col="tier" onclick="sortBy('tier')">Tier</th>
       <th class="sortable ${cc('budget_type')}" data-col="budget_type" onclick="sortBy('budget_type')">Budget</th>
-      <th class="num sortable ${cc('fy25')}"   data-col="fy25"   style="color:var(--muted)" onclick="sortBy('fy25')">FY 2025</th>
+      <th class="num sortable ${cc('fy25')}" data-col="fy25" style="color:var(--muted);max-width:75px" onclick="sortBy('fy25')">FY 25</th>
       <th class="num sortable ${cc('signed')}" data-col="signed" onclick="sortBy('signed')">Signed 2026</th>
-      <th class="num sortable ${cc('yoy')}"    data-col="yoy"    onclick="sortBy('yoy')">YoY</th>
-      <th class="num sortable ${cc('ytd')}"    data-col="ytd"    onclick="sortBy('ytd')">YTD Actual</th>
+      <th class="num sortable ${cc('yoy_val')}" data-col="yoy_val" onclick="sortBy('yoy_val')">YoY €</th>
+      <th class="num sortable ${cc('yoy')}" data-col="yoy" onclick="sortBy('yoy')">YoY %</th>
+      <th class="num sortable ${cc('ytd')}" data-col="ytd" onclick="sortBy('ytd')">YTD Actual</th>
+      <th class="num sortable ${cc('ytd_val')}" data-col="ytd_val" onclick="sortBy('ytd_val')">YTD Δ</th>
       <th class="num sortable ${cc('ytd_vs_ly')}" data-col="ytd_vs_ly" onclick="sortBy('ytd_vs_ly')">YTD vs LY</th>
-      <th class="num sortable ${cc('mf_ytd')}" data-col="mf_ytd" onclick="sortBy('mf_ytd')">Media Fees YTD</th>
-      <th class="num sortable ${cc('mf_ly')}"  data-col="mf_ly"  onclick="sortBy('mf_ly')">Media Fees LY</th>
+      <th class="num sortable ${cc('mf_ytd')}" data-col="mf_ytd" onclick="sortBy('mf_ytd')">MF YTD</th>
+      <th class="num sortable ${cc('mf_ly')}" data-col="mf_ly" onclick="sortBy('mf_ly')">MF LY</th>
     </tr></thead>
     <tbody>${rows.map(r=>{
-      const yoy = r.actual_25>0 ? pctStr(r.signed, r.actual_25) : '<span class="neu">—</span>';
       const ytdM = GDATA.summary.ytd_months;
       const ytd25 = (r.monthly_25||[]).slice(0, ytdM).reduce((s,v)=>s+v, 0);
-      const ytdVsLy = ytd25 >= 1000 ? Math.round(((r.actual_26||0) / ytd25 - 1) * 100) : null;
-      const ytdVsLyHtml = ytdVsLy != null
+      const yoy = r.actual_25>0 ? pctStr(r.signed, r.actual_25) : '<span class="neu">—</span>';
+      const yoyVal = r.actual_25>0 ? (r.signed||0)-r.actual_25 : null;
+      const yoyValHtml = yoyVal!=null
+        ? `<span class="${yoyVal>=0?'yoy-pos':'yoy-neg'}">${yoyVal>=0?'+':''}${fmt(yoyVal)}</span>`
+        : '<span class="neu">—</span>';
+      const ytdVsLy = ytd25>=1000 ? Math.round(((r.actual_26||0)/ytd25-1)*100) : null;
+      const ytdVsLyHtml = ytdVsLy!=null
         ? `<span class="${ytdVsLy>=0?'yoy-pos':'yoy-neg'}">${ytdVsLy>=0?'+':''}${ytdVsLy}%</span>`
         : '<span class="neu">—</span>';
+      const ytdVal = ytd25>=1000 ? (r.actual_26||0)-ytd25 : null;
+      const ytdValHtml = ytdVal!=null
+        ? `<span class="${ytdVal>=0?'yoy-pos':'yoy-neg'}">${ytdVal>=0?'+':''}${fmt(ytdVal)}</span>`
+        : '<span class="neu">—</span>';
+      const vert = VERTICAL_MAP[r.id] || '—';
+      const vertColor = VERTICAL_LABEL_COLORS[vert] || 'var(--muted)';
       return `<tr onclick="openModal('${r.id}')">
-        <td class="merchant-name">${merchantLabel(r.id)}${r.is_new_client?'<span class="badge-new">new</span>':''}</td>
+        <td class="merchant-name" style="border-right:1px solid var(--border)">${merchantLabel(r.id)}${r.is_new_client?'<span class="badge-new">new</span>':''}</td>
+        <td><span style="font-size:10px;font-weight:500;color:${vertColor}">${vert}</span></td>
         <td><span class="am-pill">${r.am}</span></td>
         <td>${tierBadge(r.id)}</td>
         <td>${r.budget_type==='capped'?'<span class="type-capped">Capped</span>':'<span class="type-uncapped">Open</span>'}</td>
-        <td class="num dim">${r.actual_25>0?fmt(r.actual_25):'—'}</td>
+        <td class="num dim" style="max-width:75px">${r.actual_25>0?fmt(r.actual_25):'—'}</td>
         <td class="num">${r.budget_type==='capped'?`<strong>${fmt(r.signed)}</strong>`:'<span class="neu">—</span>'}</td>
+        <td class="num">${yoyValHtml}</td>
         <td class="num">${yoy}</td>
         <td class="num">${fmt(r.actual_26)}</td>
+        <td class="num">${ytdValHtml}</td>
         <td class="num">${ytdVsLyHtml}</td>
         <td class="num">${r.media_fees_ytd>0?fmt(r.media_fees_ytd):'<span class="neu">—</span>'}</td>
         <td class="num dim">${r.media_fees_ly>0?fmt(r.media_fees_ly):'—'}</td>
       </tr>`;
     }).join('')}</tbody>
   </table>`;
+}
+
+function filterMerchantsSearch(query) {
+  merchantSearchQuery = query;
+  renderMerchantTable('merchants-table-wrap', GDATA.merchants, activeMerchantsAM);
 }
 
 /* ═══════════════════════════════════════════════
@@ -1598,6 +1822,39 @@ function closeWowModal() {
   if (wowQRevChart)  { wowQRevChart.destroy();  wowQRevChart=null; }
 }
 
+/* ── Budget crossing date & pace status helpers ── */
+function budgetCrossingDateStr(r) {
+  if (r.budget_type !== 'capped' || r.remaining_budget == null || r.remaining_budget <= 0) return null;
+  const ytdM = GDATA ? GDATA.summary.ytd_months : 0;
+  if (!ytdM || !(r.actual_26 > 0)) return null;
+  const burnPerDay = r.actual_26 / (ytdM * 30.4);
+  if (burnPerDay <= 0) return null;
+  const daysLeft = Math.round(r.remaining_budget / burnPerDay);
+  if (daysLeft > 365) return null;
+  const crossDate = new Date(Date.now() + daysLeft * 86400000);
+  return { date: MONTHS[crossDate.getMonth()]+' '+crossDate.getDate(), daysLeft };
+}
+function budgetStatusBadge(r) {
+  if (r.budget_type !== 'capped' || !r.signed_26 || !(r.actual_26 > 0)) return '<span class="neu">—</span>';
+  const ytdM = GDATA ? GDATA.summary.ytd_months : 0;
+  if (!ytdM) return '<span class="neu">—</span>';
+  if (r.remaining_budget != null && r.remaining_budget <= 0)
+    return `<span style="font-size:10px;font-weight:600;color:var(--red);background:rgba(255,85,85,.1);border:1px solid rgba(255,85,85,.3);border-radius:4px;padding:2px 6px;white-space:nowrap">Épuisé</span>`;
+  const expected = r.signed_26 * (ytdM / 12);
+  const delta = (r.actual_26||0) - expected;
+  const pct = expected > 0 ? delta / expected * 100 : 0;
+  if (pct > 15) {
+    return `<span style="font-size:10px;font-weight:600;color:var(--red);background:rgba(255,85,85,.1);border:1px solid rgba(255,85,85,.3);border-radius:4px;padding:2px 6px;white-space:nowrap">⚠ At risk +${fmt(delta)}</span>`;
+  }
+  if (pct > 5)
+    return `<span style="font-size:10px;font-weight:600;color:var(--yellow);background:rgba(228,250,98,.08);border:1px solid rgba(228,250,98,.25);border-radius:4px;padding:2px 6px;white-space:nowrap">Monitor</span>`;
+  if (pct < -20)
+    return `<span style="font-size:10px;font-weight:600;color:#64B4FF;background:rgba(100,180,255,.1);border:1px solid rgba(100,180,255,.3);border-radius:4px;padding:2px 6px;white-space:nowrap">Opportunité ${fmt(Math.abs(delta))}</span>`;
+  if (pct < -10)
+    return `<span style="font-size:10px;font-weight:600;color:#64B4FF;background:rgba(100,180,255,.1);border:1px solid rgba(100,180,255,.3);border-radius:4px;padding:2px 6px;white-space:nowrap">Slow spend</span>`;
+  return `<span style="font-size:10px;font-weight:600;color:var(--green);background:rgba(100,231,106,.08);border:1px solid rgba(100,231,106,.2);border-radius:4px;padding:2px 6px;white-space:nowrap">On track</span>`;
+}
+
 /* ── AM delivery sort ── */
 function amSortBy(col) {
   if (amSortCol === col) amSortDir *= -1;
@@ -1655,6 +1912,8 @@ function renderAMDeliveryTable(merchants, am, summary) {
         ${sh('ytd','YTD Actual')}
         ${sh('budget','Open Budget')}
         ${sh('rem','Remaining','var(--purple)')}
+        <th class="num" style="white-space:nowrap">Budget End</th>
+        <th class="num" style="white-space:nowrap">Status</th>
         ${sh('avb','Actual vs Budget')}
         <th style="cursor:pointer;user-select:none;text-align:center;white-space:nowrap" onclick="amSortBy('wow')">WoW${sc('wow')}</th>
         ${sh('mf','Q MF','var(--purple)')}
@@ -1693,6 +1952,8 @@ function renderAMDeliveryTable(merchants, am, summary) {
           <td class="num"><strong>${fmt(r.actual_26)}</strong></td>
           <td class="num">${openBudgetCell}</td>
           <td class="num">${remCell}</td>
+          <td class="num">${(() => { const cd=budgetCrossingDateStr(r); if(!cd) return '<span class="neu">—</span>'; const c=cd.daysLeft<=30?'var(--red)':cd.daysLeft<=60?'var(--yellow)':'var(--text)'; return `<span style="color:${c};font-size:11px;font-weight:500">${cd.date}</span>`; })()}</td>
+          <td class="num">${budgetStatusBadge(r)}</td>
           <td class="num">${avbCell}</td>
           <td style="text-align:center">${wowCell(r)}</td>
           <td class="num">${mfHtml}</td>
@@ -1705,7 +1966,7 @@ function renderAMDeliveryTable(merchants, am, summary) {
         <td class="num">${fmt(rows.reduce((s,r)=>s+(r.actual_26||0),0))}</td>
         <td class="num">${fmt(rows.filter(r=>r.open_budget!=null).reduce((s,r)=>s+(r.open_budget||0),0)||null)}</td>
         <td class="num" style="color:var(--purple)">${fmt(rows.filter(r=>r.budget_type==='capped').reduce((s,r)=>s+(r.remaining_budget||0),0))}</td>
-        <td></td><td></td>
+        <td></td><td></td><td></td><td></td>
         <td class="num" style="color:var(--purple)">${rows.some(r=>(r.media_fees_q||0)>0)?fmt(rows.reduce((s,r)=>s+(r.media_fees_q||0),0)):'<span class="neu">—</span>'}</td>
       </tr></tbody>
     </table>`;
