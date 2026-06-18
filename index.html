@@ -6,7 +6,7 @@
   <meta http-equiv="cache-control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="pragma" content="no-cache">
   <meta http-equiv="expires" content="0">
-  <meta name="build-time" content="2026-06-18T13:14:54.851Z">
+  <meta name="build-time" content="2026-06-18T13:24:21.394Z">
   <title>Joko — CL Revenue Dashboard</title>
   <script>
     // Cache-buster: si la page en cache a plus de 2h, force un rechargement frais
@@ -1822,8 +1822,20 @@ function closeWowModal() {
   if (wowQRevChart)  { wowQRevChart.destroy();  wowQRevChart=null; }
 }
 
-/* ── Budget crossing date & pace status helpers ── */
+/* ── Budget crossing date & pace status helpers ──
+   Uses real Snowflake data (crossing_date, required_additional_budget)
+   when available from the SF-Budget-Risk n8n node.
+   Falls back to JS burn-rate estimate when data not yet injected.
+── */
 function budgetCrossingDateStr(r) {
+  // Real data from Snowflake (SF-Budget-Risk node)
+  if (r.crossing_date) {
+    const d = new Date(r.crossing_date);
+    const daysLeft = Math.round((d - Date.now()) / 86400000);
+    if (daysLeft < -30 || daysLeft > 400) return null;
+    return { date: MONTHS[d.getMonth()]+' '+d.getDate(), daysLeft };
+  }
+  // Fallback: JS burn-rate estimate
   if (r.budget_type !== 'capped' || r.remaining_budget == null || r.remaining_budget <= 0) return null;
   const ytdM = GDATA ? GDATA.summary.ytd_months : 0;
   if (!ytdM || !(r.actual_26 > 0)) return null;
@@ -1835,7 +1847,29 @@ function budgetCrossingDateStr(r) {
   return { date: MONTHS[crossDate.getMonth()]+' '+crossDate.getDate(), daysLeft };
 }
 function budgetStatusBadge(r) {
-  if (r.budget_type !== 'capped' || !r.signed_26 || !(r.actual_26 > 0)) return '<span class="neu">—</span>';
+  if (r.budget_type !== 'capped') return '<span class="neu">—</span>';
+
+  // ── Real data from Snowflake ──
+  // required_additional_budget = -min(forecasted_remaining_budget) over period
+  //   > 0 → budget will be exceeded (at risk) — how much extra is needed
+  //   < 0 → budget won't be fully spent (opportunity) — abs() = leftover
+  if (r.required_additional_budget != null) {
+    const rab = r.required_additional_budget;
+    if (rab > 50000)
+      return `<span style="font-size:10px;font-weight:600;color:var(--red);background:rgba(255,85,85,.1);border:1px solid rgba(255,85,85,.3);border-radius:4px;padding:2px 6px;white-space:nowrap">⚠ At risk +${fmt(rab)}</span>`;
+    if (rab > 5000)
+      return `<span style="font-size:10px;font-weight:600;color:var(--yellow);background:rgba(228,250,98,.08);border:1px solid rgba(228,250,98,.25);border-radius:4px;padding:2px 6px;white-space:nowrap">Monitor +${fmt(rab)}</span>`;
+    if (rab > 0)
+      return `<span style="font-size:10px;font-weight:600;color:var(--yellow);background:rgba(228,250,98,.08);border:1px solid rgba(228,250,98,.25);border-radius:4px;padding:2px 6px;white-space:nowrap">Monitor</span>`;
+    if (rab < -50000)
+      return `<span style="font-size:10px;font-weight:600;color:#64B4FF;background:rgba(100,180,255,.1);border:1px solid rgba(100,180,255,.3);border-radius:4px;padding:2px 6px;white-space:nowrap">Opportunité ${fmt(Math.abs(rab))}</span>`;
+    if (rab < -10000)
+      return `<span style="font-size:10px;font-weight:600;color:#64B4FF;background:rgba(100,180,255,.1);border:1px solid rgba(100,180,255,.3);border-radius:4px;padding:2px 6px;white-space:nowrap">Slow spend ${fmt(Math.abs(rab))}</span>`;
+    return `<span style="font-size:10px;font-weight:600;color:var(--green);background:rgba(100,231,106,.08);border:1px solid rgba(100,231,106,.2);border-radius:4px;padding:2px 6px;white-space:nowrap">On track</span>`;
+  }
+
+  // ── Fallback: JS linear pacing estimate ──
+  if (!r.signed_26 || !(r.actual_26 > 0)) return '<span class="neu">—</span>';
   const ytdM = GDATA ? GDATA.summary.ytd_months : 0;
   if (!ytdM) return '<span class="neu">—</span>';
   if (r.remaining_budget != null && r.remaining_budget <= 0)
@@ -1843,15 +1877,12 @@ function budgetStatusBadge(r) {
   const expected = r.signed_26 * (ytdM / 12);
   const delta = (r.actual_26||0) - expected;
   const pct = expected > 0 ? delta / expected * 100 : 0;
-  if (pct > 15) {
-    return `<span style="font-size:10px;font-weight:600;color:var(--red);background:rgba(255,85,85,.1);border:1px solid rgba(255,85,85,.3);border-radius:4px;padding:2px 6px;white-space:nowrap">⚠ At risk +${fmt(delta)}</span>`;
-  }
+  if (pct > 15)
+    return `<span style="font-size:10px;font-weight:600;color:var(--red);background:rgba(255,85,85,.1);border:1px solid rgba(255,85,85,.3);border-radius:4px;padding:2px 6px;white-space:nowrap">⚠ At risk ~${fmt(delta)}</span>`;
   if (pct > 5)
     return `<span style="font-size:10px;font-weight:600;color:var(--yellow);background:rgba(228,250,98,.08);border:1px solid rgba(228,250,98,.25);border-radius:4px;padding:2px 6px;white-space:nowrap">Monitor</span>`;
   if (pct < -20)
-    return `<span style="font-size:10px;font-weight:600;color:#64B4FF;background:rgba(100,180,255,.1);border:1px solid rgba(100,180,255,.3);border-radius:4px;padding:2px 6px;white-space:nowrap">Opportunité ${fmt(Math.abs(delta))}</span>`;
-  if (pct < -10)
-    return `<span style="font-size:10px;font-weight:600;color:#64B4FF;background:rgba(100,180,255,.1);border:1px solid rgba(100,180,255,.3);border-radius:4px;padding:2px 6px;white-space:nowrap">Slow spend</span>`;
+    return `<span style="font-size:10px;font-weight:600;color:#64B4FF;background:rgba(100,180,255,.1);border:1px solid rgba(100,180,255,.3);border-radius:4px;padding:2px 6px;white-space:nowrap">Slow spend ~${fmt(Math.abs(delta))}</span>`;
   return `<span style="font-size:10px;font-weight:600;color:var(--green);background:rgba(100,231,106,.08);border:1px solid rgba(100,231,106,.2);border-radius:4px;padding:2px 6px;white-space:nowrap">On track</span>`;
 }
 
