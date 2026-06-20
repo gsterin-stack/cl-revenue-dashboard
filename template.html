@@ -994,8 +994,9 @@ function renderTierSection(merchants, r25Portfolio) {
   };
 
   // Group merchants by tier
-  const groups = { T1:{a25:0,a26:0,p26:0,count:0}, T2:{a25:0,a26:0,p26:0,count:0},
-                   T3:{a25:0,a26:0,p26:0,count:0}, NC:{a25:0,a26:0,p26:0,count:0} };
+  const ytdM = GDATA ? GDATA.summary.ytd_months : 0;
+  const groups = { T1:{a25:0,a26:0,p26:0,ytd26:0,ytd25:0,count:0}, T2:{a25:0,a26:0,p26:0,ytd26:0,ytd25:0,count:0},
+                   T3:{a25:0,a26:0,p26:0,ytd26:0,ytd25:0,count:0}, NC:{a25:0,a26:0,p26:0,ytd26:0,ytd25:0,count:0} };
 
   for (const [mid, m] of Object.entries(merchants)) {
     const tier = TIER_MAP[mid] || 'NC';
@@ -1003,6 +1004,8 @@ function renderTierSection(merchants, r25Portfolio) {
     g.a25  += m.actual_25 || 0;
     g.a26  += m.actual_26 || 0;
     g.p26  += m.proj_26   || 0;
+    g.ytd26 += m.actual_26 || 0;
+    if (ytdM > 0) g.ytd25 += (m.monthly_25||[]).slice(0, ytdM).reduce((s,x)=>s+x, 0);
     g.count++;
   }
 
@@ -1041,13 +1044,20 @@ function renderTierSection(merchants, r25Portfolio) {
   const totalA25 = allKeys.reduce((s,k)=>s+groups[k].a25, 0);
   const totalA26 = allKeys.reduce((s,k)=>s+groups[k].a26, 0);
   const totalP26 = allKeys.reduce((s,k)=>s+groups[k].p26, 0);
+  const totalYtd26 = allKeys.reduce((s,k)=>s+groups[k].ytd26, 0);
+  const totalYtd25 = allKeys.reduce((s,k)=>s+groups[k].ytd25, 0);
   const totalCount = allKeys.reduce((s,k)=>s+groups[k].count, 0);
+  const ytdRangeLabel = ytdM>0 ? `YTD vs LY (Jan–${MONTHS[ytdM-1]})` : 'YTD vs LY';
 
   function tierRow(key, label, color) {
     const g = groups[key];
     const tot = g.a26 + g.p26;
     const yoy = g.a25 > 0 ? Math.round((tot/g.a25-1)*100) : null;
     const yoyHtml = yoy!=null ? `<span style="color:${yoy>=0?'var(--green)':'var(--red)'}">${yoy>=0?'+':''}${yoy}%</span>` : '—';
+    const ytdDelta = g.ytd26 - g.ytd25;
+    const ytdPct = g.ytd25>0 ? Math.round((g.ytd26/g.ytd25-1)*100) : null;
+    const ytdDeltaHtml = g.ytd25>0 ? `<span style="color:${ytdDelta>=0?'var(--green)':'var(--red)'}">${ytdDelta>=0?'+':''}${fmt(ytdDelta)}</span>` : '—';
+    const ytdPctHtml = ytdPct!=null ? `<span style="color:${ytdPct>=0?'var(--green)':'var(--red)'}">${ytdPct>=0?'+':''}${ytdPct}%</span>` : '—';
     const isClickable = key==='T1'||key==='T2'||key==='T3';
     const rowAttrs = isClickable
       ? `style="cursor:pointer" onclick="openTierModal('${key}')" title="View ${key} details"`
@@ -1057,6 +1067,8 @@ function renderTierSection(merchants, r25Portfolio) {
       <td style="text-align:center;color:var(--text2)">${g.count}</td>
       <td class="num" style="color:var(--text2)">${g.a25>0?fmt(g.a25):'—'}</td>
       <td class="num" style="color:var(--green)">${g.a26>0?fmt(g.a26):'—'}</td>
+      <td class="num">${ytdDeltaHtml}</td>
+      <td class="num">${ytdPctHtml}</td>
       <td class="num" style="color:rgba(100,231,106,.55)">${g.p26>0?fmt(g.p26):'—'}</td>
       <td class="num" style="font-weight:700">${tot>0?fmt(tot):'—'}</td>
       <td class="num">${yoyHtml}</td>
@@ -1066,14 +1078,18 @@ function renderTierSection(merchants, r25Portfolio) {
   const totAP = totalA26 + totalP26;
   const totYoy = totalA25 > 0 ? Math.round((totAP/totalA25-1)*100) : null;
   const totYoyHtml = totYoy!=null ? `<span style="color:${totYoy>=0?'var(--green)':'var(--red)'};font-weight:700">${totYoy>=0?'+':''}${totYoy}%</span>` : '—';
+  const totYtdDelta = totalYtd26 - totalYtd25;
+  const totYtdPct = totalYtd25>0 ? Math.round((totalYtd26/totalYtd25-1)*100) : null;
 
   document.getElementById('tier-table-wrap').innerHTML = `
     <table>
       <thead><tr>
         <th>Tier</th>
         <th style="text-align:center">Marchands</th>
-        <th class="num" style="color:var(--muted)">2025</th>
+        <th class="num" style="color:var(--muted)">FY 2025</th>
         <th class="num">2026 Actual</th>
+        <th class="num">${ytdRangeLabel} €</th>
+        <th class="num">${ytdRangeLabel} %</th>
         <th class="num" style="color:rgba(100,231,106,.55)">Projection</th>
         <th class="num">Total A+P</th>
         <th class="num">vs 2025</th>
@@ -1088,6 +1104,8 @@ function renderTierSection(merchants, r25Portfolio) {
           <td style="text-align:center;color:var(--text2)">${totalCount}</td>
           <td class="num" style="color:var(--text2)">${fmt(totalA25)}</td>
           <td class="num" style="color:var(--green)">${fmt(totalA26)}</td>
+          <td class="num"><span style="color:${totYtdDelta>=0?'var(--green)':'var(--red)'}">${totYtdDelta>=0?'+':''}${fmt(totYtdDelta)}</span></td>
+          <td class="num">${totYtdPct!=null?`<span style="color:${totYtdPct>=0?'var(--green)':'var(--red)'}">${totYtdPct>=0?'+':''}${totYtdPct}%</span>`:'—'}</td>
           <td class="num" style="color:rgba(100,231,106,.55)">${fmt(totalP26)}</td>
           <td class="num">${fmt(totAP)}</td>
           <td class="num">${totYoyHtml}</td>
@@ -1242,8 +1260,8 @@ function renderVerticalSection(merchants) {
     const v = VERTICAL_MAP[mid]||'Autres';
     const g = groups[v]||groups['Autres'];
     g.a25 += m.actual_25||0; g.a26 += m.actual_26||0; g.p26 += m.proj_26||0; g.count++;
+    g.ytd26 += m.actual_26 || 0;
     if (ytdM > 0) {
-      g.ytd26 += (m.monthly_26||[]).slice(0, ytdM).reduce((s,x)=>s+x, 0);
       g.ytd25 += (m.monthly_25||[]).slice(0, ytdM).reduce((s,x)=>s+x, 0);
     }
   }
