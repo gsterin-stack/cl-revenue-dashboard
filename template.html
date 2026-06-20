@@ -1237,12 +1237,15 @@ function renderVerticalSection(merchants) {
     'Restauration','Sport','High-Tech','Loisirs','E-commerce','Bien-être'];
   const ytdM = GDATA ? GDATA.summary.ytd_months : 0;
   const groups = {};
-  [...VORDER,'Autres'].forEach(v => { groups[v]={a25:0,a26:0,p26:0,ytd:0,count:0}; });
+  [...VORDER,'Autres'].forEach(v => { groups[v]={a25:0,a26:0,p26:0,ytd26:0,ytd25:0,count:0}; });
   for (const [mid,m] of Object.entries(merchants)) {
     const v = VERTICAL_MAP[mid]||'Autres';
     const g = groups[v]||groups['Autres'];
     g.a25 += m.actual_25||0; g.a26 += m.actual_26||0; g.p26 += m.proj_26||0; g.count++;
-    if (ytdM > 0) g.ytd += (m.monthly_26||[]).slice(0, ytdM).reduce((s,x)=>s+x, 0);
+    if (ytdM > 0) {
+      g.ytd26 += (m.monthly_26||[]).slice(0, ytdM).reduce((s,x)=>s+x, 0);
+      g.ytd25 += (m.monthly_25||[]).slice(0, ytdM).reduce((s,x)=>s+x, 0);
+    }
   }
   const active = [...VORDER,'Autres'].filter(v=>(groups[v].a26+groups[v].p26+groups[v].a25)>0);
   active.sort((a,b)=>(groups[b].a26+groups[b].p26)-(groups[a].a26+groups[a].p26));
@@ -1274,20 +1277,24 @@ function renderVerticalSection(merchants) {
   const totA25=active.reduce((s,v)=>s+groups[v].a25,0);
   const totA26=active.reduce((s,v)=>s+groups[v].a26,0);
   const totP26=active.reduce((s,v)=>s+groups[v].p26,0);
-  const totYtd=active.reduce((s,v)=>s+groups[v].ytd,0);
+  const totYtd26=active.reduce((s,v)=>s+groups[v].ytd26,0);
+  const totYtd25=active.reduce((s,v)=>s+groups[v].ytd25,0);
   const totCount=active.reduce((s,v)=>s+groups[v].count,0);
   const totAP=totA26+totP26;
   const totYoy=totA25>0?Math.round((totAP/totA25-1)*100):null;
   const totYoyHtml=totYoy!=null?`<span style="color:${totYoy>=0?'var(--green)':'var(--red)'};font-weight:700">${totYoy>=0?'+':''}${totYoy}%</span>`:'—';
-  const ytdLabel = ytdM>0 ? `YTD (Jan–${MONTHS[ytdM-1]})` : 'YTD';
+  const totYtdDelta=totYtd26-totYtd25;
+  const totYtdPct=totYtd25>0?Math.round((totYtd26/totYtd25-1)*100):null;
+  const ytdRangeLabel = ytdM>0 ? `YTD vs LY (Jan–${MONTHS[ytdM-1]})` : 'YTD vs LY';
   document.getElementById('vertical-table-wrap').innerHTML=`
     <table>
       <thead><tr>
         <th>Vertical</th>
         <th style="text-align:center">Merchants</th>
         <th class="num" style="color:var(--muted)">FY 2025</th>
-        <th class="num" style="color:var(--green)">${ytdLabel}</th>
         <th class="num">2026 Actual</th>
+        <th class="num">${ytdRangeLabel} €</th>
+        <th class="num">${ytdRangeLabel} %</th>
         <th class="num" style="color:rgba(100,231,106,.55)">Projection</th>
         <th class="num">Total A+P</th>
         <th class="num">vs 2025</th>
@@ -1298,12 +1305,17 @@ function renderVerticalSection(merchants) {
           const yoy=g.a25>0?Math.round((tot/g.a25-1)*100):null;
           const yoyHtml=yoy!=null?`<span style="color:${yoy>=0?'var(--green)':'var(--red)'}">${yoy>=0?'+':''}${yoy}%</span>`:'—';
           const color=VERTICAL_LABEL_COLORS[v]||'var(--muted)';
+          const ytdDelta=g.ytd26-g.ytd25;
+          const ytdPct=g.ytd25>0?Math.round((g.ytd26/g.ytd25-1)*100):null;
+          const ytdDeltaHtml=g.ytd25>0?`<span style="color:${ytdDelta>=0?'var(--green)':'var(--red)'}">${ytdDelta>=0?'+':''}${fmt(ytdDelta)}</span>`:'—';
+          const ytdPctHtml=ytdPct!=null?`<span style="color:${ytdPct>=0?'var(--green)':'var(--red)'}">${ytdPct>=0?'+':''}${ytdPct}%</span>`:'—';
           return `<tr style="cursor:pointer" onclick="openVerticalModal('${v}')">
             <td style="font-weight:600;color:${color}">${v}</td>
             <td style="text-align:center;color:var(--text2)">${g.count}</td>
             <td class="num" style="color:var(--text2)">${g.a25>0?fmt(g.a25):'—'}</td>
-            <td class="num" style="color:var(--green)">${g.ytd>0?fmt(g.ytd):'—'}</td>
             <td class="num" style="color:var(--green)">${g.a26>0?fmt(g.a26):'—'}</td>
+            <td class="num">${ytdDeltaHtml}</td>
+            <td class="num">${ytdPctHtml}</td>
             <td class="num" style="color:rgba(100,231,106,.55)">${g.p26>0?fmt(g.p26):'—'}</td>
             <td class="num" style="font-weight:700">${tot>0?fmt(tot):'—'}</td>
             <td class="num">${yoyHtml}</td>
@@ -1313,8 +1325,9 @@ function renderVerticalSection(merchants) {
           <td>Total</td>
           <td style="text-align:center;color:var(--text2)">${totCount}</td>
           <td class="num" style="color:var(--text2)">${fmt(totA25)}</td>
-          <td class="num" style="color:var(--green)">${fmt(totYtd)}</td>
           <td class="num" style="color:var(--green)">${fmt(totA26)}</td>
+          <td class="num"><span style="color:${totYtdDelta>=0?'var(--green)':'var(--red)'}">${totYtdDelta>=0?'+':''}${fmt(totYtdDelta)}</span></td>
+          <td class="num">${totYtdPct!=null?`<span style="color:${totYtdPct>=0?'var(--green)':'var(--red)'}">${totYtdPct>=0?'+':''}${totYtdPct}%</span>`:'—'}</td>
           <td class="num" style="color:rgba(100,231,106,.55)">${fmt(totP26)}</td>
           <td class="num">${fmt(totAP)}</td>
           <td class="num">${totYoyHtml}</td>
@@ -2512,12 +2525,17 @@ function openVerticalModal(vertical) {
       <div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.6px;color:var(--text2);margin-bottom:8px">Monthly Revenue 2025 · 2026</div>
       <div style="display:flex;gap:12px;margin-bottom:10px">
         <div style="display:flex;align-items:center;gap:5px"><div style="width:9px;height:9px;border-radius:2px;background:rgba(160,160,160,.5)"></div><span style="font-size:11px;color:var(--text2)">2025</span></div>
-        <div style="display:flex;align-items:center;gap:5px"><div style="width:9px;height:9px;border-radius:2px;background:${color}"></div><span style="font-size:11px;color:var(--text2)">2026</span></div>
+        <div style="display:flex;align-items:center;gap:5px"><div style="width:9px;height:9px;border-radius:2px;background:rgba(100,231,106,.88)"></div><span style="font-size:11px;color:var(--text2)">2026 Actual</span></div>
+        <div style="display:flex;align-items:center;gap:5px"><div style="width:9px;height:9px;border-radius:2px;background:rgba(100,231,106,.25);border:1px solid rgba(100,231,106,.5)"></div><span style="font-size:11px;color:var(--text2)">2026 Proj.</span></div>
       </div>
       <div style="position:relative;height:180px;width:100%">
         <canvas id="vertical-modal-chart"></canvas>
       </div>
     </div>`;
+
+  // Split monthly26 into actual months and projected months
+  const monthly26_act  = monthly26.map((v,i) => i < ytdM ? v : 0);
+  const monthly26_proj = monthly26.map((v,i) => i >= ytdM ? v : 0);
 
   if (verticalModalChart) { verticalModalChart.destroy(); verticalModalChart = null; }
   document.getElementById('vertical-modal-overlay').classList.add('open');
@@ -2527,15 +2545,16 @@ function openVerticalModal(vertical) {
     verticalModalChart = new Chart(ctx.getContext('2d'), {
       type:'bar',
       data:{ labels:MONTHS, datasets:[
-        { label:'2025', data:monthly25, backgroundColor:'rgba(160,160,160,.45)', borderRadius:3 },
-        { label:'2026', data:monthly26, backgroundColor:color.startsWith('var(')
-            ? 'rgba(100,231,106,.82)' : color, borderRadius:3 },
+        { label:'2025',       data:monthly25,       backgroundColor:'rgba(160,160,160,.45)', borderRadius:3 },
+        { label:'2026 Act.',  data:monthly26_act,   backgroundColor:'rgba(100,231,106,.88)', stack:'s26', borderRadius:3 },
+        { label:'2026 Proj.', data:monthly26_proj,  backgroundColor:'rgba(100,231,106,.25)', stack:'s26',
+          borderColor:'rgba(100,231,106,.5)', borderWidth:1, borderRadius:3 },
       ]},
       options:{ responsive:true, maintainAspectRatio:false,
         plugins:{ legend:{display:false}, tooltip:ttip() },
         scales:{
-          x:{ grid:{color:'transparent'}, ticks:{color:'#555',font:{size:10}} },
-          y:{ grid:{color:'rgba(255,255,255,0.04)'}, ticks:{color:'#555',font:{size:10},
+          x:{ stacked:true, grid:{color:'transparent'}, ticks:{color:'#555',font:{size:10}} },
+          y:{ stacked:true, grid:{color:'rgba(255,255,255,0.04)'}, ticks:{color:'#555',font:{size:10},
             callback:v=>Math.abs(v)>=1e3?'€'+Math.round(v/1e3)+'K':'€'+Math.round(v)} }
         }
       }
