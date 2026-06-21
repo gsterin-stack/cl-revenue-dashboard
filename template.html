@@ -2556,8 +2556,8 @@ function openVerticalModal(vertical) {
       <div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.6px;color:var(--text2);margin-bottom:8px">Monthly Revenue 2025 · 2026</div>
       <div style="display:flex;gap:12px;margin-bottom:10px">
         <div style="display:flex;align-items:center;gap:5px"><div style="width:9px;height:9px;border-radius:2px;background:rgba(160,160,160,.5)"></div><span style="font-size:11px;color:var(--text2)">2025</span></div>
-        <div style="display:flex;align-items:center;gap:5px"><div style="width:9px;height:9px;border-radius:2px;background:rgba(100,231,106,.88)"></div><span style="font-size:11px;color:var(--text2)">2026 Actual</span></div>
-        <div style="display:flex;align-items:center;gap:5px"><div style="width:9px;height:9px;border-radius:2px;background:rgba(100,231,106,.25);border:1px solid rgba(100,231,106,.5)"></div><span style="font-size:11px;color:var(--text2)">2026 Proj.</span></div>
+        <div style="display:flex;align-items:center;gap:5px"><div style="width:9px;height:9px;border-radius:2px;background:${VERTICAL_HEX_COLORS[vertical]||'#64E76A'}DD"></div><span style="font-size:11px;color:var(--text2)">2026 Actual</span></div>
+        <div style="display:flex;align-items:center;gap:5px"><div style="width:9px;height:9px;border-radius:2px;background:${VERTICAL_HEX_COLORS[vertical]||'#64E76A'}44;border:1px solid ${VERTICAL_HEX_COLORS[vertical]||'#64E76A'}88"></div><span style="font-size:11px;color:var(--text2)">2026 Proj.</span></div>
       </div>
       <div style="position:relative;height:180px;width:100%">
         <canvas id="vertical-modal-chart"></canvas>
@@ -2577,9 +2577,9 @@ function openVerticalModal(vertical) {
       type:'bar',
       data:{ labels:MONTHS, datasets:[
         { label:'2025',       data:monthly25,       backgroundColor:'rgba(160,160,160,.45)', borderRadius:3 },
-        { label:'2026 Act.',  data:monthly26_act,   backgroundColor:'rgba(100,231,106,.88)', stack:'s26', borderRadius:3 },
-        { label:'2026 Proj.', data:monthly26_proj,  backgroundColor:'rgba(100,231,106,.25)', stack:'s26',
-          borderColor:'rgba(100,231,106,.5)', borderWidth:1, borderRadius:3 },
+        { label:'2026 Act.',  data:monthly26_act,   backgroundColor:(VERTICAL_HEX_COLORS[vertical]||'#64E76A')+'DD', stack:'s26', borderRadius:3 },
+        { label:'2026 Proj.', data:monthly26_proj,  backgroundColor:(VERTICAL_HEX_COLORS[vertical]||'#64E76A')+'44', stack:'s26',
+          borderColor:(VERTICAL_HEX_COLORS[vertical]||'#64E76A')+'88', borderWidth:1, borderRadius:3 },
       ]},
       options:{ responsive:true, maintainAspectRatio:false,
         plugins:{ legend:{display:false}, tooltip:ttip() },
