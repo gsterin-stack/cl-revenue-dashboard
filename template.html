@@ -706,7 +706,6 @@ function renderAll(data) {
   renderTierSection(data.merchants, data.chart_arrays.R25);
   renderMFMgmtSection(data.merchants, data.summary.ytd_months);
   renderVerticalSection(data.merchants);
-  renderMerchantsKPIs(data.merchants, 'all', data.summary);
   renderMerchantTable('merchants-table-wrap', data.merchants, 'all');
   renderAMView(data.merchants, data.summary);
 }
@@ -2240,7 +2239,6 @@ function filterMerchantsAM(am, btn) {
   activeMerchantsAM = am;
   document.querySelectorAll('#merchants-am-filter .am-btn').forEach(b=>b.classList.remove('active'));
   btn.classList.add('active');
-  renderMerchantsKPIs(GDATA.merchants, am, GDATA.summary);
   renderMerchantTable('merchants-table-wrap', GDATA.merchants, am);
 }
 function renderMerchantsKPIs(merchants, am, summary) {
