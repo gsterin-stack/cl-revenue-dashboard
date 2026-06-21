@@ -557,6 +557,12 @@ const VERTICAL_LABEL_COLORS = {
   'Sport':'var(--purple)', 'High-Tech':'#50C8FF', 'Loisirs':'#FFC83C',
   'E-commerce':'#B4FFC8', 'Bien-être':'#C896FF', 'Autres':'var(--muted)',
 };
+const VERTICAL_HEX_COLORS = {
+  'Alimentaire':'#64E76A', 'Mode':'#FF9650', 'Beauté':'#FF78B4',
+  'Maison':'#64B4FF', 'Mobilité':'#E4FA62', 'Restauration':'#FF6464',
+  'Sport':'#9254E3', 'High-Tech':'#50C8FF', 'Loisirs':'#FFC83C',
+  'E-commerce':'#B4FFC8', 'Bien-être':'#C896FF', 'Autres':'#666666',
+};
 
 /* ── Merchant display names ── */
 const MERCHANT_LABELS = {
@@ -1273,17 +1279,21 @@ function renderVerticalSection(merchants) {
 
   document.getElementById('vertical-legend').innerHTML = `
     <div class="legend-item"><div class="legend-dot" style="background:rgba(170,170,170,.5)"></div>2025</div>
-    <div class="legend-item"><div class="legend-dot" style="background:rgba(100,231,106,.9)"></div>2026 Actual</div>
-    <div class="legend-item"><div class="legend-dot" style="background:rgba(100,231,106,.22);border:1px solid rgba(100,231,106,.4)"></div>2026 Proj.</div>`;
+    <div class="legend-item"><div class="legend-dot" style="background:linear-gradient(90deg,#64E76A,#FF78B4,#64B4FF)"></div>2026 Actual</div>
+    <div class="legend-item"><div class="legend-dot" style="background:linear-gradient(90deg,rgba(100,231,106,.3),rgba(255,120,180,.3),rgba(100,180,255,.3));border:1px solid rgba(255,255,255,.2)"></div>2026 Proj.</div>`;
+
+  const actColors  = active.map(v => { const h=VERTICAL_HEX_COLORS[v]||'#888'; return h+'DD'; });
+  const projColors = active.map(v => { const h=VERTICAL_HEX_COLORS[v]||'#888'; return h+'44'; });
+  const projBorders= active.map(v => { const h=VERTICAL_HEX_COLORS[v]||'#888'; return h+'88'; });
 
   if (verticalChart) { verticalChart.destroy(); verticalChart=null; }
   verticalChart = new Chart(document.getElementById('vertical-chart').getContext('2d'),{
     type:'bar',
     data:{ labels, datasets:[
       {label:'2025',       data:active.map(v=>groups[v].a25), backgroundColor:'rgba(170,170,170,.45)', borderRadius:3},
-      {label:'2026 Act.',  data:active.map(v=>groups[v].a26), backgroundColor:'rgba(100,231,106,.88)', stack:'s26', borderRadius:3},
-      {label:'2026 Proj.', data:active.map(v=>groups[v].p26), backgroundColor:'rgba(100,231,106,.28)', stack:'s26',
-        borderColor:'rgba(100,231,106,.45)', borderWidth:1, borderRadius:3},
+      {label:'2026 Act.',  data:active.map(v=>groups[v].a26), backgroundColor:actColors, stack:'s26', borderRadius:3},
+      {label:'2026 Proj.', data:active.map(v=>groups[v].p26), backgroundColor:projColors, stack:'s26',
+        borderColor:projBorders, borderWidth:1, borderRadius:3},
     ]},
     options:{ responsive:true, maintainAspectRatio:false,
       plugins:{legend:{display:false},tooltip:ttip()},
