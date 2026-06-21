@@ -6,7 +6,7 @@
   <meta http-equiv="cache-control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="pragma" content="no-cache">
   <meta http-equiv="expires" content="0">
-  <meta name="build-time" content="2026-06-21T11:09:18.517Z">
+  <meta name="build-time" content="2026-06-21T11:17:20.731Z">
   <title>Joko — CL Revenue Dashboard</title>
   <script>
     // Cache-buster: si la page en cache a plus de 2h, force un rechargement frais
@@ -556,6 +556,12 @@ const VERTICAL_LABEL_COLORS = {
   'Maison':'#64B4FF', 'Mobilité':'var(--yellow)', 'Restauration':'#FF6464',
   'Sport':'var(--purple)', 'High-Tech':'#50C8FF', 'Loisirs':'#FFC83C',
   'E-commerce':'#B4FFC8', 'Bien-être':'#C896FF', 'Autres':'var(--muted)',
+};
+const VERTICAL_HEX_COLORS = {
+  'Alimentaire':'#64E76A', 'Mode':'#FF9650', 'Beauté':'#FF78B4',
+  'Maison':'#64B4FF', 'Mobilité':'#E4FA62', 'Restauration':'#FF6464',
+  'Sport':'#9254E3', 'High-Tech':'#50C8FF', 'Loisirs':'#FFC83C',
+  'E-commerce':'#B4FFC8', 'Bien-être':'#C896FF', 'Autres':'#666666',
 };
 
 /* ── Merchant display names ── */
@@ -1273,17 +1279,21 @@ function renderVerticalSection(merchants) {
 
   document.getElementById('vertical-legend').innerHTML = `
     <div class="legend-item"><div class="legend-dot" style="background:rgba(170,170,170,.5)"></div>2025</div>
-    <div class="legend-item"><div class="legend-dot" style="background:rgba(100,231,106,.9)"></div>2026 Actual</div>
-    <div class="legend-item"><div class="legend-dot" style="background:rgba(100,231,106,.22);border:1px solid rgba(100,231,106,.4)"></div>2026 Proj.</div>`;
+    <div class="legend-item"><div class="legend-dot" style="background:linear-gradient(90deg,#64E76A,#FF78B4,#64B4FF)"></div>2026 Actual</div>
+    <div class="legend-item"><div class="legend-dot" style="background:linear-gradient(90deg,rgba(100,231,106,.3),rgba(255,120,180,.3),rgba(100,180,255,.3));border:1px solid rgba(255,255,255,.2)"></div>2026 Proj.</div>`;
+
+  const actColors  = active.map(v => { const h=VERTICAL_HEX_COLORS[v]||'#888'; return h+'DD'; });
+  const projColors = active.map(v => { const h=VERTICAL_HEX_COLORS[v]||'#888'; return h+'44'; });
+  const projBorders= active.map(v => { const h=VERTICAL_HEX_COLORS[v]||'#888'; return h+'88'; });
 
   if (verticalChart) { verticalChart.destroy(); verticalChart=null; }
   verticalChart = new Chart(document.getElementById('vertical-chart').getContext('2d'),{
     type:'bar',
     data:{ labels, datasets:[
       {label:'2025',       data:active.map(v=>groups[v].a25), backgroundColor:'rgba(170,170,170,.45)', borderRadius:3},
-      {label:'2026 Act.',  data:active.map(v=>groups[v].a26), backgroundColor:'rgba(100,231,106,.88)', stack:'s26', borderRadius:3},
-      {label:'2026 Proj.', data:active.map(v=>groups[v].p26), backgroundColor:'rgba(100,231,106,.28)', stack:'s26',
-        borderColor:'rgba(100,231,106,.45)', borderWidth:1, borderRadius:3},
+      {label:'2026 Act.',  data:active.map(v=>groups[v].a26), backgroundColor:actColors, stack:'s26', borderRadius:3},
+      {label:'2026 Proj.', data:active.map(v=>groups[v].p26), backgroundColor:projColors, stack:'s26',
+        borderColor:projBorders, borderWidth:1, borderRadius:3},
     ]},
     options:{ responsive:true, maintainAspectRatio:false,
       plugins:{legend:{display:false},tooltip:ttip()},
@@ -1462,7 +1472,7 @@ function renderMerchantTable(wrapId, merchants, amFilter) {
         ? `<span class="${ytdVal>=0?'yoy-pos':'yoy-neg'}">${ytdVal>=0?'+':''}${fmt(ytdVal)}</span>`
         : '<span class="neu">—</span>';
       const vert = VERTICAL_MAP[r.id] || '—';
-      const vertColor = VERTICAL_LABEL_COLORS[vert] || 'var(--muted)';
+      const vertColor = 'var(--text2)';
       return `<tr onclick="openModal('${r.id}')">
         <td class="merchant-name" style="border-right:1px solid var(--border)">${merchantLabel(r.id)}${r.is_new_client?'<span class="badge-new">new</span>':''}</td>
         <td><span style="font-size:10px;font-weight:500;color:${vertColor}">${vert}</span></td>
@@ -2009,7 +2019,7 @@ function renderAMDeliveryTable(merchants, am, summary) {
         ${sh('signed','Signed 2026')}
         ${sh('ytd','YTD Actual')}
         ${sh('budget','Open Budget')}
-        ${sh('rem','Remaining','var(--purple)')}
+        ${sh('rem','Remaining')}
         ${sh('budgetend','Budget End')}
         <th class="num" style="cursor:pointer;user-select:none;white-space:nowrap" onclick="amSortBy('status')">Status <span style="opacity:.5;font-size:10px;cursor:pointer" title="Upsell opport: budget will be exceeded — go negotiate more&#10;On track: spending in line with budget&#10;⚠ Underspend risk: merchant won't spend full budget">ⓘ</span>${sc('status')}</th>
         ${sh('avb','Actual vs Budget')}
@@ -2021,7 +2031,7 @@ function renderAMDeliveryTable(merchants, am, summary) {
         const avb = isCapped ? actualVsOpenBudget(r) : null;
         const remColor = r.remaining_budget==null ? 'var(--muted)'
           : r.remaining_budget < 5000 ? 'var(--red)'
-          : r.remaining_budget < 20000 ? 'var(--yellow)' : 'var(--purple)';
+          : r.remaining_budget < 20000 ? '#FFA040' : 'var(--green)';
         const mfQ = r.media_fees_q || 0;
         const mfHtml = mfQ > 0
           ? `<span style="color:var(--purple);font-weight:600">${fmt(mfQ)}</span>`
@@ -2050,7 +2060,7 @@ function renderAMDeliveryTable(merchants, am, summary) {
           <td class="num"><strong>${fmt(r.actual_26)}</strong></td>
           <td class="num">${openBudgetCell}</td>
           <td class="num">${remCell}</td>
-          <td class="num">${(() => { const cd=budgetCrossingDateStr(r); if(!cd) return '<span class="neu">—</span>'; const c=cd.daysLeft<=30?'var(--red)':cd.daysLeft<=60?'var(--yellow)':'var(--text)'; return `<span style="color:${c};font-size:11px;font-weight:500">${cd.date}</span>`; })()}</td>
+          <td class="num">${(() => { const cd=budgetCrossingDateStr(r); if(!cd) return '<span class="neu">—</span>'; const c=cd.daysLeft<=30?'var(--red)':cd.daysLeft<=60?'#FFA040':'var(--green)'; return `<span style="color:${c};font-size:11px;font-weight:500">${cd.date}</span>`; })()}</td>
           <td class="num">${budgetStatusBadge(r)}</td>
           <td class="num">${avbCell}</td>
           <td style="text-align:center">${wowCell(r)}</td>
@@ -2063,7 +2073,7 @@ function renderAMDeliveryTable(merchants, am, summary) {
         <td class="num">${fmt(filteredRows.filter(r=>r.budget_type==='capped'&&r.signed_26!=null).reduce((s,r)=>s+(r.signed_26||0),0))}</td>
         <td class="num">${fmt(filteredRows.reduce((s,r)=>s+(r.actual_26||0),0))}</td>
         <td class="num">${fmt(filteredRows.filter(r=>r.open_budget!=null).reduce((s,r)=>s+(r.open_budget||0),0)||null)}</td>
-        <td class="num" style="color:var(--purple)">${fmt(filteredRows.filter(r=>r.budget_type==='capped').reduce((s,r)=>s+(r.remaining_budget||0),0))}</td>
+        <td class="num">${fmt(filteredRows.filter(r=>r.budget_type==='capped').reduce((s,r)=>s+(r.remaining_budget||0),0))}</td>
         <td></td><td></td><td></td><td></td>
         <td class="num" style="color:var(--purple)">${filteredRows.some(r=>(r.media_fees_q||0)>0)?fmt(filteredRows.reduce((s,r)=>s+(r.media_fees_q||0),0)):'<span class="neu">—</span>'}</td>
       </tr></tbody>
