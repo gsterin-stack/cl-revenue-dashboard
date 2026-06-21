@@ -6,7 +6,7 @@
   <meta http-equiv="cache-control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="pragma" content="no-cache">
   <meta http-equiv="expires" content="0">
-  <meta name="build-time" content="2026-06-21T11:23:15.213Z">
+  <meta name="build-time" content="2026-06-21T13:33:01.723Z">
   <title>Joko — CL Revenue Dashboard</title>
   <script>
     // Cache-buster: si la page en cache a plus de 2h, force un rechargement frais
@@ -375,6 +375,10 @@
 
 <script>
 const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
+/* ── Historical revenue (hardcoded, final) ── */
+const R24 = [671952,565875,615871,703340,738597,767482,874290,701441,620841,686759,950434,1099266];
+const R25_HARD = [726227,667280,583768,691001,690320,744567,775173,713803,681708,751957,1181813,1180760];
 let GDATA    = null;
 let activeAM = 'all';
 let activeMerchantsAM = 'all';
@@ -782,14 +786,16 @@ function renderMonthlyTable(ca, ytdMonths) {
   const totalActual = actuals.reduce((a,b)=>a+b,0);
   const totalProj   = projs.reduce((a,b)=>a+b,0);
   const totalOkr    = okrs.reduce((a,b)=>a+b,0);
-  const total25     = r25.reduce((a,b)=>a+b,0);
+  const total25     = R25_HARD.reduce((a,b)=>a+b,0);
+  const total24     = R24.reduce((a,b)=>a+b,0);
 
   // Build column arrays (12 months + Total)
   const cols     = [...MONTHS, 'Total'];
   const aRow     = [...actuals, totalActual];
   const pRow     = [...projs,   totalProj];
   const oRow     = [...okrs,    totalOkr];
-  const r25Row   = [...r25,     total25];
+  const r25Row   = [...R25_HARD, total25];
+  const r24Row   = [...R24,      total24];
   const totRow   = aRow.map((a,i) => a + pRow[i]);
 
   function fmtCell(v, style) {
@@ -803,6 +809,13 @@ function renderMonthlyTable(ca, ytdMonths) {
         ${cols.map((c,i) => `<th${i===cols.length-1?' style="border-left:1px solid var(--border)"':''}>${c}</th>`).join('')}
       </tr></thead>
       <tbody>
+        <tr>
+          <td class="row-label" style="color:var(--muted)">2024</td>
+          ${r24Row.map((v,i) => {
+            const sep = i===12 ? 'border-left:1px solid var(--border);' : '';
+            return `<td style="text-align:right;${sep}color:var(--muted)">${v>0?fmt(v):'—'}</td>`;
+          }).join('')}
+        </tr>
         <tr>
           <td class="row-label" style="color:var(--muted)">2025</td>
           ${r25Row.map((v,i) => {
@@ -864,6 +877,16 @@ function renderMonthlyTable(ca, ytdMonths) {
             const sep = i===12 ? 'border-left:1px solid var(--border);' : '';
             if (!r25Row[i] || !total) return `<td style="text-align:right;${sep}color:var(--muted)">—</td>`;
             const v = Math.round((total/r25Row[i]-1)*100);
+            const c = v>=0?'var(--green)':'var(--red)';
+            return `<td style="text-align:right;${sep}color:${c};font-weight:600">${v>=0?'+':''}${v}%</td>`;
+          }).join('')}
+        </tr>
+        <tr>
+          <td class="row-label" style="color:var(--text2)">vs 2024 (A+P)</td>
+          ${totRow.map((total,i) => {
+            const sep = i===12 ? 'border-left:1px solid var(--border);' : '';
+            if (!r24Row[i] || !total) return `<td style="text-align:right;${sep}color:var(--muted)">—</td>`;
+            const v = Math.round((total/r24Row[i]-1)*100);
             const c = v>=0?'var(--green)':'var(--red)';
             return `<td style="text-align:right;${sep}color:${c};font-weight:600">${v>=0?'+':''}${v}%</td>`;
           }).join('')}
@@ -1312,7 +1335,8 @@ function renderVerticalSection(merchants) {
   const totCount=active.reduce((s,v)=>s+groups[v].count,0);
   const totAP=totA26+totP26;
   const totYoy=totA25>0?Math.round((totAP/totA25-1)*100):null;
-  const totYoyHtml=totYoy!=null?`<span style="color:${totYoy>=0?'var(--green)':'var(--red)'};font-weight:700">${totYoy>=0?'+':''}${totYoy}%</span>`:'—';
+  const totYoyVal=totAP-totA25;
+  const totYoyHtml=totA25>0?`<span style="color:${totYoy>=0?'var(--green)':'var(--red)'};font-weight:700">${totYoy>=0?'+':''}${fmt(totYoyVal)}</span><br><span style="font-size:10px;font-weight:400;opacity:.7">${totYoy>=0?'+':''}${totYoy}%</span>`:'—';
   const totYtdDelta=totYtd26-totYtd25;
   // Use Snowflake-computed ytd_yoy for the total % (avoids distortion from new 2026 merchants with no 2025 history)
   const totYtdPct = GDATA && GDATA.summary.ytd_yoy != null ? GDATA.summary.ytd_yoy : (totYtd25>0?Math.round((totYtd26/totYtd25-1)*100):null);
@@ -1334,7 +1358,8 @@ function renderVerticalSection(merchants) {
         ${active.map(v=>{
           const g=groups[v]; const tot=g.a26+g.p26;
           const yoy=g.a25>0?Math.round((tot/g.a25-1)*100):null;
-          const yoyHtml=yoy!=null?`<span style="color:${yoy>=0?'var(--green)':'var(--red)'}">${yoy>=0?'+':''}${yoy}%</span>`:'—';
+          const yoyVal=tot-g.a25;
+          const yoyHtml=g.a25>0?`<span style="color:${yoy>=0?'var(--green)':'var(--red)'}">${yoy>=0?'+':''}${fmt(yoyVal)}</span><br><span style="font-size:10px;opacity:.7">${yoy>=0?'+':''}${yoy}%</span>`:'—';
           const color=VERTICAL_LABEL_COLORS[v]||'var(--muted)';
           const ytdDelta=g.ytd26-g.ytd25;
           const ytdPct=g.ytd25>0?Math.round((g.ytd26/g.ytd25-1)*100):null;
