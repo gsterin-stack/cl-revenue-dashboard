@@ -6,7 +6,7 @@
   <meta http-equiv="cache-control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="pragma" content="no-cache">
   <meta http-equiv="expires" content="0">
-  <meta name="build-time" content="2026-06-21T14:02:42.885Z">
+  <meta name="build-time" content="2026-06-21T14:08:23.875Z">
   <title>Joko — CL Revenue Dashboard</title>
   <script>
     // Cache-buster: si la page en cache a plus de 2h, force un rechargement frais
@@ -697,18 +697,16 @@ function switchTab(id, btn) {
 function renderAll(data) {
   GDATA = data;
   document.getElementById('updated-at').textContent = 'Updated: '+data.updated_at;
-  // Boutons AM dynamiques — doit être appelé avant les renders qui utilisent activeAMView
   renderAMButtons(data.summary.ams || buildAMsFromMerchants(data.merchants));
   renderKPIs(data.summary);
-  renderMainChart(data.chart_arrays);
-  renderMonthlyTable(data.chart_arrays, data.summary.ytd_months);
-  renderQSection(data.quarterly, data.chart_arrays.R25);
-  renderTierSection(data.merchants, data.chart_arrays.R25);
-  renderMFMgmtSection(data.merchants, data.summary.ytd_months);
-  renderVerticalSection(data.merchants);
-  renderMerchantsKPIs(data.merchants, 'all', data.summary);
-  renderMerchantTable('merchants-table-wrap', data.merchants, 'all');
-  renderAMView(data.merchants, data.summary);
+  try { renderMainChart(data.chart_arrays); } catch(e) { console.error('renderMainChart',e); }
+  try { renderMonthlyTable(data.chart_arrays, data.summary.ytd_months); } catch(e) { console.error('renderMonthlyTable',e); }
+  try { renderQSection(data.quarterly, data.chart_arrays.R25); } catch(e) { console.error('renderQSection',e); }
+  try { renderTierSection(data.merchants, data.chart_arrays.R25); } catch(e) { console.error('renderTierSection',e); }
+  try { renderMFMgmtSection(data.merchants, data.summary.ytd_months); } catch(e) { console.error('renderMFMgmtSection',e); }
+  try { renderVerticalSection(data.merchants); } catch(e) { console.error('renderVerticalSection',e); }
+  try { renderMerchantTable('merchants-table-wrap', data.merchants, 'all'); } catch(e) { console.error('renderMerchantTable',e); }
+  try { renderAMView(data.merchants, data.summary); } catch(e) { console.error('renderAMView',e); }
 }
 
 // Fallback si n8n n'envoie pas encore summary.ams : extraire depuis les merchants
@@ -2240,7 +2238,6 @@ function filterMerchantsAM(am, btn) {
   activeMerchantsAM = am;
   document.querySelectorAll('#merchants-am-filter .am-btn').forEach(b=>b.classList.remove('active'));
   btn.classList.add('active');
-  renderMerchantsKPIs(GDATA.merchants, am, GDATA.summary);
   renderMerchantTable('merchants-table-wrap', GDATA.merchants, am);
 }
 function renderMerchantsKPIs(merchants, am, summary) {
