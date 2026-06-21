@@ -6,7 +6,7 @@
   <meta http-equiv="cache-control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="pragma" content="no-cache">
   <meta http-equiv="expires" content="0">
-  <meta name="build-time" content="2026-06-21T13:47:18.556Z">
+  <meta name="build-time" content="2026-06-21T13:58:46.132Z">
   <title>Joko — CL Revenue Dashboard</title>
   <script>
     // Cache-buster: si la page en cache a plus de 2h, force un rechargement frais
@@ -274,16 +274,15 @@
 
   <!-- ═══ MERCHANTS ═══ -->
   <div id="tab-merchants" class="tab-content">
-    <div class="am-filter" id="merchants-am-filter"><!-- generated dynamically --></div>
-    <div class="am-kpi-bar" id="merchants-kpi-bar"></div>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+      <div class="am-filter" id="merchants-am-filter" style="margin-bottom:0"><!-- generated dynamically --></div>
+      <input type="text" id="merchants-search" placeholder="🔍 Search merchant…"
+        oninput="filterMerchantsSearch(this.value)"
+        style="background:var(--s2);border:1px solid var(--border);border-radius:8px;color:var(--text);padding:7px 14px;font-size:13px;width:260px;outline:none;font-family:var(--font);transition:border-color .15s"
+        onfocus="this.style.borderColor='rgba(100,231,106,.5)'"
+        onblur="this.style.borderColor='var(--border)'">
+    </div>
     <div class="card">
-      <div style="display:flex;align-items:center;justify-content:flex-end;margin-bottom:10px">
-        <input type="text" id="merchants-search" placeholder="Search merchant…"
-          oninput="filterMerchantsSearch(this.value)"
-          style="background:var(--s2);border:1px solid var(--border);border-radius:8px;color:var(--text);padding:6px 12px;font-size:12px;width:220px;outline:none;font-family:var(--font);transition:border-color .15s"
-          onfocus="this.style.borderColor='rgba(100,231,106,.5)'"
-          onblur="this.style.borderColor='var(--border)'">
-      </div>
       <div class="table-wrap" id="merchants-table-wrap"></div>
     </div>
   </div>
