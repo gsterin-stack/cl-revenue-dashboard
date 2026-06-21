@@ -1079,7 +1079,9 @@ function renderTierSection(merchants, r25Portfolio) {
   const totYoy = totalA25 > 0 ? Math.round((totAP/totalA25-1)*100) : null;
   const totYoyHtml = totYoy!=null ? `<span style="color:${totYoy>=0?'var(--green)':'var(--red)'};font-weight:700">${totYoy>=0?'+':''}${totYoy}%</span>` : '—';
   const totYtdDelta = totalYtd26 - totalYtd25;
-  const totYtdPct = totalYtd25>0 ? Math.round((totalYtd26/totalYtd25-1)*100) : null;
+  // Use Snowflake-computed ytd_yoy for the total % (avoids distortion from new 2026 merchants with no 2025 history)
+  const sfYtdPct = GDATA && GDATA.summary.ytd_yoy != null ? GDATA.summary.ytd_yoy : null;
+  const totYtdPct = sfYtdPct;
 
   document.getElementById('tier-table-wrap').innerHTML = `
     <table>
@@ -1302,7 +1304,8 @@ function renderVerticalSection(merchants) {
   const totYoy=totA25>0?Math.round((totAP/totA25-1)*100):null;
   const totYoyHtml=totYoy!=null?`<span style="color:${totYoy>=0?'var(--green)':'var(--red)'};font-weight:700">${totYoy>=0?'+':''}${totYoy}%</span>`:'—';
   const totYtdDelta=totYtd26-totYtd25;
-  const totYtdPct=totYtd25>0?Math.round((totYtd26/totYtd25-1)*100):null;
+  // Use Snowflake-computed ytd_yoy for the total % (avoids distortion from new 2026 merchants with no 2025 history)
+  const totYtdPct = GDATA && GDATA.summary.ytd_yoy != null ? GDATA.summary.ytd_yoy : (totYtd25>0?Math.round((totYtd26/totYtd25-1)*100):null);
   const ytdRangeLabel = ytdM>0 ? `YTD vs LY (Jan–${MONTHS[ytdM-1]})` : 'YTD vs LY';
   document.getElementById('vertical-table-wrap').innerHTML=`
     <table>
