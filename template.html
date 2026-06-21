@@ -1312,7 +1312,8 @@ function renderVerticalSection(merchants) {
   const totCount=active.reduce((s,v)=>s+groups[v].count,0);
   const totAP=totA26+totP26;
   const totYoy=totA25>0?Math.round((totAP/totA25-1)*100):null;
-  const totYoyHtml=totYoy!=null?`<span style="color:${totYoy>=0?'var(--green)':'var(--red)'};font-weight:700">${totYoy>=0?'+':''}${totYoy}%</span>`:'—';
+  const totYoyVal=totAP-totA25;
+  const totYoyHtml=totA25>0?`<span style="color:${totYoy>=0?'var(--green)':'var(--red)'};font-weight:700">${totYoy>=0?'+':''}${fmt(totYoyVal)}</span><br><span style="font-size:10px;font-weight:400;opacity:.7">${totYoy>=0?'+':''}${totYoy}%</span>`:'—';
   const totYtdDelta=totYtd26-totYtd25;
   // Use Snowflake-computed ytd_yoy for the total % (avoids distortion from new 2026 merchants with no 2025 history)
   const totYtdPct = GDATA && GDATA.summary.ytd_yoy != null ? GDATA.summary.ytd_yoy : (totYtd25>0?Math.round((totYtd26/totYtd25-1)*100):null);
@@ -1334,7 +1335,8 @@ function renderVerticalSection(merchants) {
         ${active.map(v=>{
           const g=groups[v]; const tot=g.a26+g.p26;
           const yoy=g.a25>0?Math.round((tot/g.a25-1)*100):null;
-          const yoyHtml=yoy!=null?`<span style="color:${yoy>=0?'var(--green)':'var(--red)'}">${yoy>=0?'+':''}${yoy}%</span>`:'—';
+          const yoyVal=tot-g.a25;
+          const yoyHtml=g.a25>0?`<span style="color:${yoy>=0?'var(--green)':'var(--red)'}">${yoy>=0?'+':''}${fmt(yoyVal)}</span><br><span style="font-size:10px;opacity:.7">${yoy>=0?'+':''}${yoy}%</span>`:'—';
           const color=VERTICAL_LABEL_COLORS[v]||'var(--muted)';
           const ytdDelta=g.ytd26-g.ytd25;
           const ytdPct=g.ytd25>0?Math.round((g.ytd26/g.ytd25-1)*100):null;
