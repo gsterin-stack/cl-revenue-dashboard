@@ -697,17 +697,16 @@ function switchTab(id, btn) {
 function renderAll(data) {
   GDATA = data;
   document.getElementById('updated-at').textContent = 'Updated: '+data.updated_at;
-  // Boutons AM dynamiques — doit être appelé avant les renders qui utilisent activeAMView
   renderAMButtons(data.summary.ams || buildAMsFromMerchants(data.merchants));
   renderKPIs(data.summary);
-  renderMainChart(data.chart_arrays);
-  renderMonthlyTable(data.chart_arrays, data.summary.ytd_months);
-  renderQSection(data.quarterly, data.chart_arrays.R25);
-  renderTierSection(data.merchants, data.chart_arrays.R25);
-  renderMFMgmtSection(data.merchants, data.summary.ytd_months);
-  renderVerticalSection(data.merchants);
-  renderMerchantTable('merchants-table-wrap', data.merchants, 'all');
-  renderAMView(data.merchants, data.summary);
+  try { renderMainChart(data.chart_arrays); } catch(e) { console.error('renderMainChart',e); }
+  try { renderMonthlyTable(data.chart_arrays, data.summary.ytd_months); } catch(e) { console.error('renderMonthlyTable',e); }
+  try { renderQSection(data.quarterly, data.chart_arrays.R25); } catch(e) { console.error('renderQSection',e); }
+  try { renderTierSection(data.merchants, data.chart_arrays.R25); } catch(e) { console.error('renderTierSection',e); }
+  try { renderMFMgmtSection(data.merchants, data.summary.ytd_months); } catch(e) { console.error('renderMFMgmtSection',e); }
+  try { renderVerticalSection(data.merchants); } catch(e) { console.error('renderVerticalSection',e); }
+  try { renderMerchantTable('merchants-table-wrap', data.merchants, 'all'); } catch(e) { console.error('renderMerchantTable',e); }
+  try { renderAMView(data.merchants, data.summary); } catch(e) { console.error('renderAMView',e); }
 }
 
 // Fallback si n8n n'envoie pas encore summary.ams : extraire depuis les merchants
