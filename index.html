@@ -871,16 +871,7 @@ function renderMonthlyTable(ca, ytdMonths) {
             return `<td style="text-align:right;${sep}color:${c};font-weight:600">${v>=0?'+':''}${v}%</td>`;
           }).join('')}
         </tr>
-        <tr>
-          <td class="row-label" style="color:var(--text2)">vs 2024 (A+P)</td>
-          ${totRow.map((total,i) => {
-            const sep = i===12 ? 'border-left:1px solid var(--border);' : '';
-            if (!r24Row[i] || !total) return `<td style="text-align:right;${sep}color:var(--muted)">—</td>`;
-            const v = Math.round((total/r24Row[i]-1)*100);
-            const c = v>=0?'var(--green)':'var(--red)';
-            return `<td style="text-align:right;${sep}color:${c};font-weight:600">${v>=0?'+':''}${v}%</td>`;
-          }).join('')}
-        </tr>
+
       </tbody>
     </table>`;
 }
