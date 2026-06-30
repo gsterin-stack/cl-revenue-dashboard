@@ -6,7 +6,7 @@
   <meta http-equiv="cache-control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="pragma" content="no-cache">
   <meta http-equiv="expires" content="0">
-  <meta name="build-time" content="2026-06-30T13:17:45.712Z">
+  <meta name="build-time" content="2026-06-30T13:29:00.395Z">
   <title>Joko — CL Revenue Dashboard</title>
   <script>
     // Cache-buster: si la page en cache a plus de 2h, force un rechargement frais
@@ -360,7 +360,7 @@
 
 <!-- ═══ NEW CLIENTS MODAL ═══ -->
 <div class="modal-overlay" id="nc-modal-overlay" onclick="if(event.target===this)closeNewClientsModal()">
-  <div class="modal" style="width:min(820px,96vw)">
+  <div class="modal" style="width:min(640px,96vw)">
     <div class="modal-header">
       <div>
         <div class="modal-title">New Clients 2026</div>
@@ -2271,24 +2271,17 @@ function openNewClientsModal() {
     .map(([id,m]) => ({ id, ...m }))
     .sort((a,b) => (b.actual_26||0) - (a.actual_26||0));
   const totalRev = newClients.reduce((s,m) => s+(m.actual_26||0), 0);
-  const totalFY  = newClients.reduce((s,m) => s+(m.actual_26||0)+(m.proj_26||0), 0);
-  const totalSigned = newClients.reduce((s,m) => s+(m.signed_26||0), 0);
   const ytdRange = GDATA.summary.ytd_months > 0
     ? `Jan–${MONTHS[GDATA.summary.ytd_months-1]} 2026`
     : '2026 YTD';
   document.getElementById('nc-modal-sub').textContent =
     `${newClients.length} new clients · ${ytdRange}`;
   document.getElementById('nc-modal-body').innerHTML = `
-    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:20px">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:20px">
       <div class="modal-kpi">
         <div class="modal-kpi-label">Total New Client Revenue</div>
         <div class="modal-kpi-value" style="color:var(--green)">${fmt(totalRev)}</div>
         <div class="modal-kpi-sub">${ytdRange}</div>
-      </div>
-      <div class="modal-kpi">
-        <div class="modal-kpi-label">FY 2026 Projection</div>
-        <div class="modal-kpi-value" style="color:rgba(100,231,106,.7)">${fmt(totalFY)}</div>
-        <div class="modal-kpi-sub">YTD + projected remaining</div>
       </div>
       <div class="modal-kpi">
         <div class="modal-kpi-label">vs 2025 New Clients</div>
@@ -2300,25 +2293,18 @@ function openNewClientsModal() {
       <thead><tr>
         <th style="text-align:left">Client</th>
         <th style="text-align:left">AM</th>
-        <th>Signed</th>
         <th>YTD Revenue</th>
-        <th>FY Projection</th>
       </tr></thead>
       <tbody>${newClients.map(m => {
-        const fy = (m.actual_26||0)+(m.proj_26||0);
         return `<tr onclick="closeNewClientsModal();openModal('${m.id}')" style="cursor:pointer">
           <td>${merchantLabel(m.id)}</td>
           <td style="text-align:left"><span class="am-pill">${m.am}</span></td>
-          <td>${m.signed_26!=null ? fmt(m.signed_26) : '<span class="neu">—</span>'}</td>
           <td class="act26">${fmt(m.actual_26)}</td>
-          <td class="proj26">${fmt(fy)}</td>
         </tr>`;
       }).join('')}
       <tr style="border-top:2px solid var(--border);font-weight:700">
         <td>Total</td><td></td>
-        <td>${fmt(totalSigned)}</td>
         <td class="act26">${fmt(totalRev)}</td>
-        <td class="proj26">${fmt(totalFY)}</td>
       </tr></tbody>
     </table>`;
   document.getElementById('nc-modal-overlay').classList.add('open');
