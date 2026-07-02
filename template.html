@@ -196,6 +196,7 @@
     <button class="tab active" onclick="switchTab('management',this)">Global</button>
     <button class="tab" onclick="switchTab('merchants',this)">Merchants</button>
     <button class="tab" onclick="switchTab('am',this)">AM View</button>
+    <button class="tab" onclick="switchTab('quarter',this)">Quarter</button>
   </nav>
   <div class="updated" id="updated-at">—</div>
 </header>
@@ -284,6 +285,17 @@
     </div>
     <div class="card">
       <div class="table-wrap" id="merchants-table-wrap"></div>
+    </div>
+  </div>
+
+  <!-- ═══ QUARTER ═══ -->
+  <div id="tab-quarter" class="tab-content">
+    <div class="card">
+      <div class="section-header">
+        <span class="section-title">Quarter Tracking</span>
+        <span class="section-sub">Photo hebdomadaire (chaque lundi) de la projection de fin de trimestre</span>
+      </div>
+      <div class="table-wrap" id="quarter-table-wrap"></div>
     </div>
   </div>
 </main>
@@ -707,6 +719,10 @@ function renderAll(data) {
   try { renderVerticalSection(data.merchants); } catch(e) { console.error('renderVerticalSection',e); }
   try { renderMerchantTable('merchants-table-wrap', data.merchants, 'all'); } catch(e) { console.error('renderMerchantTable',e); }
   try { renderAMView(data.merchants, data.summary); } catch(e) { console.error('renderAMView',e); }
+  fetch('./quarter_history.json')
+    .then(r => r.ok ? r.json() : [])
+    .catch(() => [])
+    .then(history => { try { renderQuarterTab(history, data.chart_arrays); } catch(e) { console.error('renderQuarterTab',e); } });
 }
 
 // Fallback si n8n n'envoie pas encore summary.ams : extraire depuis les merchants
@@ -1542,6 +1558,74 @@ function amQRevenue(merchants, am, q) {
     if (!r.monthly_26) return sum + (q===currentQ() ? (r.actual_26||0) : 0); // fallback
     return sum + mos.reduce((s,mo) => s+(r.monthly_26[mo-1]||0), 0);
   }, 0);
+}
+
+/* ═══════════════════════════════════════════════
+   QUARTER TAB — historique hebdomadaire (photo chaque lundi)
+   Alimenté par quarter_history.json, écrit par un workflow n8n séparé.
+   ═══════════════════════════════════════════════ */
+function renderQuarterTab(history, chartArrays) {
+  const wrap = document.getElementById('quarter-table-wrap');
+  if (!wrap) return;
+
+  const q          = currentQ();
+  const qKey       = qLabel(q);
+  const year       = new Date().getFullYear();
+  const quarterId  = `${qKey}-${year}`;
+  const mos        = Q_MONTHS[q-1];
+  const monthLabels= mos.map(m => MONTHS[m-1]);
+  const okrRow     = mos.map(m => (chartArrays.OKR[m-1] || 0));
+  const okrTotal   = okrRow.reduce((a,b)=>a+b, 0);
+
+  const rows = (history || [])
+    .filter(h => h.quarter === quarterId)
+    .sort((a,b) => b.week - a.week); // plus récent en haut
+
+  if (!rows.length) {
+    wrap.innerHTML = `<div style="padding:32px;text-align:center;color:var(--muted)">
+      Pas encore d'historique pour ${qKey} ${year} — la première photo sera prise lundi prochain.
+    </div>`;
+    return;
+  }
+
+  function trendColor(curr, prev) {
+    if (prev == null || curr == null) return 'var(--text)';
+    if (curr > prev) return 'var(--green)';
+    if (curr < prev) return 'var(--red)';
+    return 'var(--text)';
+  }
+
+  const bodyRows = rows.map((r, idx) => {
+    const prev = rows[idx+1]; // ligne juste en dessous = semaine précédente
+    const cells = monthLabels.map(label => {
+      const v  = r.months ? (r.months[label] || 0) : 0;
+      const pv = prev && prev.months ? (prev.months[label] || 0) : null;
+      return `<td style="text-align:right;color:${trendColor(v,pv)}">${v>0?fmt(v):'—'}</td>`;
+    }).join('');
+    const totColor = trendColor(r.total, prev ? prev.total : null);
+    return `<tr>
+      <td class="row-label">W${r.week}</td>
+      ${cells}
+      <td style="text-align:right;border-left:1px solid var(--border);font-weight:700;color:${totColor}">${r.total>0?fmt(r.total):'—'}</td>
+    </tr>`;
+  }).join('');
+
+  wrap.innerHTML = `
+    <table class="perf-table">
+      <thead><tr>
+        <th class="row-label">${qKey} ${year}</th>
+        ${monthLabels.map(l => `<th>${l}</th>`).join('')}
+        <th style="border-left:1px solid var(--border)">Total</th>
+      </tr></thead>
+      <tbody>
+        <tr style="border-bottom:1px solid var(--border)">
+          <td class="row-label" style="color:var(--muted);font-style:italic">Target</td>
+          ${okrRow.map(v => `<td style="text-align:right;color:var(--muted)">${v>0?fmt(v):'—'}</td>`).join('')}
+          <td style="text-align:right;border-left:1px solid var(--border);color:var(--muted)">${okrTotal>0?fmt(okrTotal):'—'}</td>
+        </tr>
+        ${bodyRows}
+      </tbody>
+    </table>`;
 }
 
 /* ── Quarterly OKRs — renseigner quand disponible, nouveaux AMs = null auto ── */
