@@ -13,7 +13,7 @@
     (function() {
       try {
         var bt = document.querySelector('meta[name="build-time"]');
-        if (!bt || bt.content === 'BUILD_TIMESTAMP_PLACEHOLDER') return;
+        if (!bt || bt.content === '2026-07-09T16:33:32.799Z') return;
         var age = Date.now() - new Date(bt.content).getTime();
         var url = new URL(window.location.href);
         if (age > 2 * 3600 * 1000 && !url.searchParams.has('_v')) {
