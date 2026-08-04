@@ -2197,6 +2197,9 @@ function openWowModal(mid) {
           datasets: [
             { label:'2025', data: rev25, backgroundColor:'rgba(100,100,100,.45)', borderRadius:4, barThickness:24,
               stack:'s25', datalabels:{ display:false } },
+            ...(hasSignedQ ? [{ label:'Expected (signed)', data: revSigned, backgroundColor:'rgba(146,84,227,.55)',
+              borderColor:'rgba(146,84,227,.9)', borderWidth:1, borderRadius:4, barThickness:24, stack:'sExp',
+              datalabels:{ display:false } }] : []),
             { label:'2026', data: rev26, backgroundColor:'rgba(100,231,106,.9)', borderRadius:4, barThickness:24,
               stack:'s26',
               datalabels:{
@@ -2215,9 +2218,6 @@ function openWowModal(mid) {
                 color:'rgba(100,231,106,.9)', font:{ size:10, weight:'600' }
               }
             },
-            ...(hasSignedQ ? [{ label:'Expected (signed)', data: revSigned, backgroundColor:'rgba(146,84,227,.55)',
-              borderColor:'rgba(146,84,227,.9)', borderWidth:1, borderRadius:4, barThickness:24, stack:'sExp',
-              datalabels:{ display:false } }] : []),
           ]
         },
         options: {
@@ -2789,12 +2789,12 @@ function openModal(merchantId) {
     type:'bar',
     data:{ labels:MONTHS, datasets:[
       {label:'2025',       data:m25_display, backgroundColor:'rgba(160,160,160,.45)', borderRadius:3, stack:'s25'},
-      {label:'2026 Act.',  data:m26_act,     backgroundColor:'rgba(100,231,106,.9)',  borderRadius:3, stack:'s26'},
-      {label:'2026 Proj.', data:m26_proj,    backgroundColor:'rgba(100,231,106,.22)', borderRadius:3, stack:'s26',
-        borderColor:'rgba(100,231,106,.35)', borderWidth:1},
       ...(hasSigned ? [{label:'Expected (signed)', data:m.monthly_signed,
         backgroundColor:'rgba(146,84,227,.55)', borderColor:'rgba(146,84,227,.9)', borderWidth:1,
         borderRadius:2, stack:'sExp'}] : []),
+      {label:'2026 Act.',  data:m26_act,     backgroundColor:'rgba(100,231,106,.9)',  borderRadius:3, stack:'s26'},
+      {label:'2026 Proj.', data:m26_proj,    backgroundColor:'rgba(100,231,106,.22)', borderRadius:3, stack:'s26',
+        borderColor:'rgba(100,231,106,.35)', borderWidth:1},
     ]},
     options:{ responsive:true, maintainAspectRatio:false,
       plugins:{legend:{display:false}, tooltip:ttip()},
