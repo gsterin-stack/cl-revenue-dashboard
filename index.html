@@ -2112,20 +2112,12 @@ function openWowModal(mid) {
   let curMonthRemainderRaw = 0;
   const qCurPos = qMonthIdxs.indexOf(curMoIdx2);
   if (qCurPos !== -1) {
-    if (m.current_month_forecast != null) {
-      // Vrai forecast Snowflake (jour par jour) pour les jours restants du mois —
-      // toujours préférable à une extrapolation run-rate, qui peut s'envoler si les
-      // premiers jours du mois sont anormalement hauts ou bas (cf. update_data.py).
-      curMonthRemainderRaw = Math.max(0, m.current_month_forecast);
+    const pctx = getPacingCtx();
+    if (pctx) {
+      const mtdRaw = m.monthly_26[curMoIdx2] || 0;
+      const projectedTotalRaw = (mtdRaw / Math.max(pctx.daysElapsed,1)) * pctx.daysInMonth;
+      curMonthRemainderRaw = Math.max(0, projectedTotalRaw - mtdRaw);
       rev26Proj[qCurPos] = Math.round(curMonthRemainderRaw/1000*10)/10;
-    } else {
-      const pctx = getPacingCtx();
-      if (pctx) {
-        const mtdRaw = m.monthly_26[curMoIdx2] || 0;
-        const projectedTotalRaw = (mtdRaw / Math.max(pctx.daysElapsed,1)) * pctx.daysInMonth;
-        curMonthRemainderRaw = Math.max(0, projectedTotalRaw - mtdRaw);
-        rev26Proj[qCurPos] = Math.round(curMonthRemainderRaw/1000*10)/10;
-      }
     }
   }
   const qRev26 = qMonthIdxs.reduce((s,i) => s+(m.monthly_26[i]||0), 0) + curMonthRemainderRaw;
@@ -2784,20 +2776,12 @@ function openModal(merchantId) {
   const curMoIdx = ytdM - 1;
   let curMonthProjected = false;
   if (!isEstimated && curMoIdx >= 0 && curMoIdx < 12) {
-    if (m.current_month_forecast != null) {
-      // Vrai forecast Snowflake (jour par jour) pour les jours restants du mois —
-      // toujours préférable à une extrapolation run-rate, qui peut s'envoler si les
-      // premiers jours du mois sont anormalement hauts ou bas (cf. update_data.py).
-      m26_proj[curMoIdx] = Math.max(0, Math.round(m.current_month_forecast));
+    const ctx = getPacingCtx();
+    if (ctx) {
+      const mtd = m26_display[curMoIdx] || 0;
+      const projectedTotal = (mtd / Math.max(ctx.daysElapsed,1)) * ctx.daysInMonth;
+      m26_proj[curMoIdx] = Math.max(0, Math.round(projectedTotal - mtd));
       curMonthProjected = true;
-    } else {
-      const ctx = getPacingCtx();
-      if (ctx) {
-        const mtd = m26_display[curMoIdx] || 0;
-        const projectedTotal = (mtd / Math.max(ctx.daysElapsed,1)) * ctx.daysInMonth;
-        m26_proj[curMoIdx] = Math.max(0, Math.round(projectedTotal - mtd));
-        curMonthProjected = true;
-      }
     }
   }
   if (modalChart) { modalChart.destroy(); modalChart=null; }
