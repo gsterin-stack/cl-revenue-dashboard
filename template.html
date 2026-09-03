@@ -395,6 +395,8 @@ let activeAM = 'all';
 let activeMerchantsAM = 'all';
 let activeGlobalAM = 'all';
 let modalChart = null;
+let mainChart  = null;
+let qChart     = null;
 let tierChart  = null;
 let sortCol  = 'signed';
 let sortDir  = -1;
@@ -881,7 +883,8 @@ function renderKPIs(s) {
 
 /* ── Main chart ── */
 function renderMainChart(ca) {
-  new Chart(document.getElementById('main-chart').getContext('2d'),{
+  if (mainChart) { mainChart.destroy(); mainChart = null; }
+  mainChart = new Chart(document.getElementById('main-chart').getContext('2d'),{
     type:'bar',
     data:{ labels:MONTHS, datasets:[
       {label:'2024',       data:R24,       backgroundColor:'rgba(80,80,80,.65)', stack:'s24', borderRadius:2},
@@ -1027,7 +1030,8 @@ function renderQSection(q, r25) {
   ];
 
   // ── Chart ──
-  new Chart(document.getElementById('q-chart').getContext('2d'),{
+  if (qChart) { qChart.destroy(); qChart = null; }
+  qChart = new Chart(document.getElementById('q-chart').getContext('2d'),{
     type:'bar',
     data:{ labels:quarters, datasets:[
       {label:'2025',   data:q25,                           backgroundColor:'rgba(150,150,150,.4)', borderRadius:3},
