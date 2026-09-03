@@ -843,6 +843,7 @@ function deriveChartArraysForAM(merchants, am, ytdMonths, baseChartArrays) {
   const R26P = new Array(12).fill(0);
   const R25  = new Array(12).fill(0);
   const EXPECTED = new Array(12).fill(0);
+  const curMoIdx = ytdMonths - 1;
   for (const m of Object.values(merchants)) {
     for (let i=0; i<12; i++) {
       R25[i] += (m.monthly_25 && m.monthly_25[i]) || 0;
@@ -851,6 +852,12 @@ function deriveChartArraysForAM(merchants, am, ytdMonths, baseChartArrays) {
       EXPECTED[i] += m.is_capped
         ? ((m.monthly_signed && m.monthly_signed[i] != null) ? m.monthly_signed[i] : v26)
         : v26;
+    }
+    /* Le mois en cours ne contient dans monthly_26 que le réalisé MTD — le reste du mois
+       projeté vient du forecast Snowflake jour par jour (cf. update_data.py), pas de la
+       boucle ci-dessus (qui, pour ce mois, tombe dans la branche R26A). */
+    if (curMoIdx >= 0 && curMoIdx < 12 && m.current_month_forecast != null) {
+      R26P[curMoIdx] += Math.max(0, m.current_month_forecast);
     }
   }
   return { ...baseChartArrays, R26A, R26P, R25, EXPECTED };
