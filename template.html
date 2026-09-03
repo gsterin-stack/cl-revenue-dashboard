@@ -388,9 +388,8 @@
 <script>
 const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 
-/* ── Historical revenue (hardcoded, final) ── */
+/* ── 2024 revenue (hardcoded — aucune donnée par merchant pour 2024, pas de source dynamique) ── */
 const R24 = [671952,565875,615871,703340,738597,767482,874290,701441,620841,686759,950434,1099266];
-const R25_HARD = [726227,667280,583768,691001,690320,744567,775173,713803,681708,751957,1181813,1180760];
 let GDATA    = null;
 let activeAM = 'all';
 let activeMerchantsAM = 'all';
@@ -734,9 +733,9 @@ function buildAMsFromMerchants(merchants) {
    repasse tel quel les agrégats déjà calculés par n8n (data.summary/chart_arrays/
    quarterly) — zéro risque de divergence sur la vue par défaut. Pour un AM précis, on
    recalcule à partir des merchants filtrés, avec la même logique de split actual/proj
-   (via ytd_months) que le pipeline n8n. Le porteur historique (R24/R25_HARD, utilisés
-   directement par renderMainChart/renderMonthlyTable) et la ligne OKR mensuelle restent
-   des références globales non filtrées, comme c'est déjà le cas pour la vue "all". ── */
+   (via ytd_months) que le pipeline n8n. Seuls R24 (aucune donnée par merchant pour 2024,
+   impossible à filtrer) et la ligne OKR mensuelle restent des références globales non
+   filtrées ; le 2025 (ca.R25, dérivé de monthly_25) est filtrable comme le 2026. ── */
 function filterMerchantsByAM(merchants, am) {
   if (am === 'all') return merchants;
   return Object.fromEntries(Object.entries(merchants).filter(([,m]) => m.am === am));
@@ -886,7 +885,7 @@ function renderMainChart(ca) {
     type:'bar',
     data:{ labels:MONTHS, datasets:[
       {label:'2024',       data:R24,       backgroundColor:'rgba(80,80,80,.65)', stack:'s24', borderRadius:2},
-      {label:'2025',       data:R25_HARD,  backgroundColor:'rgba(170,170,170,.5)', stack:'s25', borderRadius:2},
+      {label:'2025',       data:ca.R25,    backgroundColor:'rgba(170,170,170,.5)', stack:'s25', borderRadius:2},
       {label:'2026 Act.',  data:ca.R26A,backgroundColor:'rgba(100,231,106,.9)', stack:'s26', borderRadius:2},
       {label:'2026 Proj.', data:ca.R26P,backgroundColor:'rgba(100,231,106,.18)',stack:'s26', borderRadius:2,
         borderColor:'rgba(100,231,106,.35)',borderWidth:1},
@@ -915,7 +914,7 @@ function renderMonthlyTable(ca, ytdMonths) {
   const totalActual = actuals.reduce((a,b)=>a+b,0);
   const totalProj   = projs.reduce((a,b)=>a+b,0);
   const totalOkr    = okrs.reduce((a,b)=>a+b,0);
-  const total25     = R25_HARD.reduce((a,b)=>a+b,0);
+  const total25     = r25.reduce((a,b)=>a+b,0);
   const total24     = R24.reduce((a,b)=>a+b,0);
 
   // Build column arrays (12 months + Total)
@@ -923,7 +922,7 @@ function renderMonthlyTable(ca, ytdMonths) {
   const aRow     = [...actuals, totalActual];
   const pRow     = [...projs,   totalProj];
   const oRow     = [...okrs,    totalOkr];
-  const r25Row   = [...R25_HARD, total25];
+  const r25Row   = [...r25,     total25];
   const r24Row   = [...R24,      total24];
   const totRow   = aRow.map((a,i) => a + pRow[i]);
 
