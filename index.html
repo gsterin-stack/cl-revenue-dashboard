@@ -844,7 +844,7 @@ function renderKPIs(s) {
   const kpis = [
     { label:'YTD Actual',
       value: fmtK(s.ytd_actual),
-      sub: (ytdYoyHtml ? ytdYoyHtml + ' · ' : '') + `<span class="neu">${ytdRange}</span>`,
+      sub: ytdYoyHtml || `<span class="neu">${ytdRange}</span>`,
       clickable: false },
     { label:'New Client Revenue',
       value: fmt(s.ytd_new_clients_revenue),
@@ -2716,6 +2716,10 @@ function openModal(merchantId) {
   const yoyHtml = yoy!=null
     ? (yoy>=0 ? `<span class="pos">+${yoy}%</span>` : `<span class="neg">${yoy}%</span>`)
     : '<span class="neu">—</span>';
+  const ytdYoy = m.actual_25_ytd>0 ? pct(m.actual_26, m.actual_25_ytd) : null;
+  const ytdYoyHtml = ytdYoy!=null
+    ? (ytdYoy>=0 ? `<span class="pos">+${ytdYoy}% vs LY</span>` : `<span class="neg">${ytdYoy}% vs LY</span>`)
+    : `<span class="neu">${GDATA.summary.ytd_months>0?`Jan–${MONTHS[GDATA.summary.ytd_months-1]} 2026`:'2026 YTD'}</span>`;
   document.getElementById('modal-title').textContent = merchantLabel(merchantId);
   document.getElementById('modal-sub').innerHTML =
     `<span class="am-pill">${m.am}</span>${m.is_new_client?' <span class="badge-new">new</span>':''}`;
@@ -2728,7 +2732,7 @@ function openModal(merchantId) {
     <div class="modal-kpi">
       <div class="modal-kpi-label">YTD Actual</div>
       <div class="modal-kpi-value" style="color:var(--green)">${fmt(m.actual_26)}</div>
-      <div class="modal-kpi-sub">${GDATA.summary.ytd_months>0?`Jan–${MONTHS[GDATA.summary.ytd_months-1]} 2026`:'2026 YTD'}</div>
+      <div class="modal-kpi-sub">${ytdYoyHtml}</div>
     </div>
     <div class="modal-kpi">
       <div class="modal-kpi-label">FY 2025</div>
