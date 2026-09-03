@@ -53,7 +53,7 @@
     .tab-content.active { display:flex; }
 
     /* ── KPI Bar ── */
-    .kpi-bar    { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; }
+    .kpi-bar    { display:grid; grid-template-columns:repeat(4,1fr); gap:10px; }
     .am-kpi-bar { display:grid; grid-template-columns:repeat(4,1fr); gap:10px; margin-bottom:14px; }
     .kpi { background:var(--s1); border:1px solid var(--border); border-radius:var(--radius); padding:14px 16px; }
     .kpi.clickable { cursor:pointer; transition:border-color .15s, background .15s; }
@@ -841,14 +841,37 @@ function renderKPIs(s) {
     ? `Jan–${MONTHS[s.ytd_months-1]} 2026`
     : '2026 YTD';
 
+  // New Client Revenue vs LY — n8n doit fournir s.ytd_new_clients_revenue_ly pour l'activer
+  const ncYoy = pct(s.ytd_new_clients_revenue, s.ytd_new_clients_revenue_ly);
+  const ncYoyHtml = ncYoy!=null
+    ? (ncYoy>=0 ? `<span class="pos">+${ncYoy}% vs LY</span> · ` : `<span class="neg">${ncYoy}% vs LY</span> · `)
+    : '';
+
+  // YTD vs OKR (cumul Q1…trimestre en cours) — même cible que la vue AM, agrégée sur tout le book
+  const q          = currentQ();
+  const okrQuarters = GDATA && GDATA.quarterly
+    ? Array.from({length:q}, (_,i) => GDATA.quarterly[qLabel(i+1)] ? GDATA.quarterly[qLabel(i+1)].okr : null)
+    : [];
+  const ytdOkrSum  = okrQuarters.length && okrQuarters.every(v => v != null)
+    ? okrQuarters.reduce((a,b)=>a+b, 0) : null;
+  const ytdOkrPct  = ytdOkrSum ? Math.round(s.ytd_actual/ytdOkrSum*100) : null;
+  const ytdOkrColor= ytdOkrPct==null ? 'var(--text)' : ytdOkrPct>=90?'var(--green)':ytdOkrPct>=70?'var(--yellow)':'var(--red)';
+
   const kpis = [
     { label:'YTD Actual',
       value: fmtK(s.ytd_actual),
       sub: (ytdYoyHtml ? ytdYoyHtml + ' · ' : '') + `<span class="neu">${ytdRange}</span>`,
       clickable: false },
+    { label:`YTD vs Q1–${qLabel(q)} OKR`,
+      value: ytdOkrPct!=null ? ytdOkrPct+'%' : '—',
+      valueColor: ytdOkrColor,
+      sub: ytdOkrSum
+        ? `<span class="neu">${ytdRange}</span> vs ${fmtK(ytdOkrSum)} cible`
+        : `<span style="font-size:11px;color:var(--muted);font-style:italic">OKR not set</span>`,
+      clickable: false },
     { label:'New Client Revenue',
       value: fmt(s.ytd_new_clients_revenue),
-      sub: `<span class="pos">${s.new_clients_26} new clients</span> <span class="neu">vs ${s.new_clients_25_ytd} last year</span>`,
+      sub: ncYoyHtml + `<span class="pos">${s.new_clients_26} new clients</span> <span class="neu">vs ${s.new_clients_25_ytd} last year</span>`,
       clickable: true, onclick: 'openNewClientsModal()' },
     { label:'Active Merchants 2026',
       value: s.active_merchants_26,
@@ -858,7 +881,7 @@ function renderKPIs(s) {
   document.getElementById('kpi-bar').innerHTML = kpis.map(k=>`
     <div class="kpi${k.clickable?' clickable':''}"${k.onclick?` onclick="${k.onclick}"`:''}>
       <div class="kpi-label">${k.label}${k.clickable?' <span style="opacity:.45;font-size:9px">↗</span>':''}</div>
-      <div class="kpi-value">${k.value}</div>
+      <div class="kpi-value"${k.valueColor?` style="color:${k.valueColor}"`:''}>${k.value}</div>
       <div class="kpi-sub">${k.sub}</div>
     </div>`).join('');
 }
@@ -879,6 +902,7 @@ function renderMainChart(ca) {
         pointRadius:0, borderWidth:1.5, tension:0, fill:false, order:-1},
     ]},
     options:{ responsive:true, maintainAspectRatio:false,
+      interaction:{ mode:'index', intersect:false },
       plugins:{legend:{display:false}, tooltip:ttip()},
       onClick:(evt, elements, chart) => {
         if (!elements.length) return;
@@ -1877,13 +1901,16 @@ const AM_OKR_DATA = {
   'Romain':    { Q1: null, Q2: null, Q3: 682521,  Q4: null },
 };
 // Fallback propre pour tout AM non listé (nouveau, etc.)
-// Pour 'all', on agrège les targets de tous les AM = vue manager de l'équipe.
+// Pour 'all', on utilise la cible globale du book (GDATA.quarterly, fournie par n8n) plutôt que
+// d'agréger les cibles individuelles des AM — celles-ci sont souvent partiellement renseignées
+// (ex: seul Q3 est connu pour la plupart des AM), ce qui faussait la cible cumulée affichée.
 function getAMOkr(am) {
   if (am === 'all') {
     const totals = { Q1: null, Q2: null, Q3: null, Q4: null };
-    for (const q of ['Q1','Q2','Q3','Q4']) {
-      const vals = Object.values(AM_OKR_DATA).map(o => o[q]).filter(v => v != null);
-      totals[q] = vals.length ? vals.reduce((a,b) => a+b, 0) : null;
+    if (GDATA && GDATA.quarterly) {
+      for (const q of ['Q1','Q2','Q3','Q4']) {
+        totals[q] = GDATA.quarterly[q] ? GDATA.quarterly[q].okr : null;
+      }
     }
     return totals;
   }
@@ -1948,10 +1975,14 @@ function renderAMQKPIs(merchants, am, summary) {
   const qPct   = qOkr ? Math.round(qRev/qOkr*100) : null;
   const qColor = qPct==null?'var(--text)':qPct>=90?'var(--green)':qPct>=70?'var(--yellow)':'var(--red)';
 
-  // YTD vs cumulative OKR (Q1+Q2+… through current Q)
-  const rows      = merchantRows(merchants, am);
-  const ytd       = rows.reduce((s,r)=>s+(r.actual_26||0), 0);
-  const ytdOkrSum = Array.from({length:q},(_,i)=>amOkr[qLabel(i+1)]||0).reduce((s,v)=>s+v,0) || null;
+  // YTD vs cumulative OKR (Q1+Q2+… through current Q).
+  // Only sum when every quarter up to now has a known target — a quarter with an
+  // unset OKR must not silently count as 0, or the cumulative target (and the % vs
+  // it) comes out badly wrong once YTD actuals span more quarters than have a set OKR.
+  const rows        = merchantRows(merchants, am);
+  const ytd         = rows.reduce((s,r)=>s+(r.actual_26||0), 0);
+  const ytdQuarters = Array.from({length:q},(_,i)=>amOkr[qLabel(i+1)]);
+  const ytdOkrSum   = ytdQuarters.every(v=>v!=null) ? ytdQuarters.reduce((s,v)=>s+v,0) : null;
   const ytdPct  = ytdOkrSum ? Math.round(ytd/ytdOkrSum*100) : null;
   const ytdColor= ytdPct==null?'var(--text)':ytdPct>=90?'var(--green)':ytdPct>=70?'var(--yellow)':'var(--red)';
 
