@@ -1854,6 +1854,19 @@ function renderAMQKPIs(merchants, am, summary) {
 
   const rows        = merchantRows(merchants, am);
 
+  // "YTD vs Q1–${qLabel(q)} OKR" — uniquement pertinent pour 'all' : aucun objectif n'est
+  // configuré par AM individuellement pour l'instant (cf. AM_OKR_DATA), donc la tuile
+  // n'affiche jamais que "OKR not set" dès qu'un AM précis est sélectionné.
+  const showOkrTile = am === 'all';
+  let ytd, ytdOkrSum, ytdPct, ytdColor;
+  if (showOkrTile) {
+    ytd = rows.reduce((s,r)=>s+(r.actual_26||0), 0);
+    const ytdQuarters = Array.from({length:q},(_,i)=>amOkr[qLabel(i+1)]);
+    ytdOkrSum = ytdQuarters.every(v=>v!=null) ? ytdQuarters.reduce((s,v)=>s+v,0) : null;
+    ytdPct    = ytdOkrSum ? Math.round(ytd/ytdOkrSum*100) : null;
+    ytdColor  = ytdPct==null?'var(--text)':ytdPct>=90?'var(--green)':ytdPct>=70?'var(--yellow)':'var(--red)';
+  }
+
   // MF alert count
   const mfAlerts = rows.filter(r => (r.media_fees_ly||0)>0 && (r.media_fees_ytd||0)===0).length;
 
@@ -1873,6 +1886,7 @@ function renderAMQKPIs(merchants, am, summary) {
 
   const okrPlaceholder = `<span style="font-size:11px;color:var(--muted);font-style:italic">OKR not set</span>`;
 
+  document.getElementById('am-q-kpi-bar').style.gridTemplateColumns = showOkrTile ? 'repeat(4,1fr)' : 'repeat(3,1fr)';
   document.getElementById('am-q-kpi-bar').innerHTML = `
     <div class="kpi">
       <div class="kpi-label">${qLabel(q)} Achievement</div>
@@ -1882,6 +1896,13 @@ function renderAMQKPIs(merchants, am, summary) {
         : okrPlaceholder}</div>
       ${qProgressHtml}
     </div>
+    ${showOkrTile ? `<div class="kpi">
+      <div class="kpi-label">YTD vs Q1–${qLabel(q)} OKR</div>
+      <div class="kpi-value" style="color:${ytdColor}">${fmtK(ytd)}</div>
+      <div class="kpi-sub">${ytdOkrSum
+        ? `<span style="color:${ytdColor};font-weight:700">${ytdPct}%</span> <span class="neu">vs ${fmtK(ytdOkrSum)} cible</span>`
+        : okrPlaceholder}</div>
+    </div>` : ''}
     <div class="kpi">
       <div class="kpi-label">Merchants · ${am}</div>
       <div class="kpi-value">${rows.length}</div>
