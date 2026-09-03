@@ -217,7 +217,7 @@
         <div class="legend-item"><div class="legend-dot" style="background:rgba(100,231,106,.92)"></div>2026 Actual</div>
         <div class="legend-item"><div class="legend-dot" style="background:rgba(100,231,106,.22);border:1px solid rgba(100,231,106,.4)"></div>2026 Proj.</div>
         <div class="legend-item"><div class="legend-dot" style="background:rgba(146,84,227,.55);border:1px solid rgba(146,84,227,.9)"></div>Expected (Signed+Open)</div>
-        <div class="legend-item"><div class="legend-line"></div>Monthly OKR</div>
+        <div class="legend-item" id="okr-legend-item"><div class="legend-line"></div>Monthly OKR</div>
       </div>
       <canvas id="main-chart"></canvas>
     </div>
@@ -904,9 +904,9 @@ function renderGlobalSections(data, am) {
   const quarterly  = deriveQuarterlyForAM(am, ca.R26A, ca.R26P, data.quarterly);
 
   renderKPIs(summary);
-  try { renderMainChart(ca); } catch(e) { console.error('renderMainChart',e); }
-  try { renderMonthlyTable(ca, summary.ytd_months); } catch(e) { console.error('renderMonthlyTable',e); }
-  try { renderQSection(quarterly, ca.R25); } catch(e) { console.error('renderQSection',e); }
+  try { renderMainChart(ca, am); } catch(e) { console.error('renderMainChart',e); }
+  try { renderMonthlyTable(ca, summary.ytd_months, am); } catch(e) { console.error('renderMonthlyTable',e); }
+  try { renderQSection(quarterly, ca.R25, am); } catch(e) { console.error('renderQSection',e); }
   try { renderTierSection(filteredMerchants, ca.R25); } catch(e) { console.error('renderTierSection',e); }
   try { renderMFMgmtSection(filteredMerchants, summary.ytd_months); } catch(e) { console.error('renderMFMgmtSection',e); }
   try { renderVerticalSection(filteredMerchants); } catch(e) { console.error('renderVerticalSection',e); }
@@ -976,8 +976,13 @@ function renderKPIs(s) {
 }
 
 /* ── Main chart ── */
-function renderMainChart(ca) {
+function renderMainChart(ca, am) {
   if (mainChart) { mainChart.destroy(); mainChart = null; }
+  // L'OKR n'a de sens qu'au niveau du book complet (aucune cible mensuelle par AM) —
+  // masqué dès qu'un AM précis est sélectionné.
+  const showOkr = am === 'all';
+  const okrLegendItem = document.getElementById('okr-legend-item');
+  if (okrLegendItem) okrLegendItem.style.display = showOkr ? '' : 'none';
   mainChart = new Chart(document.getElementById('main-chart').getContext('2d'),{
     type:'bar',
     data:{ labels:MONTHS, datasets:[
@@ -987,8 +992,8 @@ function renderMainChart(ca) {
         borderColor:'rgba(100,231,106,.35)',borderWidth:1},
       {label:'Expected (Signed+Open)', data:ca.EXPECTED, backgroundColor:'rgba(146,84,227,.55)',
         stack:'sExp', borderRadius:2, borderColor:'rgba(146,84,227,.9)', borderWidth:1},
-      {label:'OKR', data:ca.OKR, type:'line', borderColor:'#E4FA62', borderDash:[5,4],
-        pointRadius:0, borderWidth:1.5, tension:0, fill:false, order:-1},
+      ...(showOkr ? [{label:'OKR', data:ca.OKR, type:'line', borderColor:'#E4FA62', borderDash:[5,4],
+        pointRadius:0, borderWidth:1.5, tension:0, fill:false, order:-1}] : []),
     ]},
     options:{ responsive:true, maintainAspectRatio:false,
       interaction:{ mode:'index', intersect:false },
@@ -1011,13 +1016,14 @@ function openMonthDrilldownModal(moIdx) {
   if (!GDATA) return;
   const monthLabel = MONTHS[moIdx];
   const curMoIdx = (GDATA.summary.ytd_months||1) - 1;
-  const list = Object.entries(GDATA.merchants)
+  const list = Object.entries(filterMerchantsByAM(GDATA.merchants, activeGlobalAM))
     .map(([id, m]) => ({ id, ...m, status: merchantMonthStatus(m, moIdx) }))
     .filter(r => r.status);
   const capped = list.filter(r => r.status.type==='capped').sort((a,b) => a.status.pct - b.status.pct);
   const open   = list.filter(r => r.status.type==='open').sort((a,b) => a.status.pct - b.status.pct);
 
-  document.getElementById('month-modal-title').textContent = `${monthLabel} 2026 — Delivery vs Plan`;
+  const amSuffix = activeGlobalAM === 'all' ? '' : ` — ${activeGlobalAM}`;
+  document.getElementById('month-modal-title').textContent = `${monthLabel} 2026 — Delivery vs Plan${amSuffix}`;
   document.getElementById('month-modal-sub').textContent =
     `${capped.length} capped (vs signed this month) · ${open.length} open (vs ${monthLabel} 2025)${paceGraceNote(moIdx===curMoIdx)} · click a column to sort`;
 
@@ -1145,7 +1151,10 @@ function openWatchlistModal() {
 }
 
 /* ── Monthly Performance Table (transposed: months = columns) ── */
-function renderMonthlyTable(ca, ytdMonths) {
+function renderMonthlyTable(ca, ytdMonths, am) {
+  // L'OKR n'a de sens qu'au niveau du book complet (aucune cible mensuelle par AM) —
+  // masqué dès qu'un AM précis est sélectionné, cf. renderMainChart/renderQSection.
+  const showOkr = am === 'all';
   // Pas de projection pour les mois complets passés ; projection visible pour le mois en cours et les mois futurs
   const actuals = ca.R26A.map(v => v || 0);
   const projs   = ca.R26P.map((v,i) => i < ytdMonths - 1 ? 0 : (v || 0));
@@ -1165,38 +1174,32 @@ function renderMonthlyTable(ca, ytdMonths) {
   const r25Row   = [...r25,     total25];
   const totRow   = aRow.map((a,i) => a + pRow[i]);
 
-  function fmtCell(v, style) {
-    return `<td style="text-align:right;${style}">${v>0?fmt(v):'—'}</td>`;
-  }
-
-  document.getElementById('monthly-table-wrap').innerHTML = `
-    <table class="perf-table">
-      <thead><tr>
-        <th class="row-label"></th>
-        ${cols.map((c,i) => `<th${i===cols.length-1?' style="border-left:1px solid var(--border)"':''}>${c}</th>`).join('')}
-      </tr></thead>
-      <tbody>
+  const rows = [];
+  rows.push(`
         <tr>
           <td class="row-label" style="color:var(--muted)">2025</td>
           ${r25Row.map((v,i) => {
             const sep = i===12 ? 'border-left:1px solid var(--border);' : '';
             return `<td style="text-align:right;${sep}color:var(--muted)">${v>0?fmt(v):'—'}</td>`;
           }).join('')}
-        </tr>
+        </tr>`);
+  if (showOkr) rows.push(`
         <tr>
           <td class="row-label" style="color:var(--muted)">OKR</td>
           ${oRow.map((v,i) => {
             const sep = i===12 ? 'border-left:1px solid var(--border);' : '';
             return `<td style="text-align:right;${sep}color:var(--muted)">${v>0?fmt(v):'—'}</td>`;
           }).join('')}
-        </tr>
+        </tr>`);
+  rows.push(`
         <tr>
           <td class="row-label" style="color:var(--green)">Actual</td>
           ${aRow.map((v,i) => {
             const sep = i===12 ? 'border-left:1px solid var(--border);' : '';
             return `<td style="text-align:right;${sep}color:${v>0?'var(--green)':'var(--muted)'}">${v>0?fmt(v):'—'}</td>`;
           }).join('')}
-        </tr>
+        </tr>`);
+  if (showOkr) rows.push(`
         <tr>
           <td class="row-label" style="color:var(--text2)">vs OKR</td>
           ${aRow.map((actual,i) => {
@@ -1206,21 +1209,24 @@ function renderMonthlyTable(ca, ytdMonths) {
             const c = v>=90?'var(--green)':v>=70?'var(--yellow)':'var(--red)';
             return `<td style="text-align:right;${sep}color:${c};font-weight:700">${v}%</td>`;
           }).join('')}
-        </tr>
+        </tr>`);
+  rows.push(`
         <tr style="border-top:1px solid var(--border)">
           <td class="row-label" style="color:rgba(100,231,106,.55)">Projection</td>
           ${pRow.map((v,i) => {
             const sep = i===12 ? 'border-left:1px solid var(--border);' : '';
             return `<td style="text-align:right;${sep}color:${v>0?'rgba(100,231,106,.55)':'var(--muted)'}">${v>0?fmt(v):'—'}</td>`;
           }).join('')}
-        </tr>
+        </tr>`);
+  rows.push(`
         <tr>
           <td class="row-label" style="color:var(--text);font-weight:700">Total A+P</td>
           ${totRow.map((v,i) => {
             const sep = i===12 ? 'border-left:1px solid var(--border);' : '';
             return `<td style="text-align:right;${sep}color:${v>0?'var(--text)':'var(--muted)'};font-weight:700">${v>0?fmt(v):'—'}</td>`;
           }).join('')}
-        </tr>
+        </tr>`);
+  if (showOkr) rows.push(`
         <tr>
           <td class="row-label" style="color:var(--text2)">vs OKR (A+P)</td>
           ${totRow.map((total,i) => {
@@ -1230,7 +1236,8 @@ function renderMonthlyTable(ca, ytdMonths) {
             const c = v>=90?'var(--green)':v>=70?'var(--yellow)':'var(--red)';
             return `<td style="text-align:right;${sep}color:${c};font-weight:700">${v}%</td>`;
           }).join('')}
-        </tr>
+        </tr>`);
+  rows.push(`
         <tr style="border-top:1px solid var(--border)">
           <td class="row-label" style="color:var(--text2)">vs 2025 (A+P)</td>
           ${totRow.map((total,i) => {
@@ -1240,13 +1247,23 @@ function renderMonthlyTable(ca, ytdMonths) {
             const c = v>=0?'var(--green)':'var(--red)';
             return `<td style="text-align:right;${sep}color:${c};font-weight:600">${v>=0?'+':''}${v}%</td>`;
           }).join('')}
-        </tr>
-      </tbody>
+        </tr>`);
+
+  document.getElementById('monthly-table-wrap').innerHTML = `
+    <table class="perf-table">
+      <thead><tr>
+        <th class="row-label"></th>
+        ${cols.map((c,i) => `<th${i===cols.length-1?' style="border-left:1px solid var(--border)"':''}>${c}</th>`).join('')}
+      </tr></thead>
+      <tbody>${rows.join('')}</tbody>
     </table>`;
 }
 
 /* ── Quarterly Performance (chart first, then transposed table) ── */
-function renderQSection(q, r25) {
+function renderQSection(q, r25, am) {
+  // L'OKR n'a de sens qu'au niveau du book complet — masqué dès qu'un AM précis est
+  // sélectionné (cf. renderMainChart/renderMonthlyTable pour la même règle).
+  const showOkr = am === 'all';
   const quarters = ['Q1','Q2','Q3','Q4'];
   const q25 = [
     r25.slice(0,3).reduce((a,b)=>a+b,0),
@@ -1263,7 +1280,7 @@ function renderQSection(q, r25) {
       {label:'2025',   data:q25,                           backgroundColor:'rgba(150,150,150,.4)', borderRadius:3},
       {label:'Actual', data:quarters.map(k=>q[k].actual),  backgroundColor:'rgba(100,231,106,.85)', stack:'s26', borderRadius:3},
       {label:'Proj.',  data:quarters.map(k=>q[k].proj),    backgroundColor:'rgba(100,231,106,.28)', stack:'s26', borderRadius:3, borderColor:'rgba(100,231,106,.45)',borderWidth:1},
-      {label:'OKR',    data:quarters.map(k=>q[k].okr),     type:'line', borderColor:'#E4FA62', borderDash:[4,3], pointRadius:3, pointBackgroundColor:'#E4FA62', borderWidth:1.5, tension:0, fill:false, order:-1},
+      ...(showOkr ? [{label:'OKR', data:quarters.map(k=>q[k].okr), type:'line', borderColor:'#E4FA62', borderDash:[4,3], pointRadius:3, pointBackgroundColor:'#E4FA62', borderWidth:1.5, tension:0, fill:false, order:-1}] : []),
     ]},
     options:{ responsive:true, maintainAspectRatio:false,
       plugins:{legend:{display:false}, tooltip:ttip()},
@@ -1288,34 +1305,32 @@ function renderQSection(q, r25) {
   const oRow    = [...quarters.map(k=>q[k].okr),    totalOkr];
   const totRow  = aRow.map((a,i) => a + pRow[i]);
 
-  document.getElementById('q-table-wrap').innerHTML = `
-    <table class="perf-table">
-      <thead><tr>
-        <th class="row-label"></th>
-        ${cols.map((c,i) => `<th${i===4?' style="border-left:1px solid var(--border)"':''}>${c}</th>`).join('')}
-      </tr></thead>
-      <tbody>
+  const rows = [];
+  rows.push(`
         <tr>
           <td class="row-label" style="color:var(--muted)">2025</td>
           ${a25Row.map((v,i) => {
             const sep = i===4?'border-left:1px solid var(--border);':'';
             return `<td style="text-align:right;${sep}color:var(--muted)">${v>0?fmt(v):'—'}</td>`;
           }).join('')}
-        </tr>
+        </tr>`);
+  if (showOkr) rows.push(`
         <tr>
           <td class="row-label" style="color:var(--muted)">OKR</td>
           ${oRow.map((v,i) => {
             const sep = i===4?'border-left:1px solid var(--border);':'';
             return `<td style="text-align:right;${sep}color:var(--muted)">${v>0?fmt(v):'—'}</td>`;
           }).join('')}
-        </tr>
+        </tr>`);
+  rows.push(`
         <tr>
           <td class="row-label" style="color:var(--green)">Actual</td>
           ${aRow.map((v,i) => {
             const sep = i===4?'border-left:1px solid var(--border);':'';
             return `<td style="text-align:right;${sep}color:${v>0?'var(--green)':'var(--muted)'}">${v>0?fmt(v):'—'}</td>`;
           }).join('')}
-        </tr>
+        </tr>`);
+  if (showOkr) rows.push(`
         <tr>
           <td class="row-label" style="color:var(--text2)">vs OKR</td>
           ${aRow.map((actual,i) => {
@@ -1325,21 +1340,24 @@ function renderQSection(q, r25) {
             const c = v>=90?'var(--green)':v>=70?'var(--yellow)':'var(--red)';
             return `<td style="text-align:right;${sep}color:${c};font-weight:700">${v}%</td>`;
           }).join('')}
-        </tr>
+        </tr>`);
+  rows.push(`
         <tr style="border-top:1px solid var(--border)">
           <td class="row-label" style="color:rgba(100,231,106,.55)">Projection</td>
           ${pRow.map((v,i) => {
             const sep = i===4?'border-left:1px solid var(--border);':'';
             return `<td style="text-align:right;${sep}color:${v>0?'rgba(100,231,106,.55)':'var(--muted)'}">${v>0?fmt(v):'—'}</td>`;
           }).join('')}
-        </tr>
+        </tr>`);
+  rows.push(`
         <tr>
           <td class="row-label" style="color:var(--text);font-weight:700">Total A+P</td>
           ${totRow.map((v,i) => {
             const sep = i===4?'border-left:1px solid var(--border);':'';
             return `<td style="text-align:right;${sep}color:${v>0?'var(--text)':'var(--muted)'};font-weight:700">${v>0?fmt(v):'—'}</td>`;
           }).join('')}
-        </tr>
+        </tr>`);
+  if (showOkr) rows.push(`
         <tr>
           <td class="row-label" style="color:var(--text2)">vs OKR (A+P)</td>
           ${totRow.map((total,i) => {
@@ -1349,7 +1367,8 @@ function renderQSection(q, r25) {
             const c = v>=90?'var(--green)':v>=70?'var(--yellow)':'var(--red)';
             return `<td style="text-align:right;${sep}color:${c};font-weight:700">${v}%</td>`;
           }).join('')}
-        </tr>
+        </tr>`);
+  rows.push(`
         <tr>
           <td class="row-label" style="color:var(--text2)">vs 2025 (A+P)</td>
           ${totRow.map((total,i) => {
@@ -1359,8 +1378,15 @@ function renderQSection(q, r25) {
             const c = v>=0?'var(--green)':'var(--red)';
             return `<td style="text-align:right;${sep}color:${c};font-weight:600">${v>=0?'+':''}${v}%</td>`;
           }).join('')}
-        </tr>
-      </tbody>
+        </tr>`);
+
+  document.getElementById('q-table-wrap').innerHTML = `
+    <table class="perf-table">
+      <thead><tr>
+        <th class="row-label"></th>
+        ${cols.map((c,i) => `<th${i===4?' style="border-left:1px solid var(--border)"':''}>${c}</th>`).join('')}
+      </tr></thead>
+      <tbody>${rows.join('')}</tbody>
     </table>`;
 }
 
@@ -2655,8 +2681,8 @@ function openTierModal(tier) {
   };
   const tc = TIER_COLORS[tier] || {};
 
-  // Build list of merchants in this tier with their delta vs 2025
-  const list = Object.entries(GDATA.merchants)
+  // Build list of merchants in this tier (filtré par l'AM actif de l'onglet Global) avec leur delta vs 2025
+  const list = Object.entries(filterMerchantsByAM(GDATA.merchants, activeGlobalAM))
     .filter(([id]) => TIER_MAP[id] === tier)
     .map(([id, m]) => {
       const ytd25 = m.actual_25_ytd || 0;
@@ -2668,10 +2694,11 @@ function openTierModal(tier) {
   const tops  = list.filter(r => r.delta >= 0).sort((a,b) => b.delta - a.delta);
   const flops = list.filter(r => r.delta < 0).sort((a,b) => a.delta - b.delta);
 
+  const amSuffix = activeGlobalAM === 'all' ? '' : ` · ${activeGlobalAM}`;
   document.getElementById('tier-modal-title').innerHTML =
     `<span style="color:${tc.label}">${tier}</span> — Tops & Flops`;
   document.getElementById('tier-modal-sub').textContent =
-    `${list.length} merchants · YTD ${GDATA.summary.ytd_months>0?'Jan–'+['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][GDATA.summary.ytd_months-1]:''} 2026 vs same period 2025`;
+    `${list.length} merchants · YTD ${GDATA.summary.ytd_months>0?'Jan–'+['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][GDATA.summary.ytd_months-1]:''} 2026 vs same period 2025${amSuffix}`;
 
   function makeCol(items, isFlop) {
     if (!items.length) return `<div style="color:var(--muted);font-size:12px;padding:12px 0">No merchants</div>`;
@@ -2812,7 +2839,7 @@ function renderMerchantsKPIs(merchants, am, summary) {
 /* ── New Clients Modal ── */
 function openNewClientsModal() {
   if (!GDATA) return;
-  const newClients = Object.entries(GDATA.merchants)
+  const newClients = Object.entries(filterMerchantsByAM(GDATA.merchants, activeGlobalAM))
     .filter(([,m]) => m.is_new_client)
     .map(([id,m]) => ({ id, ...m }))
     .sort((a,b) => (b.actual_26||0) - (a.actual_26||0));
@@ -2820,20 +2847,25 @@ function openNewClientsModal() {
   const ytdRange = GDATA.summary.ytd_months > 0
     ? `Jan–${MONTHS[GDATA.summary.ytd_months-1]} 2026`
     : '2026 YTD';
+  const amSuffix = activeGlobalAM === 'all' ? '' : ` · ${activeGlobalAM}`;
   document.getElementById('nc-modal-sub').textContent =
-    `${newClients.length} new clients · ${ytdRange}`;
+    `${newClients.length} new clients · ${ytdRange}${amSuffix}`;
+  // "vs 2025 New Clients" compare au total du book (n8n) — pas de référence 2025 par AM
+  // disponible, donc masqué dès qu'un AM précis est sélectionné (cf. règle OKR ci-dessus).
+  const vsLastYearTile = activeGlobalAM === 'all' ? `
+      <div class="modal-kpi">
+        <div class="modal-kpi-label">vs 2025 New Clients</div>
+        <div class="modal-kpi-value" style="color:var(--text2)">${newClients.length} <span style="font-size:13px">vs ${GDATA.summary.new_clients_25_ytd}</span></div>
+        <div class="modal-kpi-sub">last year (YTD)</div>
+      </div>` : '';
   document.getElementById('nc-modal-body').innerHTML = `
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:20px">
+    <div style="display:grid;grid-template-columns:${activeGlobalAM === 'all' ? '1fr 1fr' : '1fr'};gap:10px;margin-bottom:20px">
       <div class="modal-kpi">
         <div class="modal-kpi-label">Total New Client Revenue</div>
         <div class="modal-kpi-value" style="color:var(--green)">${fmt(totalRev)}</div>
         <div class="modal-kpi-sub">${ytdRange}</div>
       </div>
-      <div class="modal-kpi">
-        <div class="modal-kpi-label">vs 2025 New Clients</div>
-        <div class="modal-kpi-value" style="color:var(--text2)">${newClients.length} <span style="font-size:13px">vs ${GDATA.summary.new_clients_25_ytd}</span></div>
-        <div class="modal-kpi-sub">last year (YTD)</div>
-      </div>
+      ${vsLastYearTile}
     </div>
     <table class="modal-table">
       <thead><tr>
@@ -3068,7 +3100,7 @@ function openVerticalModal(vertical) {
   const ytdM = GDATA.summary.ytd_months;
   const color = VERTICAL_LABEL_COLORS[vertical] || 'var(--text)';
 
-  const list = Object.entries(GDATA.merchants)
+  const list = Object.entries(filterMerchantsByAM(GDATA.merchants, activeGlobalAM))
     .filter(([id]) => (VERTICAL_MAP[id]||'Autres') === vertical)
     .map(([id, m]) => {
       const ytd25 = m.actual_25_ytd || 0;
@@ -3080,10 +3112,11 @@ function openVerticalModal(vertical) {
   const tops  = list.filter(r => r.delta >= 0).sort((a,b) => b.delta - a.delta);
   const flops = list.filter(r => r.delta < 0).sort((a,b) => a.delta - b.delta);
 
+  const amSuffix = activeGlobalAM === 'all' ? '' : ` · ${activeGlobalAM}`;
   document.getElementById('vertical-modal-title').innerHTML =
     `<span style="color:${color}">${vertical}</span>`;
   document.getElementById('vertical-modal-sub').textContent =
-    `${list.length} merchants · YTD ${ytdM>0?'Jan–'+MONTHS[ytdM-1]:''} 2026 vs same period 2025`;
+    `${list.length} merchants · YTD ${ytdM>0?'Jan–'+MONTHS[ytdM-1]:''} 2026 vs same period 2025${amSuffix}`;
 
   const thStyle = 'text-align:right;padding:6px 8px;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.4px;color:var(--text2);border-bottom:1px solid var(--border)';
   function makeCol(items, isFlop) {
@@ -3193,7 +3226,7 @@ function closeVerticalModal() {
 function openMFDetailModal(label, sub, monthIndices) {
   if (!GDATA) return;
 
-  const rows = Object.entries(GDATA.merchants).map(([id, m]) => {
+  const rows = Object.entries(filterMerchantsByAM(GDATA.merchants, activeGlobalAM)).map(([id, m]) => {
     const mf25 = m.monthly_mf_25 || [];
     const mf26 = m.monthly_mf_26 || [];
     const v25 = monthIndices.reduce((s,i) => s + (mf25[i]||0), 0);
@@ -3206,9 +3239,10 @@ function openMFDetailModal(label, sub, monthIndices) {
   const tops    = rows.filter(r => r.delta >= 0 && !(r.v25 === 0 && r.v26 > 0)).sort((a,b) => b.delta - a.delta);
   const flops   = rows.filter(r => r.delta < 0 && !(r.v25 > 0 && r.v26 === 0)).sort((a,b) => a.delta - b.delta);
 
+  const amSuffix = activeGlobalAM === 'all' ? '' : ` · ${activeGlobalAM}`;
   document.getElementById('mf-detail-modal-title').textContent = `Media Fees — ${label}`;
   document.getElementById('mf-detail-modal-sub').textContent =
-    `${sub} · ${stopped.length} stopped ordering · ${started.length} new order`;
+    `${sub} · ${stopped.length} stopped ordering · ${started.length} new order${amSuffix}`;
 
   const thStyle = 'text-align:right;padding:6px 8px;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.4px;color:var(--text2);border-bottom:1px solid var(--border)';
   function makeTable(items, tagLabel, tagColor) {
