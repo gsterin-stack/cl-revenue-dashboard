@@ -2611,7 +2611,7 @@ function renderAMDeliveryTable(merchants, am, summary) {
         ${sh('avb','Actual vs Budget')}
         <th style="cursor:pointer;user-select:none;text-align:center;white-space:nowrap" onclick="amSortBy('wow')">WoW${sc('wow')}</th>
         ${sh('mf','Q MF','var(--purple)')}
-        <th class="num" style="white-space:nowrap" title="Capped: month actual+proj vs signed/validated (Airtable) · Open: vs same month last year">Pace</th>
+        <th class="num" style="white-space:nowrap" title="Projected month-end run-rate vs target (Capped: vs signed/validated · Open: vs same month last year) — muted during the first 5 days of the month">Pace</th>
       </tr></thead>
       <tbody>${filteredRows.map(r => {
         const isCapped = r.budget_type === 'capped';
@@ -2638,10 +2638,20 @@ function renderAMDeliveryTable(merchants, am, summary) {
         const avbCell = isCapped && avb!=null
           ? `${budgetGauge(avb)} `
           : '<span class="neu">—</span>';
+        /* Le point/pct affiché ici doit refléter le projeté fin de mois (pacing), pas le
+           MTD brut — sinon tout le book paraît rouge en tout début de mois. On retombe
+           sur le MTD brut seulement si le pacing n'a pas pu être calculé (pas de date
+           de référence exploitable). */
         const paceStatus = merchantMonthStatus(r, curMoIdx);
-        const paceCell = paceStatus
-          ? `<span style="display:inline-flex;align-items:center;gap:4px;color:${paceStatus.color};font-weight:700">
-               <span style="width:7px;height:7px;border-radius:50%;background:${paceStatus.color};display:inline-block;flex-shrink:0"></span>${paceStatus.pct}%
+        const paceDisplay = paceStatus ? (paceStatus.pacing || paceStatus) : null;
+        const paceTip = paceDisplay && paceDisplay.neutralized
+          ? ` title="Grace period — day ${paceDisplay.daysElapsed} of ${paceDisplay.daysInMonth}, projection muted through day 5"`
+          : paceDisplay && paceDisplay.daysElapsed != null
+          ? ` title="Projected month-end vs target (run-rate as of day ${paceDisplay.daysElapsed}/${paceDisplay.daysInMonth})"`
+          : '';
+        const paceCell = paceDisplay
+          ? `<span${paceTip} style="display:inline-flex;align-items:center;gap:4px;color:${paceDisplay.color};font-weight:700">
+               <span style="width:7px;height:7px;border-radius:50%;background:${paceDisplay.color};display:inline-block;flex-shrink:0"></span>${paceDisplay.pct}%
              </span>`
           : '<span class="neu">—</span>';
         return `<tr style="cursor:pointer" onclick="openWowModal('${r.id}')">
