@@ -204,6 +204,7 @@
 <main>
   <!-- ═══ MANAGEMENT ═══ -->
   <div id="tab-management" class="tab-content active">
+    <div class="am-filter" id="global-am-filter"><!-- generated dynamically --></div>
     <div class="kpi-bar" id="kpi-bar"></div>
 
     <div class="card chart-full">
@@ -258,18 +259,18 @@
 
   <!-- ═══ AM VIEW ═══ -->
   <div id="tab-am" class="tab-content">
-    <div class="am-select-bar" id="am-select-bar"><!-- generated dynamically --></div>
-    <div id="am-q-kpi-bar" class="am-q-kpi-bar" style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:14px"></div>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+      <div class="am-select-bar" id="am-select-bar" style="margin-bottom:0"><!-- generated dynamically --></div>
+      <input type="text" id="am-search" placeholder="🔍 Search merchant…"
+        oninput="filterAMSearch(this.value)"
+        style="background:var(--s2);border:1px solid var(--border);border-radius:8px;color:var(--text);padding:7px 14px;font-size:13px;width:260px;outline:none;font-family:var(--font);transition:border-color .15s"
+        onfocus="this.style.borderColor='rgba(100,231,106,.5)'"
+        onblur="this.style.borderColor='var(--border)'">
+    </div>
+    <div id="am-q-kpi-bar" class="am-q-kpi-bar" style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:14px"></div>
     <div id="am-mf-alerts" style="margin-bottom:14px"></div>
     <div class="card">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
-        <div class="card-title" id="am-delivery-title" style="margin-bottom:0">DELIVERY — Portfolio</div>
-        <input type="text" id="am-search" placeholder="Search merchant…"
-          oninput="filterAMSearch(this.value)"
-          style="background:var(--s2);border:1px solid var(--border);border-radius:8px;color:var(--text);padding:6px 12px;font-size:12px;width:220px;outline:none;font-family:var(--font);transition:border-color .15s"
-          onfocus="this.style.borderColor='rgba(100,231,106,.5)'"
-          onblur="this.style.borderColor='var(--border)'">
-      </div>
+      <div class="card-title" id="am-delivery-title">DELIVERY — Portfolio</div>
       <div class="table-wrap" id="am-delivery-table-wrap"></div>
     </div>
   </div>
@@ -422,6 +423,7 @@ const R25_HARD = [726227,667280,583768,691001,690320,744567,775173,713803,681708
 let GDATA    = null;
 let activeAM = 'all';
 let activeMerchantsAM = 'all';
+let activeGlobalAM = 'all';
 let modalChart = null;
 let tierChart  = null;
 let sortCol  = 'signed';
@@ -808,13 +810,7 @@ function renderAll(data) {
   GDATA = data;
   document.getElementById('updated-at').textContent = 'Updated: '+data.updated_at;
   renderAMButtons(data.summary.ams || buildAMsFromMerchants(data.merchants));
-  renderKPIs(data.summary);
-  try { renderMainChart(data.chart_arrays); } catch(e) { console.error('renderMainChart',e); }
-  try { renderMonthlyTable(data.chart_arrays, data.summary.ytd_months); } catch(e) { console.error('renderMonthlyTable',e); }
-  try { renderQSection(data.quarterly, data.chart_arrays.R25); } catch(e) { console.error('renderQSection',e); }
-  try { renderTierSection(data.merchants, data.chart_arrays.R25); } catch(e) { console.error('renderTierSection',e); }
-  try { renderMFMgmtSection(data.merchants, data.summary.ytd_months); } catch(e) { console.error('renderMFMgmtSection',e); }
-  try { renderVerticalSection(data.merchants); } catch(e) { console.error('renderVerticalSection',e); }
+  renderGlobalSections(data, activeGlobalAM);
   try { renderMerchantTable('merchants-table-wrap', data.merchants, 'all'); } catch(e) { console.error('renderMerchantTable',e); }
   try { renderAMView(data.merchants, data.summary); } catch(e) { console.error('renderAMView',e); }
   fetch('./quarter_history.json')
@@ -828,6 +824,95 @@ function buildAMsFromMerchants(merchants) {
   const ams = new Set();
   Object.values(merchants).forEach(m => { if (m.am) ams.add(m.am); });
   return [...ams].sort();
+}
+
+/* ── Onglet Global : filtre AM ────────────────────────────────────────────────
+   Toutes les sections du Global tab (KPIs, chart mensuel, tableau mensuel, quarterly,
+   tier, media fees, vertical) sont dérivées ici pour un AM donné. Pour 'all', on
+   repasse tel quel les agrégats déjà calculés par n8n (data.summary/chart_arrays/
+   quarterly) — zéro risque de divergence sur la vue par défaut. Pour un AM précis, on
+   recalcule à partir des merchants filtrés, avec la même logique de split actual/proj
+   (via ytd_months) que le pipeline n8n. Le porteur historique (R24/R25_HARD, utilisés
+   directement par renderMainChart/renderMonthlyTable) et la ligne OKR mensuelle restent
+   des références globales non filtrées, comme c'est déjà le cas pour la vue "all". ── */
+function filterMerchantsByAM(merchants, am) {
+  if (am === 'all') return merchants;
+  return Object.fromEntries(Object.entries(merchants).filter(([,m]) => m.am === am));
+}
+
+function deriveChartArraysForAM(merchants, am, ytdMonths, baseChartArrays) {
+  if (am === 'all') return baseChartArrays;
+  const R26A = new Array(12).fill(0);
+  const R26P = new Array(12).fill(0);
+  const R25  = new Array(12).fill(0);
+  const EXPECTED = new Array(12).fill(0);
+  for (const m of Object.values(merchants)) {
+    for (let i=0; i<12; i++) {
+      R25[i] += (m.monthly_25 && m.monthly_25[i]) || 0;
+      const v26 = (m.monthly_26 && m.monthly_26[i]) || 0;
+      if (i < ytdMonths) R26A[i] += v26; else R26P[i] += v26;
+      EXPECTED[i] += m.is_capped
+        ? ((m.monthly_signed && m.monthly_signed[i] != null) ? m.monthly_signed[i] : v26)
+        : v26;
+    }
+  }
+  return { ...baseChartArrays, R26A, R26P, R25, EXPECTED };
+}
+
+function deriveSummaryForAM(merchants, am, baseSummary) {
+  if (am === 'all') return baseSummary;
+  const rows = Object.values(merchants);
+  const ytd_actual   = rows.reduce((s,m)=>s+(m.actual_26||0), 0);
+  const ytd_25_total = rows.reduce((s,m)=>s+(m.actual_25_ytd||0), 0);
+  const ytd_yoy = ytd_25_total>0 ? Math.round((ytd_actual/ytd_25_total-1)*1000)/10 : 0;
+  const newClients = rows.filter(m=>m.is_new_client);
+
+  const q = currentQ();
+  const amOkr = getAMOkr(am);
+  const okrQuarters = Array.from({length:q}, (_,i) => amOkr[qLabel(i+1)]);
+  const ytd_okr_sum = okrQuarters.every(v=>v!=null) ? okrQuarters.reduce((a,b)=>a+b,0) : null;
+
+  return {
+    ...baseSummary,
+    ytd_actual,
+    ytd_yoy,
+    ytd_okr_sum,
+    active_merchants_26:     rows.length,
+    active_merchants_25_ytd: rows.filter(m=>(m.actual_25||0)>0).length,
+    new_clients_26:          newClients.length,
+    ytd_new_clients_revenue: newClients.reduce((s,m)=>s+(m.actual_26||0), 0),
+  };
+}
+
+function deriveQuarterlyForAM(am, R26A, R26P, baseQuarterly) {
+  if (am === 'all') return baseQuarterly;
+  const amOkr  = getAMOkr(am);
+  const qMapAM = ['Q1','Q1','Q1','Q2','Q2','Q2','Q3','Q3','Q3','Q4','Q4','Q4'];
+  const quarterly = {
+    Q1:{actual:0,proj:0,okr:amOkr.Q1}, Q2:{actual:0,proj:0,okr:amOkr.Q2},
+    Q3:{actual:0,proj:0,okr:amOkr.Q3}, Q4:{actual:0,proj:0,okr:amOkr.Q4},
+  };
+  for (let i=0; i<12; i++) {
+    const q = qMapAM[i];
+    quarterly[q].actual += R26A[i]||0;
+    quarterly[q].proj   += R26P[i]||0;
+  }
+  return quarterly;
+}
+
+function renderGlobalSections(data, am) {
+  const filteredMerchants = filterMerchantsByAM(data.merchants, am);
+  const ca        = deriveChartArraysForAM(filteredMerchants, am, data.summary.ytd_months, data.chart_arrays);
+  const summary    = deriveSummaryForAM(filteredMerchants, am, data.summary);
+  const quarterly  = deriveQuarterlyForAM(am, ca.R26A, ca.R26P, data.quarterly);
+
+  renderKPIs(summary);
+  try { renderMainChart(ca); } catch(e) { console.error('renderMainChart',e); }
+  try { renderMonthlyTable(ca, summary.ytd_months); } catch(e) { console.error('renderMonthlyTable',e); }
+  try { renderQSection(quarterly, ca.R25); } catch(e) { console.error('renderQSection',e); }
+  try { renderTierSection(filteredMerchants, ca.R25); } catch(e) { console.error('renderTierSection',e); }
+  try { renderMFMgmtSection(filteredMerchants, summary.ytd_months); } catch(e) { console.error('renderMFMgmtSection',e); }
+  try { renderVerticalSection(filteredMerchants); } catch(e) { console.error('renderVerticalSection',e); }
 }
 
 /* ── KPI Bar (3 cards, no month range in label) ── */
@@ -847,13 +932,20 @@ function renderKPIs(s) {
     ? (ncYoy>=0 ? `<span class="pos">+${ncYoy}% vs LY</span> · ` : `<span class="neg">${ncYoy}% vs LY</span> · `)
     : '';
 
-  // YTD vs OKR (cumul Q1…trimestre en cours) — même cible que la vue AM, agrégée sur tout le book
+  // YTD vs OKR (cumul Q1…trimestre en cours) — même cible que la vue AM, agrégée sur tout le book.
+  // Quand s.ytd_okr_sum est fourni (vue Global filtrée par AM, cf. deriveSummaryForAM), on l'utilise
+  // tel quel — sinon (vue "all") on retombe sur GDATA.quarterly, agrégé sur tout le book.
   const q          = currentQ();
-  const okrQuarters = GDATA && GDATA.quarterly
-    ? Array.from({length:q}, (_,i) => GDATA.quarterly[qLabel(i+1)] ? GDATA.quarterly[qLabel(i+1)].okr : null)
-    : [];
-  const ytdOkrSum  = okrQuarters.length && okrQuarters.every(v => v != null)
-    ? okrQuarters.reduce((a,b)=>a+b, 0) : null;
+  let ytdOkrSum;
+  if (s.ytd_okr_sum !== undefined) {
+    ytdOkrSum = s.ytd_okr_sum;
+  } else {
+    const okrQuarters = GDATA && GDATA.quarterly
+      ? Array.from({length:q}, (_,i) => GDATA.quarterly[qLabel(i+1)] ? GDATA.quarterly[qLabel(i+1)].okr : null)
+      : [];
+    ytdOkrSum = okrQuarters.length && okrQuarters.every(v => v != null)
+      ? okrQuarters.reduce((a,b)=>a+b, 0) : null;
+  }
   const ytdOkrPct  = ytdOkrSum ? Math.round(s.ytd_actual/ytdOkrSum*100) : null;
   const ytdOkrColor= ytdOkrPct==null ? 'var(--text)' : ytdOkrPct>=90?'var(--green)':ytdOkrPct>=70?'var(--yellow)':'var(--red)';
 
@@ -1371,9 +1463,15 @@ function renderTierSection(merchants, r25Portfolio) {
   const totYoy = totalA25 > 0 ? Math.round((totAP/totalA25-1)*100) : null;
   const totYoyHtml = totYoy!=null ? `<span style="color:${totYoy>=0?'var(--green)':'var(--red)'};font-weight:700">${totYoy>=0?'+':''}${totYoy}%</span>` : '—';
   const totYtdDelta = totalYtd26 - totalYtd25;
-  // Use Snowflake-computed ytd_yoy for the total % (avoids distortion from new 2026 merchants with no 2025 history)
-  const sfYtdPct = GDATA && GDATA.summary.ytd_yoy != null ? GDATA.summary.ytd_yoy : null;
-  const totYtdPct = sfYtdPct;
+  // Sur le book complet (non filtré par AM), on préfère le ytd_yoy calculé côté n8n : il
+  // inclut aussi les merchants qui avaient du revenu en 2025 mais n'en ont plus du tout en
+  // 2026 (churn), absents de `merchants` ici et donc invisibles à un recalcul local. Sur une
+  // vue filtrée par AM en revanche, GDATA.summary.ytd_yoy (global) ne veut plus rien dire —
+  // on retombe sur le calcul local, seule option disponible pour ce sous-ensemble.
+  const isFullBook = merchants === GDATA.merchants;
+  const totYtdPct = isFullBook && GDATA.summary.ytd_yoy != null
+    ? GDATA.summary.ytd_yoy
+    : (totalYtd25 > 0 ? Math.round((totalYtd26/totalYtd25-1)*100) : null);
 
   document.getElementById('tier-table-wrap').innerHTML = `
     <table>
@@ -1605,8 +1703,15 @@ function renderVerticalSection(merchants) {
   const totYoyVal=totAP-totA25;
   const totYoyHtml=totA25>0?`<span style="color:${totYoy>=0?'var(--green)':'var(--red)'};font-weight:700">${totYoy>=0?'+':''}${fmt(totYoyVal)}</span><br><span style="font-size:10px;font-weight:400;opacity:.7">${totYoy>=0?'+':''}${totYoy}%</span>`:'—';
   const totYtdDelta=totYtd26-totYtd25;
-  // Use Snowflake-computed ytd_yoy for the total % (avoids distortion from new 2026 merchants with no 2025 history)
-  const totYtdPct = GDATA && GDATA.summary.ytd_yoy != null ? GDATA.summary.ytd_yoy : (totYtd25>0?Math.round((totYtd26/totYtd25-1)*100):null);
+  // Sur le book complet (non filtré par AM), on préfère le ytd_yoy calculé côté n8n : il
+  // inclut aussi les merchants qui avaient du revenu en 2025 mais n'en ont plus du tout en
+  // 2026 (churn), absents de `merchants` ici et donc invisibles à un recalcul local. Sur une
+  // vue filtrée par AM en revanche, GDATA.summary.ytd_yoy (global) ne veut plus rien dire —
+  // on retombe sur le calcul local, seule option disponible pour ce sous-ensemble.
+  const isFullBook = merchants === GDATA.merchants;
+  const totYtdPct = isFullBook && GDATA.summary.ytd_yoy != null
+    ? GDATA.summary.ytd_yoy
+    : (totYtd25>0 ? Math.round((totYtd26/totYtd25-1)*100) : null);
   const ytdRangeLabel = ytdM>0 ? `YTD vs LY (Jan–${MONTHS[ytdM-1]})` : 'YTD vs LY';
   document.getElementById('vertical-table-wrap').innerHTML=`
     <table>
@@ -1941,6 +2046,22 @@ function renderAMButtons(ams) {
       `<button class="am-btn${am===activeMerchantsAM?' active':''}"
          onclick="filterMerchantsAM('${am}',this)">${am}</button>`
     ).join('');
+
+  // ── Global tab filter ──
+  document.getElementById('global-am-filter').innerHTML =
+    `<button class="am-btn${activeGlobalAM==='all'?' active':''}"
+       onclick="filterGlobalAM('all',this)">All</button>` +
+    ams.map(am =>
+      `<button class="am-btn${am===activeGlobalAM?' active':''}"
+         onclick="filterGlobalAM('${am}',this)">${am}</button>`
+    ).join('');
+}
+
+function filterGlobalAM(am, btn) {
+  activeGlobalAM = am;
+  document.querySelectorAll('#global-am-filter .am-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  renderGlobalSections(GDATA, activeGlobalAM);
 }
 
 function selectAMView(am, btn) {
@@ -1970,16 +2091,7 @@ function renderAMQKPIs(merchants, am, summary) {
   const qPct   = qOkr ? Math.round(qRev/qOkr*100) : null;
   const qColor = qPct==null?'var(--text)':qPct>=90?'var(--green)':qPct>=70?'var(--yellow)':'var(--red)';
 
-  // YTD vs cumulative OKR (Q1+Q2+… through current Q).
-  // Only sum when every quarter up to now has a known target — a quarter with an
-  // unset OKR must not silently count as 0, or the cumulative target (and the % vs
-  // it) comes out badly wrong once YTD actuals span more quarters than have a set OKR.
   const rows        = merchantRows(merchants, am);
-  const ytd         = rows.reduce((s,r)=>s+(r.actual_26||0), 0);
-  const ytdQuarters = Array.from({length:q},(_,i)=>amOkr[qLabel(i+1)]);
-  const ytdOkrSum   = ytdQuarters.every(v=>v!=null) ? ytdQuarters.reduce((s,v)=>s+v,0) : null;
-  const ytdPct  = ytdOkrSum ? Math.round(ytd/ytdOkrSum*100) : null;
-  const ytdColor= ytdPct==null?'var(--text)':ytdPct>=90?'var(--green)':ytdPct>=70?'var(--yellow)':'var(--red)';
 
   // MF alert count
   const mfAlerts = rows.filter(r => (r.media_fees_ly||0)>0 && (r.media_fees_ytd||0)===0).length;
@@ -2016,13 +2128,6 @@ function renderAMQKPIs(merchants, am, summary) {
         ? `<span style="color:${qColor};font-weight:700">${qPct}%</span> <span class="neu">vs ${fmtK(qOkr)} OKR</span>`
         : okrPlaceholder}</div>
       ${qProgressHtml}
-    </div>
-    <div class="kpi">
-      <div class="kpi-label">YTD vs Q1–${qLabel(q)} OKR</div>
-      <div class="kpi-value" style="color:${ytdColor}">${fmtK(ytd)}</div>
-      <div class="kpi-sub">${ytdOkrSum
-        ? `<span style="color:${ytdColor};font-weight:700">${ytdPct}%</span> <span class="neu">vs ${fmtK(ytdOkrSum)} cible</span>`
-        : okrPlaceholder}</div>
     </div>
     <div class="kpi">
       <div class="kpi-label">Merchants · ${am}</div>
