@@ -1273,7 +1273,7 @@ function renderTierSection(merchants, r25Portfolio) {
     g.a26  += m.actual_26 || 0;
     g.p26  += m.proj_26   || 0;
     g.ytd26 += m.actual_26 || 0;
-    if (ytdM > 0) g.ytd25 += (m.monthly_25||[]).slice(0, ytdM).reduce((s,x)=>s+x, 0);
+    g.ytd25 += m.actual_25_ytd || 0;
     g.count++;
   }
 
@@ -1537,9 +1537,7 @@ function renderVerticalSection(merchants) {
     const g = groups[v]||groups['Autres'];
     g.a25 += m.actual_25||0; g.a26 += m.actual_26||0; g.p26 += m.proj_26||0; g.count++;
     g.ytd26 += m.actual_26 || 0;
-    if (ytdM > 0) {
-      g.ytd25 += (m.monthly_25||[]).slice(0, ytdM).reduce((s,x)=>s+x, 0);
-    }
+    g.ytd25 += m.actual_25_ytd || 0;
   }
   const active = [...VORDER,'Autres'].filter(v=>(groups[v].a26+groups[v].p26+groups[v].a25)>0);
   active.sort((a,b)=>(groups[b].a26+groups[b].p26)-(groups[a].a26+groups[a].p26));
@@ -1676,9 +1674,8 @@ function merchantRows(merchants, amFilter) {
                        av=av??-999; bv=bv??-999; break;
         case 'ytd':    av=a.actual_26||0;          bv=b.actual_26||0; break;
         case 'ytd_vs_ly': {
-          const ytdM = GDATA.summary.ytd_months;
-          const ay = (a.monthly_25||[]).slice(0,ytdM).reduce((s,v)=>s+v,0);
-          const by = (b.monthly_25||[]).slice(0,ytdM).reduce((s,v)=>s+v,0);
+          const ay = a.actual_25_ytd || 0;
+          const by = b.actual_25_ytd || 0;
           av = ay>0 ? (a.actual_26||0)/ay : -999;
           bv = by>0 ? (b.actual_26||0)/by : -999;
           break;
@@ -1689,9 +1686,8 @@ function merchantRows(merchants, amFilter) {
         case 'mf_ly':  av=a.media_fees_ly||0;     bv=b.media_fees_ly||0; break;
         case 'yoy_val': av=a.actual_25>0?(a.signed||0)-a.actual_25:-999999; bv=b.actual_25>0?(b.signed||0)-b.actual_25:-999999; break;
         case 'ytd_val': {
-          const ytdMv = GDATA.summary.ytd_months;
-          const ay25v = (a.monthly_25||[]).slice(0,ytdMv).reduce((s,v)=>s+v,0);
-          const by25v = (b.monthly_25||[]).slice(0,ytdMv).reduce((s,v)=>s+v,0);
+          const ay25v = a.actual_25_ytd || 0;
+          const by25v = b.actual_25_ytd || 0;
           av = ay25v>=1000 ? (a.actual_26||0)-ay25v : -999999;
           bv = by25v>=1000 ? (b.actual_26||0)-by25v : -999999;
           break;
@@ -1726,8 +1722,7 @@ function renderMerchantTable(wrapId, merchants, amFilter) {
       <th class="num sortable ${cc('mf_ly')}" data-col="mf_ly" onclick="sortBy('mf_ly')">MF LY</th>
     </tr></thead>
     <tbody>${rows.map(r=>{
-      const ytdM = GDATA.summary.ytd_months;
-      const ytd25 = (r.monthly_25||[]).slice(0, ytdM).reduce((s,v)=>s+v, 0);
+      const ytd25 = r.actual_25_ytd || 0;
       const yoy = r.actual_25>0 ? pctStr(r.signed, r.actual_25) : '<span class="neu">—</span>';
       const yoyVal = r.actual_25>0 ? (r.signed||0)-r.actual_25 : null;
       const yoyValHtml = yoyVal!=null
@@ -2511,8 +2506,7 @@ function openTierModal(tier) {
   const list = Object.entries(GDATA.merchants)
     .filter(([id]) => TIER_MAP[id] === tier)
     .map(([id, m]) => {
-      const ytdM = GDATA.summary.ytd_months;
-      const ytd25 = (m.monthly_25||[]).slice(0, ytdM).reduce((s,v)=>s+v, 0);
+      const ytd25 = m.actual_25_ytd || 0;
       const ap = m.actual_26||0;
       const delta = ap - ytd25;
       return { id, m, ap, delta, ytd25 };
@@ -2920,7 +2914,7 @@ function openVerticalModal(vertical) {
   const list = Object.entries(GDATA.merchants)
     .filter(([id]) => (VERTICAL_MAP[id]||'Autres') === vertical)
     .map(([id, m]) => {
-      const ytd25 = (m.monthly_25||[]).slice(0, ytdM).reduce((s,v)=>s+v, 0);
+      const ytd25 = m.actual_25_ytd || 0;
       const ap = m.actual_26||0;
       const delta = ap - ytd25;
       return { id, m, ap, delta, ytd25 };
