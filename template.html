@@ -731,13 +731,13 @@ function getPacingCtx() {
   return { daysElapsed: d, daysInMonth };
 }
 /* Projects month-end delivery from the run rate observed so far, re-smoothed daily.
-   Muted (grey) through day 5 — a 1-2 day run rate is too noisy to alert on. */
+   Muted (grey) through day 4 — a 1-2 day run rate is too noisy to alert on. */
 function computePacing(now, target, ctx) {
   if (target == null || target <= 0 || !ctx) return null;
   const projected = (now / Math.max(ctx.daysElapsed, 1)) * ctx.daysInMonth;
   const pct   = Math.round(projected/target*100);
   const delta = projected - target;
-  const neutralized = ctx.daysElapsed <= 5;
+  const neutralized = ctx.daysElapsed <= 4;
   let color, dir;
   if      (pct > 120) { color = 'var(--red)';    dir = 'fast'; }
   else if (pct > 110) { color = 'var(--yellow)'; dir = 'fast'; }
@@ -1055,7 +1055,7 @@ function paceGraceNote(isCurrentMonth) {
   if (!isCurrentMonth) return '';
   const ctx = getPacingCtx();
   if (!ctx || ctx.daysElapsed > 5) return '';
-  return ` · grace period — day ${ctx.daysElapsed} of ${ctx.daysInMonth}, pacing alerts muted through day 5`;
+  return ` · grace period — day ${ctx.daysElapsed} of ${ctx.daysInMonth}, pacing alerts muted through day 4`;
 }
 
 /* ── Table partagée pace/delta (utilisée par le drilldown mois et le watchlist AM) — colonnes triables ── */
@@ -1087,7 +1087,7 @@ function paceArrow(st, key) {
 function paceCellsHTML(p) {
   if (!p) return `<td style="text-align:right;padding:8px;color:var(--muted)">—</td><td style="text-align:right;padding:8px;color:var(--muted)">—</td>`;
   const arrow = p.dir==='fast' ? ' ▲' : p.dir==='slow' ? ' ▼' : '';
-  const tip = p.neutralized ? ` title="Grace period — day ${p.daysElapsed} of ${p.daysInMonth}, alert muted through day 5"` : '';
+  const tip = p.neutralized ? ` title="Grace period — day ${p.daysElapsed} of ${p.daysInMonth}, alert muted through day 4"` : '';
   return `<td${tip} style="text-align:right;padding:8px;font-weight:700;color:${p.color}">${p.pct}%${arrow}</td>
     <td style="text-align:right;padding:8px;font-variant-numeric:tabular-nums;color:${p.delta>=0?'var(--green)':'var(--red)'}">${fmtDeltaK(p.delta)}</td>`;
 }
@@ -1126,7 +1126,7 @@ function paceTableInner(tableId) {
 
 /* ── Watchlist AM View — merchants off-pace (capped/signed or open/LY) pour l'AM sélectionné ──
    Filtre sur le pacing projeté (run-rate fin de mois), pas sur le MTD brut, pour éviter
-   le faux positif de début de mois : cf. grace period (day <=5) dans computePacing(). ── */
+   le faux positif de début de mois : cf. grace period (day <=4) dans computePacing(). ── */
 function openWatchlistModal() {
   if (!GDATA) return;
   const curMoIdx  = (GDATA.summary.ytd_months||1) - 1;
@@ -2611,7 +2611,7 @@ function renderAMDeliveryTable(merchants, am, summary) {
         ${sh('avb','Actual vs Budget')}
         <th style="cursor:pointer;user-select:none;text-align:center;white-space:nowrap" onclick="amSortBy('wow')">WoW${sc('wow')}</th>
         ${sh('mf','Q MF','var(--purple)')}
-        <th class="num" style="white-space:nowrap" title="Projected month-end run-rate vs target (Capped: vs signed/validated · Open: vs same month last year) — muted during the first 5 days of the month">Pace</th>
+        <th class="num" style="white-space:nowrap" title="Projected month-end run-rate vs target (Capped: vs signed/validated · Open: vs same month last year) — muted during the first 4 days of the month">Pace</th>
       </tr></thead>
       <tbody>${filteredRows.map(r => {
         const isCapped = r.budget_type === 'capped';
@@ -2645,7 +2645,7 @@ function renderAMDeliveryTable(merchants, am, summary) {
         const paceStatus = merchantMonthStatus(r, curMoIdx);
         const paceDisplay = paceStatus ? (paceStatus.pacing || paceStatus) : null;
         const paceTip = paceDisplay && paceDisplay.neutralized
-          ? ` title="Grace period — day ${paceDisplay.daysElapsed} of ${paceDisplay.daysInMonth}, projection muted through day 5"`
+          ? ` title="Grace period — day ${paceDisplay.daysElapsed} of ${paceDisplay.daysInMonth}, projection muted through day 4"`
           : paceDisplay && paceDisplay.daysElapsed != null
           ? ` title="Projected month-end vs target (run-rate as of day ${paceDisplay.daysElapsed}/${paceDisplay.daysInMonth})"`
           : '';
