@@ -2162,17 +2162,32 @@ let lastAMAlerts   = [];
 /* Budget Impact — what happens if nothing changes: will this capped account blow past its
    signed budget (needs more approved to keep running) or leave part of it unspent? Shown for
    every row regardless of whether it's what triggered the alert. Open-budget accounts have no
-   fixed ceiling to over/underspend against. */
+   fixed ceiling to over/underspend against.
+   A positive required_additional_budget only means real overspend when the signed budget
+   actually covers the rest of the year — otherwise there's simply no signed commitment yet for
+   the coming months, and the honest read is "this needs to be resigned soon", not "overspend". */
 function budgetImpactFor(m) {
   if (!m.is_capped || m.required_additional_budget == null) {
     return { label:'—', detail:'', color:'var(--muted)' };
   }
   const rab = m.required_additional_budget;
-  if (rab > 0) {
-    return { label:'⚠ Overspend risk', detail:`+${fmtK1(rab)} needed to sustain pace`, color:'var(--orange)' };
-  }
   if (rab < -15000) {
     return { label:'Underspend risk', detail:`-${fmtK1(Math.abs(rab))} left unspent`, color:'var(--orange)' };
+  }
+  if (rab > 0) {
+    const curMoIdx = (GDATA.summary.ytd_months||1) - 1;
+    const signed = m.monthly_signed || [];
+    const remaining = signed.slice(curMoIdx);
+    const fullYearSigned = remaining.length > 0 && remaining.every(v => v != null);
+    if (!fullYearSigned) {
+      let lastSignedIdx = -1;
+      for (let i=0; i<signed.length; i++) if (signed[i] != null) lastSignedIdx = i;
+      const detail = lastSignedIdx >= 0
+        ? `signed through ${MONTHS[lastSignedIdx]} only — resign to continue at pace`
+        : 'no signed budget yet';
+      return { label:'⏳ Budget ending soon', detail, color:'var(--orange)' };
+    }
+    return { label:'⚠ Overspend risk', detail:`+${fmtK1(rab)} needed to sustain pace`, color:'var(--orange)' };
   }
   return { label:'On track', detail:'', color:'var(--green)' };
 }
