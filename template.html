@@ -2156,7 +2156,7 @@ function renderAMQKPIs(merchants, am, summary) {
 /* ── Alert rail: cross-cutting account health (Pace, Budget, Underspend, Media Fees, WoW, Churn) ──
    Replaces the old single-purpose Watchlist tile. One row per account — the worst issue is shown,
    the rest listed alongside — sorted by Tier first (T1 always highest priority), then severity. */
-let activeAlertSev = 'all';
+let activeAlertSev = 'red';
 let lastAMAlerts   = [];
 
 /* Budget Impact — what happens if nothing changes: will this capped account blow past its
@@ -2171,8 +2171,14 @@ function budgetImpactFor(m) {
     return { label:'—', detail:'', color:'var(--muted)' };
   }
   const rab = m.required_additional_budget;
+  // % of the account's total signed budget the risk represents — the euro figure alone doesn't
+  // say whether it's a rounding error or half the budget; the percentage does.
+  const totalBudget = signed26(m);
+  const pctOf = totalBudget > 0 ? Math.round(Math.abs(rab)/totalBudget*100) : null;
+  const pctSuffix = pctOf != null ? ` — ${pctOf}%` : '';
+
   if (rab < -15000) {
-    return { label:'Underspend risk', detail:`-${fmtK1(Math.abs(rab))} left unspent`, color:'var(--orange)' };
+    return { label:`Underspend risk${pctSuffix}`, detail:`-${fmtK1(Math.abs(rab))} at risk of going unspent`, color:'var(--orange)' };
   }
   if (rab > 0) {
     const curMoIdx = (GDATA.summary.ytd_months||1) - 1;
@@ -2187,7 +2193,7 @@ function budgetImpactFor(m) {
         : 'no signed budget yet';
       return { label:'⏳ Budget ending soon', detail, color:'var(--orange)' };
     }
-    return { label:'⚠ Overspend risk', detail:`+${fmtK1(rab)} needed to sustain pace`, color:'var(--orange)' };
+    return { label:`⚠ Overspend risk${pctSuffix}`, detail:`+${fmtK1(rab)} needed to sustain pace`, color:'var(--orange)' };
   }
   return { label:'On track', detail:'', color:'var(--green)' };
 }
@@ -2249,7 +2255,9 @@ function computeAccountAlert(id, m) {
   }
 
   if (m.required_additional_budget != null && m.required_additional_budget < -15000) {
-    reasons.push({sev:2, primary:'Underspend risk', detail:`-${fmtK1(Math.abs(m.required_additional_budget))} left to deliver`});
+    const totalBudget = signed26(m);
+    const riskPct = totalBudget > 0 ? Math.round(Math.abs(m.required_additional_budget)/totalBudget*100) : null;
+    reasons.push({sev:2, primary:`Underspend risk${riskPct!=null?` — ${riskPct}%`:''}`, detail:`-${fmtK1(Math.abs(m.required_additional_budget))} at risk of going unspent`});
   }
 
   if ((m.media_fees_ly||0) > 0 && (m.media_fees_ytd||0) === 0) {
@@ -2261,7 +2269,7 @@ function computeAccountAlert(id, m) {
     const last = wr[wr.length-1], prev = wr[wr.length-2];
     const wowPct = Math.round((last-prev)/prev*100);
     if (wowPct <= -30) {
-      reasons.push({sev: wowPct<=-60?1:2, primary:`WoW drop — ${wowPct}%`, detail:`${prev.toLocaleString()} → ${last.toLocaleString()}`});
+      reasons.push({sev: wowPct<=-60?1:2, primary:`WoW drop — ${wowPct}%`, detail:`${fmt(prev)} → ${fmt(last)}`});
     }
   }
 
@@ -2325,7 +2333,7 @@ function renderAlertTable() {
 
 function renderAMAlertRail(merchants, am) {
   lastAMAlerts = computeAMAlerts(merchants, am);
-  activeAlertSev = 'all';
+  activeAlertSev = 'red';
   const total  = Object.keys(filterMerchantsByAM(merchants, am)).length;
   const red    = lastAMAlerts.filter(a=>a.sev==='red').length;
   const orange = lastAMAlerts.filter(a=>a.sev==='orange').length;
@@ -2356,8 +2364,8 @@ function renderAMAlertRail(merchants, am) {
       </div>
     </div>
     <div class="alert-sev-filter" id="am-alert-sev-filter">
-      <div class="alert-sev-btn active" onclick="setAlertSevFilter('all', this)">All (${lastAMAlerts.length})</div>
-      <div class="alert-sev-btn" style="color:var(--red)" onclick="setAlertSevFilter('red', this)">🔴 Urgent (${red})</div>
+      <div class="alert-sev-btn" onclick="setAlertSevFilter('all', this)">All (${lastAMAlerts.length})</div>
+      <div class="alert-sev-btn active" style="color:var(--red)" onclick="setAlertSevFilter('red', this)">🔴 Urgent (${red})</div>
       <div class="alert-sev-btn" style="color:var(--orange)" onclick="setAlertSevFilter('orange', this)">🟠 Watch (${orange})</div>
       <div class="alert-sev-btn" style="color:var(--churn)" onclick="setAlertSevFilter('churn', this)">😴 Churn (${churn})</div>
     </div>
