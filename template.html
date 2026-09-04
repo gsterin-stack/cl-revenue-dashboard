@@ -2159,6 +2159,24 @@ function renderAMQKPIs(merchants, am, summary) {
 let activeAlertSev = 'all';
 let lastAMAlerts   = [];
 
+/* Budget Impact — what happens if nothing changes: will this capped account blow past its
+   signed budget (needs more approved to keep running) or leave part of it unspent? Shown for
+   every row regardless of whether it's what triggered the alert. Open-budget accounts have no
+   fixed ceiling to over/underspend against. */
+function budgetImpactFor(m) {
+  if (!m.is_capped || m.required_additional_budget == null) {
+    return { label:'—', detail:'', color:'var(--muted)' };
+  }
+  const rab = m.required_additional_budget;
+  if (rab > 0) {
+    return { label:'⚠ Overspend risk', detail:`+${fmtK1(rab)} needed to sustain pace`, color:'var(--orange)' };
+  }
+  if (rab < -15000) {
+    return { label:'Underspend risk', detail:`-${fmtK1(Math.abs(rab))} left unspent`, color:'var(--orange)' };
+  }
+  return { label:'On track', detail:'', color:'var(--green)' };
+}
+
 /* Pace: tracks the current month's projected run-rate once it's past its 4-day grace period
    (same computePacing() logic as the Delivery table's Pace column) — before that the signal is
    unreliable, so it falls back to last month's final result, labeled "(final)" so it's never
@@ -2243,7 +2261,7 @@ function computeAccountAlert(id, m) {
       : `No revenue since ${MONTHS[lastNonzero+1]} (${monthsDark} months)`;
     const detail = (m.actual_25||0) > 0 ? `was ${fmtK1(m.actual_25)} in 2025` : '';
     return { id, am: m.am, tier: TIER_MAP[id]||'?', sev:'churn', primary, detail,
-      others: reasons.map(r=>`${r.primary} (${r.detail})`) };
+      others: reasons.map(r=>`${r.primary} (${r.detail})`), budgetImpact: budgetImpactFor(m) };
   }
 
   reasons.sort((a,b)=>a.sev-b.sev);
@@ -2253,6 +2271,7 @@ function computeAccountAlert(id, m) {
     sev: top.sev===1 ? 'red' : 'orange',
     primary: top.primary, detail: top.detail,
     others: reasons.slice(1).map(r=>`${r.primary} (${r.detail})`),
+    budgetImpact: budgetImpactFor(m),
   };
 }
 
@@ -2285,7 +2304,8 @@ function renderAlertTable() {
       <td class="merchant-name">${merchantLabel(a.id)}<span class="am-pill">${a.am||'—'}</span>${tierBadge(a.id)}</td>
       <td><span class="alert-issue-primary ${a.sev}">${a.primary}</span> <span class="alert-issue-detail">${a.detail}</span></td>
       <td class="alert-others">${a.others.length ? a.others.join(' · ') : '—'}</td>
-    </tr>`).join('') : `<tr><td colspan="3" style="padding:20px;text-align:center;color:var(--muted)">No accounts in this category.</td></tr>`;
+      <td><span style="color:${a.budgetImpact.color};font-weight:600">${a.budgetImpact.label}</span>${a.budgetImpact.detail ? ` <span class="alert-issue-detail">${a.budgetImpact.detail}</span>` : ''}</td>
+    </tr>`).join('') : `<tr><td colspan="4" style="padding:20px;text-align:center;color:var(--muted)">No accounts in this category.</td></tr>`;
 }
 
 function renderAMAlertRail(merchants, am) {
@@ -2327,7 +2347,7 @@ function renderAMAlertRail(merchants, am) {
       <div class="alert-sev-btn" style="color:var(--churn)" onclick="setAlertSevFilter('churn', this)">😴 Churn (${churn})</div>
     </div>
     <table class="alert-table">
-      <thead><tr><th>Merchant</th><th>Primary alert</th><th>Other signals</th></tr></thead>
+      <thead><tr><th>Merchant</th><th>Primary alert</th><th>Other signals</th><th>Budget Impact</th></tr></thead>
       <tbody id="am-alert-tbody"></tbody>
     </table>
   `;
