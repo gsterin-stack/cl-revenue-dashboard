@@ -157,11 +157,16 @@
     .alert-row.sev-red { border-left-color:var(--red); }
     .alert-row.sev-orange { border-left-color:var(--orange); }
     .alert-row.sev-churn { border-left-color:var(--churn); }
-    .alert-issue-primary { font-weight:600; white-space:nowrap; }
-    .alert-issue-primary.red { color:var(--red); }
-    .alert-issue-primary.orange { color:var(--orange); }
-    .alert-issue-primary.churn { color:var(--churn); }
-    .alert-issue-detail { color:var(--text2); font-size:11px; }
+    .alert-label { font-weight:600; white-space:nowrap; }
+    .alert-label.red { color:var(--red); }
+    .alert-label.orange { color:var(--orange); }
+    .alert-label.churn { color:var(--churn); }
+    .alert-amount { font-weight:700; font-variant-numeric:tabular-nums; white-space:nowrap; }
+    .alert-amount-sub { display:block; font-size:10.5px; color:var(--text2); font-weight:400; margin-top:1px; white-space:nowrap; }
+    .timing-badge { display:inline-block; font-size:10px; font-weight:700; border-radius:5px; padding:2px 7px; margin-right:5px; }
+    .timing-badge.soon { color:var(--red); background:rgba(255,85,85,.12); border:1px solid rgba(255,85,85,.3); }
+    .timing-badge.watch { color:var(--orange); background:rgba(255,160,64,.1); border:1px solid rgba(255,160,64,.3); }
+    .timing-badge.later { color:var(--text2); background:var(--s2); border:1px solid var(--border); }
     .alert-others { color:var(--text2); font-size:11px; }
 
     /* Delivery table WoW sparkline */
@@ -677,6 +682,13 @@ function fmtDeltaK(n) {
   if (n==null||isNaN(n)) return '—';
   const k = n/1000;
   return (k>=0?'+':'')+k.toFixed(1)+'K€';
+}
+/* K€ under €1M, M€ above — for full-budget totals ("of €1M signed"), where a T1 account's
+   signed budget can run well past what reads well in K. */
+function fmtBudget(n) {
+  if (n==null||isNaN(n)) return '—';
+  if (Math.abs(n) >= 1000000) return '€'+(n/1000000).toFixed(1).replace(/\.0$/,'')+'M';
+  return fmtK1(n);
 }
 /* always K€, always 1 decimal, no sign — reference/target values (signed or LY-equivalent) */
 function fmtK1(n) {
@@ -2159,49 +2171,14 @@ function renderAMQKPIs(merchants, am, summary) {
 let activeAlertSev = 'red';
 let lastAMAlerts   = [];
 
-/* Budget Impact — what happens if nothing changes: will this capped account blow past its
-   signed budget (needs more approved to keep running) or leave part of it unspent? Shown for
-   every row regardless of whether it's what triggered the alert. Open-budget accounts have no
-   fixed ceiling to over/underspend against.
-   A positive required_additional_budget only means real overspend when the signed budget
-   actually covers the rest of the year — otherwise there's simply no signed commitment yet for
-   the coming months, and the honest read is "this needs to be resigned soon", not "overspend". */
-function budgetImpactFor(m) {
-  if (!m.is_capped || m.required_additional_budget == null) {
-    return { label:'—', detail:'', color:'var(--muted)' };
-  }
-  const rab = m.required_additional_budget;
-  // % of the account's total signed budget the risk represents — the euro figure alone doesn't
-  // say whether it's a rounding error or half the budget; the percentage does.
-  const totalBudget = signed26(m);
-  const pctOf = totalBudget > 0 ? Math.round(Math.abs(rab)/totalBudget*100) : null;
-  const pctSuffix = pctOf != null ? ` — ${pctOf}%` : '';
-
-  if (rab < -15000) {
-    return { label:`Underspend risk${pctSuffix}`, detail:`-${fmtK1(Math.abs(rab))} at risk of going unspent`, color:'var(--orange)' };
-  }
-  if (rab > 0) {
-    const curMoIdx = (GDATA.summary.ytd_months||1) - 1;
-    const signed = m.monthly_signed || [];
-    const remaining = signed.slice(curMoIdx);
-    const fullYearSigned = remaining.length > 0 && remaining.every(v => v != null);
-    if (!fullYearSigned) {
-      let lastSignedIdx = -1;
-      for (let i=0; i<signed.length; i++) if (signed[i] != null) lastSignedIdx = i;
-      const detail = lastSignedIdx >= 0
-        ? `signed through ${MONTHS[lastSignedIdx]} only — resign to continue at pace`
-        : 'no signed budget yet';
-      return { label:'⏳ Budget ending soon', detail, color:'var(--orange)' };
-    }
-    return { label:`⚠ Overspend risk${pctSuffix}`, detail:`+${fmtK1(rab)} needed to sustain pace`, color:'var(--orange)' };
-  }
-  return { label:'On track', detail:'', color:'var(--green)' };
-}
-
 /* Pace: tracks the current month's projected run-rate once it's past its 4-day grace period
    (same computePacing() logic as the Delivery table's Pace column) — before that the signal is
-   unreliable, so it falls back to last month's final result, labeled "(final)" so it's never
-   confused with a projection. */
+   unreliable, so it falls back to last month's final result, labeled "closed" so it's never
+   confused with a projection.
+   Each reason carries a label (what), an amount + amountSub (how much), and a timing badge/date
+   (by when) — three separated facts instead of one blended sentence.
+   A single bad week only reads as Urgent when the account's own pace is *also* off track (a
+   healthy month absorbs one rough week — see the WoW block below); it still shows, just as Watch. */
 function computeAccountAlert(id, m) {
   const ytdMonths = GDATA.summary.ytd_months || 1;
   const curMoIdx  = ytdMonths - 1;
@@ -2210,6 +2187,7 @@ function computeAccountAlert(id, m) {
   const m25 = m.monthly_25 || [];
   const signed = m.monthly_signed || [];
   const reasons = [];
+  let paceHealthPct = null;
 
   const isChurn = (m26[augIdx]||0) === 0 && (m26[curMoIdx]||0) === 0;
 
@@ -2223,23 +2201,27 @@ function computeAccountAlert(id, m) {
       if (useCurrent) {
         const p = computePacing(cur, target, ctx);
         if (p && !p.neutralized) {
+          paceHealthPct = p.pct;
           const sev = p.color==='var(--red)' ? 1 : p.color==='var(--yellow)' ? 2 : null;
           if (sev) {
-            const detail = m.is_capped
-              ? `vs ${fmtK1(target)} signed`
-              : `${p.pct-100>=0?'+':''}${p.pct-100}% YoY (${fmtK1(target)} → ${fmtK1(target+p.delta)} proj.)`;
-            reasons.push({sev, primary:`Pace ${MONTHS[paceMoIdx]} (projected) — ${p.pct}%`, detail});
+            const behind = p.delta < 0;
+            const amountSub = m.is_capped ? `vs ${fmtK1(target)} signed` : `vs ${fmtK1(target)} same month 2025`;
+            reasons.push({ sev,
+              label: `${behind?'🐌 Pace behind target':'🚀 Pace ahead of target'} — ${p.pct}% (proj.)`,
+              amount: `${p.delta>=0?'+':'-'}${fmtK1(Math.abs(p.delta))}`, amountSub,
+              timingText:'proj.', timingCls:'watch', timingDate:`by ${MONTHS[curMoIdx]} end` });
           }
         }
       } else {
         const pctVal = Math.round(cur/target*100);
+        paceHealthPct = pctVal;
         if (pctVal < 90) {
           const sev = pctVal < 70 ? 1 : 2;
-          const yoy = pctVal - 100;
-          const detail = m.is_capped
-            ? `vs ${fmtK1(target)} signed`
-            : `${yoy>=0?'+':''}${yoy}% YoY (${fmtK1(target)} → ${fmtK1(cur)})`;
-          reasons.push({sev, primary:`Pace ${MONTHS[paceMoIdx]} (final) — ${pctVal}%`, detail});
+          const amountSub = m.is_capped ? `vs ${fmtK1(target)} signed` : `vs ${fmtK1(target)} same month 2025`;
+          reasons.push({ sev,
+            label: `🐌 Pace behind target — ${pctVal}%`,
+            amount: `-${fmtK1(Math.abs(cur-target))}`, amountSub,
+            timingText:'closed', timingCls:'later', timingDate:MONTHS[paceMoIdx] });
         }
       }
     }
@@ -2250,18 +2232,39 @@ function computeAccountAlert(id, m) {
     const daysLeft = Math.round((d - Date.now())/86400000);
     if (daysLeft >= 0 && daysLeft <= 30) {
       const sev = daysLeft <= 7 ? 1 : 2;
-      reasons.push({sev, primary:`Budget — ${daysLeft} days left`, detail:`ends ${MONTHS[d.getMonth()]} ${d.getDate()}`});
+      reasons.push({ sev,
+        label: '⏰ Budget ending soon', amount:'—', amountSub:'',
+        timingText:`${daysLeft}d`, timingCls: daysLeft<=7?'soon':'watch', timingDate:`${MONTHS[d.getMonth()]} ${d.getDate()}` });
     }
   }
 
-  if (m.required_additional_budget != null && m.required_additional_budget < -15000) {
-    const totalBudget = signed26(m);
-    const riskPct = totalBudget > 0 ? Math.round(Math.abs(m.required_additional_budget)/totalBudget*100) : null;
-    reasons.push({sev:2, primary:`Underspend risk${riskPct!=null?` — ${riskPct}%`:''}`, detail:`-${fmtK1(Math.abs(m.required_additional_budget))} at risk of going unspent`});
+  const rab = m.required_additional_budget;
+  const totalBudget = signed26(m);
+  if (rab != null && rab < -15000) {
+    const riskPct = totalBudget > 0 ? Math.round(Math.abs(rab)/totalBudget*100) : null;
+    reasons.push({ sev:2,
+      label: `📊 Underspend risk${riskPct!=null?` — ${riskPct}%`:''}`,
+      amount: `-${fmtK1(Math.abs(rab))}`, amountSub: totalBudget>0 ? `of ${fmtBudget(totalBudget)} signed` : '',
+      timingText:'by', timingCls:'later', timingDate:'Dec 31' });
+  } else if (rab != null && rab > 15000 && m.is_capped) {
+    // Only a real overspend when the signed budget actually covers the rest of the year —
+    // otherwise there's simply no signed commitment yet for the coming months (crossing_date,
+    // above, already flags that case with a precise date; no need to guess here too).
+    const remaining = signed.slice(curMoIdx);
+    const fullYearSigned = remaining.length > 0 && remaining.every(v => v != null);
+    if (fullYearSigned) {
+      const pctOf = totalBudget > 0 ? Math.round(rab/totalBudget*100) : null;
+      reasons.push({ sev:2,
+        label: `⚠ Overspend risk${pctOf!=null?` — ${pctOf}%`:''}`,
+        amount: `+${fmtK1(rab)}`, amountSub:'needed to sustain pace',
+        timingText:'by', timingCls:'later', timingDate:'Dec 31' });
+    }
   }
 
   if ((m.media_fees_ly||0) > 0 && (m.media_fees_ytd||0) === 0) {
-    reasons.push({sev:2, primary:'Media Fees stopped', detail:`${fmtK1(m.media_fees_ly)} LY → €0`});
+    reasons.push({ sev:2,
+      label: '🔕 Media Fees stopped', amount: fmtK1(m.media_fees_ly), amountSub:'spent LY',
+      timingText:'—', timingCls:'later', timingDate:'' });
   }
 
   const wr = m.weekly_revenue;
@@ -2269,7 +2272,12 @@ function computeAccountAlert(id, m) {
     const last = wr[wr.length-1], prev = wr[wr.length-2];
     const wowPct = Math.round((last-prev)/prev*100);
     if (wowPct <= -30) {
-      reasons.push({sev: wowPct<=-60?1:2, primary:`WoW drop — ${wowPct}%`, detail:`${fmt(prev)} → ${fmt(last)}`});
+      const paceHealthy = paceHealthPct != null && paceHealthPct >= 90;
+      const sev = (wowPct <= -60 && !paceHealthy) ? 1 : 2;
+      reasons.push({ sev,
+        label: '📉 Revenue dip, last week',
+        amount: `-${fmtK1(Math.abs(last-prev))}`, amountSub:`vs the week before (${wowPct}%)`,
+        timingText:'this wk', timingCls: sev===1?'soon':'watch', timingDate:'' });
     }
   }
 
@@ -2279,12 +2287,12 @@ function computeAccountAlert(id, m) {
     let lastNonzero = -1;
     for (let i=0; i<=curMoIdx; i++) if ((m26[i]||0) > 0) lastNonzero = i;
     const monthsDark = curMoIdx - lastNonzero;
-    const primary = lastNonzero === -1
-      ? `No revenue in 2026 (${monthsDark} months)`
-      : `No revenue since ${MONTHS[lastNonzero+1]} (${monthsDark} months)`;
-    const detail = (m.actual_25||0) > 0 ? `was ${fmtK1(m.actual_25)} in 2025` : '';
-    return { id, am: m.am, tier: TIER_MAP[id]||'?', sev:'churn', primary, detail,
-      others: reasons.map(r=>`${r.primary} (${r.detail})`), budgetImpact: budgetImpactFor(m) };
+    const label = lastNonzero === -1 ? `😴 No revenue in 2026` : `😴 No revenue since ${MONTHS[lastNonzero+1]}`;
+    const hasLY = (m.actual_25||0) > 0;
+    return { id, am: m.am, tier: TIER_MAP[id]||'?', sev:'churn',
+      label, amount: hasLY ? fmtK1(m.actual_25) : '—', amountSub: hasLY ? 'in 2025' : '',
+      timingText:`${monthsDark}mo`, timingCls:'later', timingDate:'dark',
+      others: reasons.map(r=>`${r.label} (${r.amount})`) };
   }
 
   reasons.sort((a,b)=>a.sev-b.sev);
@@ -2292,9 +2300,9 @@ function computeAccountAlert(id, m) {
   return {
     id, am: m.am, tier: TIER_MAP[id]||'?',
     sev: top.sev===1 ? 'red' : 'orange',
-    primary: top.primary, detail: top.detail,
-    others: reasons.slice(1).map(r=>`${r.primary} (${r.detail})`),
-    budgetImpact: budgetImpactFor(m),
+    label: top.label, amount: top.amount, amountSub: top.amountSub,
+    timingText: top.timingText, timingCls: top.timingCls, timingDate: top.timingDate,
+    others: reasons.slice(1).map(r=>`${r.label} (${r.amount})`),
   };
 }
 
@@ -2325,10 +2333,11 @@ function renderAlertTable() {
   tbody.innerHTML = filtered.length ? filtered.map(a => `
     <tr class="alert-row sev-${a.sev}" onclick="openWowModal('${a.id}')">
       <td class="merchant-name">${merchantLabel(a.id)}<span class="am-pill">${a.am||'—'}</span>${tierBadge(a.id)}</td>
-      <td><span class="alert-issue-primary ${a.sev}">${a.primary}</span> <span class="alert-issue-detail">${a.detail}</span></td>
+      <td><span class="alert-label ${a.sev}">${a.label}</span></td>
+      <td><span class="alert-amount">${a.amount}</span>${a.amountSub ? `<span class="alert-amount-sub">${a.amountSub}</span>` : ''}</td>
+      <td>${a.timingDate ? `<span class="timing-badge ${a.timingCls}">${a.timingText}</span> ${a.timingDate}` : `<span class="timing-badge ${a.timingCls}">${a.timingText}</span>`}</td>
       <td class="alert-others">${a.others.length ? a.others.join(' · ') : '—'}</td>
-      <td><span style="color:${a.budgetImpact.color};font-weight:600">${a.budgetImpact.label}</span>${a.budgetImpact.detail ? ` <span class="alert-issue-detail">${a.budgetImpact.detail}</span>` : ''}</td>
-    </tr>`).join('') : `<tr><td colspan="4" style="padding:20px;text-align:center;color:var(--muted)">No accounts in this category.</td></tr>`;
+    </tr>`).join('') : `<tr><td colspan="5" style="padding:20px;text-align:center;color:var(--muted)">No accounts in this category.</td></tr>`;
 }
 
 function renderAMAlertRail(merchants, am) {
@@ -2370,7 +2379,7 @@ function renderAMAlertRail(merchants, am) {
       <div class="alert-sev-btn" style="color:var(--churn)" onclick="setAlertSevFilter('churn', this)">😴 Churn (${churn})</div>
     </div>
     <table class="alert-table">
-      <thead><tr><th>Merchant</th><th>Primary alert</th><th>Other signals</th><th>Budget Impact</th></tr></thead>
+      <thead><tr><th>Merchant</th><th>Alert</th><th>Amount at stake</th><th>Timing</th><th>Other signals</th></tr></thead>
       <tbody id="am-alert-tbody"></tbody>
     </table>
   `;
