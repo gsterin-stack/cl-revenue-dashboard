@@ -32,7 +32,7 @@
       --bg: #000; --s1: #111; --s2: #1a1a1a; --s3: #222;
       --border: #222; --muted: #777; --text2: #888; --text: #fff;
       --green: #64E76A; --purple: #9254E3; --yellow: #E4FA62;
-      --red: #ff5555; --radius: 12px;
+      --red: #ff5555; --orange: #FFA040; --churn: #7C93B8; --radius: 12px;
       --font: 'Instrument Sans','Inter',sans-serif;
     }
     body { background: var(--bg); color: var(--text); font-family: var(--font); font-size: 13px; line-height: 1.5; }
@@ -138,18 +138,31 @@
     .q-progress-ticks { display:flex; justify-content:space-between; }
     .q-progress-tick  { font-size:9px; color:var(--muted); }
 
-    /* MF alert section */
-    .mf-alert-card { background:var(--s1); border:1px solid rgba(228,250,98,.2); border-radius:var(--radius); padding:16px 18px; }
-    .mf-alert-head  { display:flex; align-items:center; gap:10px; margin-bottom:14px; }
-    .mf-alert-title { font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.6px; color:var(--yellow); }
-    .mf-alert-badge { font-size:10px; font-weight:700; background:rgba(228,250,98,.1); border:1px solid rgba(228,250,98,.25); color:var(--yellow); border-radius:4px; padding:2px 8px; }
-    .mf-alert-none  { font-size:12px; color:var(--muted); padding:4px 0; }
-    .mf-alert-row   { display:flex; align-items:center; gap:12px; padding:8px 10px; margin-bottom:6px;
-                       background:rgba(228,250,98,.03); border:1px solid rgba(228,250,98,.1); border-radius:8px; cursor:pointer; transition:background .1s; }
-    .mf-alert-row:hover { background:rgba(228,250,98,.07); }
-    .mf-alert-name  { flex:1; font-weight:500; font-size:12px; }
-    .mf-alert-chip  { font-size:11px; color:var(--text2); white-space:nowrap; }
-    .mf-alert-warn  { font-size:11px; font-weight:600; color:var(--yellow); white-space:nowrap; }
+    /* ── AM alert rail: cross-cutting account health (Pace, Budget, Underspend, Media Fees, WoW, Churn) ── */
+    .alert-headline { display:flex; background:var(--s1); border:1px solid var(--border); border-radius:var(--radius); overflow:hidden; margin-bottom:10px; }
+    .alert-headline-stat { flex:1; padding:14px 18px; }
+    .alert-headline-stat + .alert-headline-stat { border-left:1px solid var(--border); }
+    .alert-headline-num { font-size:26px; font-weight:700; line-height:1; font-variant-numeric:tabular-nums; }
+    .alert-headline-label { font-size:10px; font-weight:600; text-transform:uppercase; letter-spacing:.5px; color:var(--text2); margin-top:5px; }
+    .alert-headline-sub { font-size:11px; color:var(--text2); margin-top:2px; }
+    .alert-sev-filter { display:flex; gap:6px; margin-bottom:10px; }
+    .alert-sev-btn { padding:6px 14px; border-radius:8px; font-size:11.5px; font-weight:600; cursor:pointer; border:1px solid var(--border); background:var(--s2); color:var(--text2); }
+    .alert-sev-btn.active { background:var(--s3); color:var(--text); border-color:currentColor; }
+    .alert-table { width:100%; border-collapse:collapse; background:var(--s1); border:1px solid var(--border); border-radius:var(--radius); overflow:hidden; }
+    .alert-table thead th { text-align:left; padding:8px 12px; font-size:10px; font-weight:600; text-transform:uppercase; letter-spacing:.5px; color:var(--text2); border-bottom:1px solid var(--border); background:var(--s2); }
+    .alert-row { border-left:3px solid transparent; cursor:pointer; }
+    .alert-row td { padding:9px 12px; border-bottom:1px solid #161616; vertical-align:middle; }
+    .alert-row:last-child td { border-bottom:none; }
+    .alert-row:hover { background:var(--s2); }
+    .alert-row.sev-red { border-left-color:var(--red); }
+    .alert-row.sev-orange { border-left-color:var(--orange); }
+    .alert-row.sev-churn { border-left-color:var(--churn); }
+    .alert-issue-primary { font-weight:600; white-space:nowrap; }
+    .alert-issue-primary.red { color:var(--red); }
+    .alert-issue-primary.orange { color:var(--orange); }
+    .alert-issue-primary.churn { color:var(--churn); }
+    .alert-issue-detail { color:var(--text2); font-size:11px; }
+    .alert-others { color:var(--text2); font-size:11px; }
 
     /* Delivery table WoW sparkline */
     .spark-cell     { display:flex; align-items:center; gap:7px; justify-content:center; }
@@ -267,7 +280,7 @@
         onblur="this.style.borderColor='var(--border)'">
     </div>
     <div id="am-q-kpi-bar" class="am-q-kpi-bar" style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:14px"></div>
-    <div id="am-mf-alerts" style="margin-bottom:14px"></div>
+    <div id="am-alert-rail" style="margin-bottom:14px"></div>
     <div class="card">
       <div class="card-title" id="am-delivery-title">DELIVERY — Portfolio</div>
       <div class="table-wrap" id="am-delivery-table-wrap"></div>
@@ -1122,39 +1135,6 @@ function paceTableInner(tableId) {
         ${showPacing ? paceCellsHTML(r.status.pacing) : ''}
       </tr>`).join('')}</tbody>
   </table>`;
-}
-
-/* ── Watchlist AM View — merchants off-pace (capped/signed or open/LY) pour l'AM sélectionné ──
-   Filtre sur le pacing projeté (run-rate fin de mois), pas sur le MTD brut, pour éviter
-   le faux positif de début de mois : cf. grace period (day <=4) dans computePacing(). ── */
-function openWatchlistModal() {
-  if (!GDATA) return;
-  const curMoIdx  = (GDATA.summary.ytd_months||1) - 1;
-  const monthLabel = MONTHS[curMoIdx];
-  const rows = merchantRows(GDATA.merchants, activeAMView);
-  const list = rows
-    .map(r => ({ ...r, status: merchantMonthStatus(r, curMoIdx) }))
-    .filter(r => r.status && r.status.pacing && r.status.pacing.color === 'var(--red)');
-  const bySeverity = (a,b) => Math.abs(b.status.pacing.pct-100) - Math.abs(a.status.pacing.pct-100);
-  const capped = list.filter(r => r.status.type==='capped').sort(bySeverity);
-  const open   = list.filter(r => r.status.type==='open').sort(bySeverity);
-
-  const amLabel = activeAMView === 'all' ? 'All AMs' : activeAMView;
-  document.getElementById('month-modal-title').textContent = `⚠ Watchlist — ${amLabel}`;
-  document.getElementById('month-modal-sub').textContent =
-    `${monthLabel} 2026 · ${capped.length} capped off-pace · ${open.length} open off-pace${paceGraceNote(true)}`;
-
-  document.getElementById('month-modal-body').innerHTML = `
-    <div style="margin-bottom:18px">
-      <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--purple);margin-bottom:6px">Capped — vs signed this month</div>
-      ${renderPaceTable(capped, 'vs Signed', 'watch-capped')}
-    </div>
-    <div>
-      <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--text2);margin-bottom:6px">Open — vs ${monthLabel} 2025</div>
-      ${renderPaceTable(open, 'vs LY', 'watch-open')}
-    </div>`;
-
-  document.getElementById('month-modal-overlay').classList.add('open');
 }
 
 /* ── Monthly Performance Table (transposed: months = columns) ── */
@@ -2106,7 +2086,7 @@ function renderAMView(merchants, summary) {
 
 function renderAMViewFull(merchants, summary) {
   renderAMQKPIs(merchants, activeAMView, summary);
-  renderAMMFAlerts(merchants, activeAMView);
+  renderAMAlertRail(merchants, activeAMView);
   renderAMDeliveryTable(merchants, activeAMView, summary);
 }
 
@@ -2135,20 +2115,6 @@ function renderAMQKPIs(merchants, am, summary) {
     ytdColor  = ytdPct==null?'var(--text)':ytdPct>=90?'var(--green)':ytdPct>=70?'var(--yellow)':'var(--red)';
   }
 
-  // MF alert count
-  const mfAlerts = rows.filter(r => (r.media_fees_ly||0)>0 && (r.media_fees_ytd||0)===0).length;
-
-  // Open budget
-  const openBdg = rows.reduce((s,r)=>s+(r.remaining_budget||0),0);
-
-  // Pace vs plan — mois en cours (curMoIdx), tous merchants de la vue (y compris 'all')
-  // Basé sur le pacing projeté fin de mois (run-rate), pas le MTD brut — cf. merchantMonthStatus().
-  const curMoIdx  = (summary.ytd_months||1) - 1;
-  const paceList  = rows.map(r => merchantMonthStatus(r, curMoIdx)).filter(Boolean);
-  const paceRed   = paceList.filter(s => s.pacing && s.pacing.color==='var(--red)');
-  const cappedRed = paceRed.filter(s => s.type==='capped').length;
-  const openRed   = paceRed.filter(s => s.type==='open').length;
-
   const qProgressHtml = `
     <div class="q-progress-wrap">
       <div class="q-progress-track">
@@ -2162,7 +2128,7 @@ function renderAMQKPIs(merchants, am, summary) {
 
   const okrPlaceholder = `<span style="font-size:11px;color:var(--muted);font-style:italic">OKR not set</span>`;
 
-  document.getElementById('am-q-kpi-bar').style.gridTemplateColumns = showOkrTile ? 'repeat(4,1fr)' : 'repeat(3,1fr)';
+  document.getElementById('am-q-kpi-bar').style.gridTemplateColumns = showOkrTile ? 'repeat(3,1fr)' : 'repeat(2,1fr)';
   document.getElementById('am-q-kpi-bar').innerHTML = `
     <div class="kpi">
       <div class="kpi-label">${qLabel(q)} Achievement</div>
@@ -2184,19 +2150,188 @@ function renderAMQKPIs(merchants, am, summary) {
       <div class="kpi-value">${rows.length}</div>
       <div class="kpi-sub">${rows.filter(r=>r.is_new_client).length} new clients · ${rows.filter(r=>(r.actual_26||0)>0).length} active</div>
     </div>
-    <div class="kpi" style="cursor:pointer" onclick="openWatchlistModal()">
-      <div class="kpi-label">⚠ Watchlist</div>
-      <div class="kpi-value" style="color:${paceRed.length>0?'var(--red)':'var(--green)'}">${paceRed.length}</div>
-      <div class="kpi-sub">${paceRed.length>0
-        ? `${cappedRed} capped off-pace · ${openRed} open off-pace`
-        : '<span class="neu">All on track</span>'}</div>
-    </div>
     `;
 }
 
-/* ── Media Fees alert section — désactivé ── */
-function renderAMMFAlerts() {
-  document.getElementById('am-mf-alerts').innerHTML = '';
+/* ── Alert rail: cross-cutting account health (Pace, Budget, Underspend, Media Fees, WoW, Churn) ──
+   Replaces the old single-purpose Watchlist tile. One row per account — the worst issue is shown,
+   the rest listed alongside — sorted by Tier first (T1 always highest priority), then severity. */
+let activeAlertSev = 'all';
+let lastAMAlerts   = [];
+
+/* Pace: tracks the current month's projected run-rate once it's past its 4-day grace period
+   (same computePacing() logic as the Delivery table's Pace column) — before that the signal is
+   unreliable, so it falls back to last month's final result, labeled "(final)" so it's never
+   confused with a projection. */
+function computeAccountAlert(id, m) {
+  const ytdMonths = GDATA.summary.ytd_months || 1;
+  const curMoIdx  = ytdMonths - 1;
+  const augIdx    = curMoIdx - 1;
+  const m26 = m.monthly_26 || [];
+  const m25 = m.monthly_25 || [];
+  const signed = m.monthly_signed || [];
+  const reasons = [];
+
+  const isChurn = (m26[augIdx]||0) === 0 && (m26[curMoIdx]||0) === 0;
+
+  const ctx = getPacingCtx();
+  const useCurrent = !!(ctx && ctx.daysElapsed > 4);
+  const paceMoIdx = useCurrent ? curMoIdx : augIdx;
+  if (paceMoIdx >= 0) {
+    const target = m.is_capped ? signed[paceMoIdx] : m25[paceMoIdx];
+    const cur = m26[paceMoIdx] || 0;
+    if (target != null && target > 0) {
+      if (useCurrent) {
+        const p = computePacing(cur, target, ctx);
+        if (p && !p.neutralized) {
+          const sev = p.color==='var(--red)' ? 1 : p.color==='var(--yellow)' ? 2 : null;
+          if (sev) {
+            const detail = m.is_capped
+              ? `vs ${fmtK1(target)} signed`
+              : `${p.pct-100>=0?'+':''}${p.pct-100}% YoY (${fmtK1(target)} → ${fmtK1(target+p.delta)} proj.)`;
+            reasons.push({sev, primary:`Pace ${MONTHS[paceMoIdx]} (projected) — ${p.pct}%`, detail});
+          }
+        }
+      } else {
+        const pctVal = Math.round(cur/target*100);
+        if (pctVal < 90) {
+          const sev = pctVal < 70 ? 1 : 2;
+          const yoy = pctVal - 100;
+          const detail = m.is_capped
+            ? `vs ${fmtK1(target)} signed`
+            : `${yoy>=0?'+':''}${yoy}% YoY (${fmtK1(target)} → ${fmtK1(cur)})`;
+          reasons.push({sev, primary:`Pace ${MONTHS[paceMoIdx]} (final) — ${pctVal}%`, detail});
+        }
+      }
+    }
+  }
+
+  if (m.crossing_date) {
+    const d = new Date(m.crossing_date);
+    const daysLeft = Math.round((d - Date.now())/86400000);
+    if (daysLeft >= 0 && daysLeft <= 30) {
+      const sev = daysLeft <= 7 ? 1 : 2;
+      reasons.push({sev, primary:`Budget — ${daysLeft} days left`, detail:`ends ${MONTHS[d.getMonth()]} ${d.getDate()}`});
+    }
+  }
+
+  if (m.required_additional_budget != null && m.required_additional_budget < -15000) {
+    reasons.push({sev:2, primary:'Underspend risk', detail:`-${fmtK1(Math.abs(m.required_additional_budget))} left to deliver`});
+  }
+
+  if ((m.media_fees_ly||0) > 0 && (m.media_fees_ytd||0) === 0) {
+    reasons.push({sev:2, primary:'Media Fees stopped', detail:`${fmtK1(m.media_fees_ly)} LY → €0`});
+  }
+
+  const wr = m.weekly_revenue;
+  if (wr && wr.length >= 2 && wr[wr.length-2] > 0) {
+    const last = wr[wr.length-1], prev = wr[wr.length-2];
+    const wowPct = Math.round((last-prev)/prev*100);
+    if (wowPct <= -30) {
+      reasons.push({sev: wowPct<=-60?1:2, primary:`WoW drop — ${wowPct}%`, detail:`${prev.toLocaleString()} → ${last.toLocaleString()}`});
+    }
+  }
+
+  if (!reasons.length && !isChurn) return null;
+
+  if (isChurn) {
+    let lastNonzero = -1;
+    for (let i=0; i<=curMoIdx; i++) if ((m26[i]||0) > 0) lastNonzero = i;
+    const monthsDark = curMoIdx - lastNonzero;
+    const primary = lastNonzero === -1
+      ? `No revenue in 2026 (${monthsDark} months)`
+      : `No revenue since ${MONTHS[lastNonzero+1]} (${monthsDark} months)`;
+    const detail = (m.actual_25||0) > 0 ? `was ${fmtK1(m.actual_25)} in 2025` : '';
+    return { id, am: m.am, tier: TIER_MAP[id]||'?', sev:'churn', primary, detail,
+      others: reasons.map(r=>`${r.primary} (${r.detail})`) };
+  }
+
+  reasons.sort((a,b)=>a.sev-b.sev);
+  const top = reasons[0];
+  return {
+    id, am: m.am, tier: TIER_MAP[id]||'?',
+    sev: top.sev===1 ? 'red' : 'orange',
+    primary: top.primary, detail: top.detail,
+    others: reasons.slice(1).map(r=>`${r.primary} (${r.detail})`),
+  };
+}
+
+function computeAMAlerts(merchants, am) {
+  const filtered = filterMerchantsByAM(merchants, am);
+  const alerts = [];
+  for (const [id, m] of Object.entries(filtered)) {
+    const a = computeAccountAlert(id, m);
+    if (a) alerts.push(a);
+  }
+  const sevOrder  = {red:0, orange:1, churn:2};
+  const tierOrder = {T1:0, T2:1, T3:2, '?':3};
+  alerts.sort((a,b) => (tierOrder[a.tier]??3)-(tierOrder[b.tier]??3) || sevOrder[a.sev]-sevOrder[b.sev]);
+  return alerts;
+}
+
+function setAlertSevFilter(sev, btn) {
+  activeAlertSev = sev;
+  document.querySelectorAll('#am-alert-sev-filter .alert-sev-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  renderAlertTable();
+}
+
+function renderAlertTable() {
+  const filtered = activeAlertSev === 'all' ? lastAMAlerts : lastAMAlerts.filter(a=>a.sev===activeAlertSev);
+  const tbody = document.getElementById('am-alert-tbody');
+  if (!tbody) return;
+  tbody.innerHTML = filtered.length ? filtered.map(a => `
+    <tr class="alert-row sev-${a.sev}" onclick="openWowModal('${a.id}')">
+      <td class="merchant-name">${merchantLabel(a.id)}<span class="am-pill">${a.am||'—'}</span>${tierBadge(a.id)}</td>
+      <td><span class="alert-issue-primary ${a.sev}">${a.primary}</span> <span class="alert-issue-detail">${a.detail}</span></td>
+      <td class="alert-others">${a.others.length ? a.others.join(' · ') : '—'}</td>
+    </tr>`).join('') : `<tr><td colspan="3" style="padding:20px;text-align:center;color:var(--muted)">No accounts in this category.</td></tr>`;
+}
+
+function renderAMAlertRail(merchants, am) {
+  lastAMAlerts = computeAMAlerts(merchants, am);
+  activeAlertSev = 'all';
+  const total  = Object.keys(filterMerchantsByAM(merchants, am)).length;
+  const red    = lastAMAlerts.filter(a=>a.sev==='red').length;
+  const orange = lastAMAlerts.filter(a=>a.sev==='orange').length;
+  const churn  = lastAMAlerts.filter(a=>a.sev==='churn').length;
+  const clean  = total - lastAMAlerts.length;
+
+  document.getElementById('am-alert-rail').innerHTML = `
+    <div class="alert-headline">
+      <div class="alert-headline-stat">
+        <div class="alert-headline-num" style="color:var(--red)">${red}</div>
+        <div class="alert-headline-label">🔴 Urgent</div>
+        <div class="alert-headline-sub">needs action this week</div>
+      </div>
+      <div class="alert-headline-stat">
+        <div class="alert-headline-num" style="color:var(--orange)">${orange}</div>
+        <div class="alert-headline-label">🟠 Watch</div>
+        <div class="alert-headline-sub">not critical, keep an eye on it</div>
+      </div>
+      <div class="alert-headline-stat">
+        <div class="alert-headline-num" style="color:var(--churn)">${churn}</div>
+        <div class="alert-headline-label">😴 Churn</div>
+        <div class="alert-headline-sub">2+ months with no revenue</div>
+      </div>
+      <div class="alert-headline-stat">
+        <div class="alert-headline-num" style="color:var(--green)">${clean}</div>
+        <div class="alert-headline-label">✓ No signal</div>
+        <div class="alert-headline-sub">out of ${total} accounts</div>
+      </div>
+    </div>
+    <div class="alert-sev-filter" id="am-alert-sev-filter">
+      <div class="alert-sev-btn active" onclick="setAlertSevFilter('all', this)">All (${lastAMAlerts.length})</div>
+      <div class="alert-sev-btn" style="color:var(--red)" onclick="setAlertSevFilter('red', this)">🔴 Urgent (${red})</div>
+      <div class="alert-sev-btn" style="color:var(--orange)" onclick="setAlertSevFilter('orange', this)">🟠 Watch (${orange})</div>
+      <div class="alert-sev-btn" style="color:var(--churn)" onclick="setAlertSevFilter('churn', this)">😴 Churn (${churn})</div>
+    </div>
+    <table class="alert-table">
+      <thead><tr><th>Merchant</th><th>Primary alert</th><th>Other signals</th></tr></thead>
+      <tbody id="am-alert-tbody"></tbody>
+    </table>
+  `;
+  renderAlertTable();
 }
 
 /* ── WoW sparkline (uses r.weekly_revenue = [w-4,w-3,w-2,w-1] if available) ── */
