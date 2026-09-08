@@ -1497,9 +1497,21 @@ function renderQSection(q, ca, am) {
    their own totals and per-account detail. ── */
 const Q_MONTH_IDX = { Q1:[0,1,2], Q2:[3,4,5], Q3:[6,7,8], Q4:[9,10,11] };
 
+/* Whole clicked period (month or quarter) is already closed — used to switch capped accounts
+   from the (indicative, forward-looking) signed target over to what actually happened. A period
+   that includes the current or a future month keeps using the signed/projected basis. */
+function isPastPeriod(idxs) {
+  const curMoIdx = (GDATA.summary.ytd_months||1) - 1;
+  return idxs.every(i => i < curMoIdx);
+}
+
 function expectedValueForPeriod(m, idxs) {
   if (m.is_capped) {
-    return idxs.reduce((s,i) => s + ((m.monthly_signed && m.monthly_signed[i]) || 0), 0);
+    // Already-closed period → the signed target was only ever indicative; what actually got
+    // delivered is the real number now that it's known. Still-open period → keep the signed
+    // target, since the real number isn't final yet.
+    const source = isPastPeriod(idxs) ? m.monthly_26 : m.monthly_signed;
+    return idxs.reduce((s,i) => s + ((source && source[i]) || 0), 0);
   }
   const curMoIdx = (GDATA.summary.ytd_months||1) - 1;
   const ctx = getPacingCtx();
@@ -1510,7 +1522,7 @@ function expectedValueForPeriod(m, idxs) {
   }, 0);
 }
 
-function renderWinLossBlock(blockLabel, refNote, items, periodLabel, colorVar) {
+function renderWinLossBlock(blockLabel, refNote, items, periodLabel, colorVar, isPast) {
   const churned = items.filter(r => r.churn).sort((a,b) => a.delta - b.delta);
   const rest    = items.filter(r => !r.churn);
   const wins    = rest.filter(r => r.delta >= 0).sort((a,b) => b.delta - a.delta);
@@ -1518,7 +1530,9 @@ function renderWinLossBlock(blockLabel, refNote, items, periodLabel, colorVar) {
   const totalWin   = wins.reduce((s,r) => s + r.delta, 0);
   const totalLoss  = losses.reduce((s,r) => s + r.delta, 0);
   const totalChurn = churned.reduce((s,r) => s + r.delta, 0);
-  const valueLabel = blockLabel === 'Capped' ? 'Signed' : 'Projected';
+  // Already-closed period → both blocks show what actually happened, not a forward-looking
+  // basis (signed target for capped, pace projection for open) — label it honestly either way.
+  const valueLabel = isPast ? 'Actual' : (blockLabel === 'Capped' ? 'Signed' : 'Projected');
 
   function makeCol(rows) {
     if (!rows.length) return `<div style="color:var(--muted);font-size:12px;padding:12px 0">No merchants</div>`;
@@ -1641,13 +1655,14 @@ function openExpectedModal(label, idxs) {
   const cappedList = list.filter(r => r.capped);
   const openList   = list.filter(r => !r.capped);
 
+  const past = isPastPeriod(idxs);
   const amSuffix = activeGlobalAM === 'all' ? '' : ` — ${activeGlobalAM}`;
-  document.getElementById('quarter-modal-title').innerHTML = `${label} — Expected vs LY${amSuffix}`;
+  document.getElementById('quarter-modal-title').innerHTML = `${label} — ${past ? 'Actual' : 'Expected'} vs LY${amSuffix}`;
   document.getElementById('quarter-modal-sub').textContent =
-    `${cappedList.length} capped · ${openList.length} open${activeGlobalAM === 'all' ? '' : ` · ${activeGlobalAM}`} · win / loss / churn vs LY · click a merchant for details`;
+    `${cappedList.length} capped · ${openList.length} open${activeGlobalAM === 'all' ? '' : ` · ${activeGlobalAM}`} · win / loss / churn vs LY${past ? ' · already closed — actual delivered' : ''} · click a merchant for details`;
 
-  const cappedBlock = renderWinLossBlock('Capped', `signed ${label} vs LY`, cappedList, label, 'var(--purple)');
-  const openBlock   = renderWinLossBlock('Open',   `pace projection ${label} vs LY`, openList, label, 'var(--text2)');
+  const cappedBlock = renderWinLossBlock('Capped', past ? `actual ${label} vs LY` : `signed ${label} vs LY`, cappedList, label, 'var(--purple)', past);
+  const openBlock   = renderWinLossBlock('Open',   past ? `actual ${label} vs LY` : `pace projection ${label} vs LY`, openList, label, 'var(--text2)', past);
 
   document.getElementById('quarter-modal-body').innerHTML =
     renderExpectedTotalsTable(cappedBlock, openBlock) + cappedBlock.html + openBlock.html;
