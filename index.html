@@ -1593,29 +1593,32 @@ function renderWinLossBlock(blockLabel, refNote, items, periodLabel, colorVar) {
 
 /* ── Compact Win/Loss/Churn summary — Total (Capped+Open), Capped, Open ── */
 function renderExpectedTotalsTable(cappedBlock, openBlock) {
-  const totalWin   = cappedBlock.totalWin   + openBlock.totalWin;
-  const totalLoss  = cappedBlock.totalLoss  + openBlock.totalLoss;
-  const totalChurn = cappedBlock.totalChurn + openBlock.totalChurn;
-  const winCount   = cappedBlock.counts.win   + openBlock.counts.win;
-  const lossCount  = cappedBlock.counts.loss  + openBlock.counts.loss;
-  const churnCount = cappedBlock.counts.churn + openBlock.counts.churn;
+  const netOf = b => b.totalWin + b.totalLoss + b.totalChurn;
+  const countOf = b => b.counts.win + b.counts.loss + b.counts.churn;
+  const cappedNet = netOf(cappedBlock);
+  const openNet   = netOf(openBlock);
+  const grandNet  = cappedNet + openNet;
+  const cappedCount = countOf(cappedBlock);
+  const openCount   = countOf(openBlock);
+  const grandCount  = cappedCount + openCount;
+
+  function tile(label, val, count) {
+    const pos = val >= 0;
+    const color = pos ? 'var(--green)' : 'var(--red)';
+    const bg = pos ? 'rgba(100,231,106,.08)' : 'rgba(255,85,85,.08)';
+    const border = pos ? 'rgba(100,231,106,.25)' : 'rgba(255,85,85,.25)';
+    return `<div style="flex:1;background:${bg};border:1px solid ${border};border-radius:8px;padding:12px 16px">
+      <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:${color}">${label}</div>
+      <div style="font-size:20px;font-weight:700;color:${color}">${pos?'+':''}${fmt(val)}</div>
+      <div style="font-size:11px;color:var(--text2)">${count} merchant${count===1?'':'s'} · win − loss − churn</div>
+    </div>`;
+  }
+
   return `
     <div style="display:flex;gap:12px;margin-bottom:26px">
-      <div style="flex:1;background:rgba(100,231,106,.08);border:1px solid rgba(100,231,106,.25);border-radius:8px;padding:12px 16px">
-        <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--green)">Total Win</div>
-        <div style="font-size:20px;font-weight:700;color:var(--green)">+${fmt(totalWin)}</div>
-        <div style="font-size:11px;color:var(--text2)">${winCount} merchant${winCount===1?'':'s'} growing</div>
-      </div>
-      <div style="flex:1;background:rgba(255,85,85,.08);border:1px solid rgba(255,85,85,.25);border-radius:8px;padding:12px 16px">
-        <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--red)">Total Loss</div>
-        <div style="font-size:20px;font-weight:700;color:var(--red)">${fmt(totalLoss)}</div>
-        <div style="font-size:11px;color:var(--text2)">${lossCount} merchant${lossCount===1?'':'s'} declining</div>
-      </div>
-      <div style="flex:1;background:rgba(124,147,184,.08);border:1px solid rgba(124,147,184,.3);border-radius:8px;padding:12px 16px">
-        <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--churn)">Total Churn</div>
-        <div style="font-size:20px;font-weight:700;color:var(--churn)">${fmt(totalChurn)}</div>
-        <div style="font-size:11px;color:var(--text2)">${churnCount} merchant${churnCount===1?'':'s'} churned</div>
-      </div>
+      ${tile('Total Capped', cappedNet, cappedCount)}
+      ${tile('Total Open', openNet, openCount)}
+      ${tile('Total (Capped + Open)', grandNet, grandCount)}
     </div>`;
 }
 
