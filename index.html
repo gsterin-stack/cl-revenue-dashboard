@@ -2784,32 +2784,37 @@ function openWowModal(mid) {
   const revSigned = qMonthIdxs.map(i => Math.round((m.monthly_signed?.[i]||0)/1000*10)/10);
   const hasSignedQ = revSigned.some(v => v > 0);
   let curMonthRemainderRaw = 0;
+  let budgetCapReached = false;
   const qCurPos = qMonthIdxs.indexOf(curMoIdx2);
   if (qCurPos !== -1) {
-    if (m.current_month_forecast != null) {
-      // Vrai forecast Snowflake (jour par jour) pour les jours restants du mois —
-      // toujours préférable à une extrapolation run-rate, qui peut s'envoler si les
-      // premiers jours du mois sont anormalement hauts ou bas (cf. update_data.py).
-      curMonthRemainderRaw = Math.max(0, m.current_month_forecast);
-      rev26Proj[qCurPos] = Math.round(curMonthRemainderRaw/1000*10)/10;
+    const snowflakeForecast = m.current_month_forecast;
+    const totalBudgetLeft   = m.remaining_budget;
+    // monthly_signed is only an indicative split of the total open budget, not a hard per-month
+    // cap — Snowflake's day-by-day forecast zeroes out once the MONTH's own tranche is used up,
+    // even if the account still has budget left in the total open pot (cf. PASSATION.md's Uber
+    // case — the day-level model tracks its own budget, which isn't always the real one). So a
+    // capped account with real headroom left in `remaining_budget` should keep counting revenue —
+    // it will still be billed against that total — capped run-rate is used as a stand-in for the
+    // rest of the month instead of trusting a Snowflake 0. Only trust the 0 (and flag the badge)
+    // once the TOTAL open budget is actually exhausted.
+    const trustSnowflake = snowflakeForecast != null
+      && (snowflakeForecast > 0 || !m.is_capped || totalBudgetLeft == null || totalBudgetLeft <= 0);
+    if (trustSnowflake) {
+      curMonthRemainderRaw = Math.max(0, snowflakeForecast);
     } else {
       const pctx = getPacingCtx();
       if (pctx) {
         const mtdRaw = m.monthly_26[curMoIdx2] || 0;
         const projectedTotalRaw = (mtdRaw / Math.max(pctx.daysElapsed,1)) * pctx.daysInMonth;
-        curMonthRemainderRaw = Math.max(0, projectedTotalRaw - mtdRaw);
-        rev26Proj[qCurPos] = Math.round(curMonthRemainderRaw/1000*10)/10;
+        let remainder = Math.max(0, projectedTotalRaw - mtdRaw);
+        if (totalBudgetLeft != null) remainder = Math.min(remainder, Math.max(0, totalBudgetLeft));
+        curMonthRemainderRaw = remainder;
       }
     }
+    rev26Proj[qCurPos] = Math.round(curMonthRemainderRaw/1000*10)/10;
+    budgetCapReached = m.is_capped && curMonthRemainderRaw === 0
+      && totalBudgetLeft != null && totalBudgetLeft <= 0;
   }
-  // Signed budget for the current month is projected to run out before month-end (Snowflake's
-  // day-by-day forecast excludes any day where cumulative revenue would exceed the signed budget —
-  // cf. PASSATION.md — so a €0 remainder for a capped account with unused signed budget left means
-  // "nothing more will be billed", not "no forecast available").
-  const signedThisMonth = qCurPos !== -1 ? (m.monthly_signed ? m.monthly_signed[curMoIdx2] : null) : null;
-  const mtdActualThisMonth = qCurPos !== -1 ? (m.monthly_26[curMoIdx2] || 0) : 0;
-  const budgetCapReached = qCurPos !== -1 && m.is_capped && curMonthRemainderRaw === 0
-    && signedThisMonth != null && signedThisMonth > mtdActualThisMonth;
 
   const qRev26 = qMonthIdxs.reduce((s,i) => s+(m.monthly_26[i]||0), 0) + curMonthRemainderRaw;
   const qRev25 = qMonthIdxs.reduce((s,i) => s+(m.monthly_25[i]||0), 0);
@@ -2854,7 +2859,7 @@ function openWowModal(mid) {
     ${budgetCapReached ? `
     <div style="display:flex;align-items:center;gap:6px;margin-bottom:10px">
       <span style="font-size:10px;font-weight:700;color:var(--orange);border:1px solid var(--orange);border-radius:4px;padding:1px 6px;white-space:nowrap">⚠ BUDGET CAP REACHED</span>
-      <span style="font-size:11px;color:var(--text2)">Signed budget for ${MONTHS[curMoIdx2]} is projected to run out before month-end — no further revenue will be billed</span>
+      <span style="font-size:11px;color:var(--text2)">Total open budget is exhausted — no further revenue will be billed</span>
     </div>` : ''}
     <div style="position:relative;height:180px;width:100%;margin-bottom:20px"><canvas id="wow-qrev-chart"></canvas></div>
     <!-- WoW 4-week trend -->
