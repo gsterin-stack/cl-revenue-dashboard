@@ -6,14 +6,14 @@
   <meta http-equiv="cache-control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="pragma" content="no-cache">
   <meta http-equiv="expires" content="0">
-  <meta name="build-time" content="2026-09-08T07:53:20.277Z">
+  <meta name="build-time" content="2026-09-03T14:02:34.925504Z">
   <title>Joko — CL Revenue Dashboard</title>
   <script>
     // Cache-buster: si la page en cache a plus de 2h, force un rechargement frais
     (function() {
       try {
         var bt = document.querySelector('meta[name="build-time"]');
-        if (!bt || bt.content === 'BUILD_TIMESTAMP_PLACEHOLDER') return;
+        if (!bt || bt.content === '2026-08-05T06:01:08.426Z') return;
         var age = Date.now() - new Date(bt.content).getTime();
         var url = new URL(window.location.href);
         if (age > 2 * 3600 * 1000 && !url.searchParams.has('_v')) {
@@ -32,7 +32,7 @@
       --bg: #000; --s1: #111; --s2: #1a1a1a; --s3: #222;
       --border: #222; --muted: #777; --text2: #888; --text: #fff;
       --green: #64E76A; --purple: #9254E3; --yellow: #E4FA62;
-      --red: #ff5555; --radius: 12px;
+      --red: #ff5555; --orange: #FFA040; --churn: #7C93B8; --radius: 12px;
       --font: 'Instrument Sans','Inter',sans-serif;
     }
     body { background: var(--bg); color: var(--text); font-family: var(--font); font-size: 13px; line-height: 1.5; }
@@ -53,7 +53,7 @@
     .tab-content.active { display:flex; }
 
     /* ── KPI Bar ── */
-    .kpi-bar    { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; }
+    .kpi-bar    { display:grid; grid-template-columns:repeat(4,1fr); gap:10px; }
     .am-kpi-bar { display:grid; grid-template-columns:repeat(4,1fr); gap:10px; margin-bottom:14px; }
     .kpi { background:var(--s1); border:1px solid var(--border); border-radius:var(--radius); padding:14px 16px; }
     .kpi.clickable { cursor:pointer; transition:border-color .15s, background .15s; }
@@ -138,18 +138,36 @@
     .q-progress-ticks { display:flex; justify-content:space-between; }
     .q-progress-tick  { font-size:9px; color:var(--muted); }
 
-    /* MF alert section */
-    .mf-alert-card { background:var(--s1); border:1px solid rgba(228,250,98,.2); border-radius:var(--radius); padding:16px 18px; }
-    .mf-alert-head  { display:flex; align-items:center; gap:10px; margin-bottom:14px; }
-    .mf-alert-title { font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.6px; color:var(--yellow); }
-    .mf-alert-badge { font-size:10px; font-weight:700; background:rgba(228,250,98,.1); border:1px solid rgba(228,250,98,.25); color:var(--yellow); border-radius:4px; padding:2px 8px; }
-    .mf-alert-none  { font-size:12px; color:var(--muted); padding:4px 0; }
-    .mf-alert-row   { display:flex; align-items:center; gap:12px; padding:8px 10px; margin-bottom:6px;
-                       background:rgba(228,250,98,.03); border:1px solid rgba(228,250,98,.1); border-radius:8px; cursor:pointer; transition:background .1s; }
-    .mf-alert-row:hover { background:rgba(228,250,98,.07); }
-    .mf-alert-name  { flex:1; font-weight:500; font-size:12px; }
-    .mf-alert-chip  { font-size:11px; color:var(--text2); white-space:nowrap; }
-    .mf-alert-warn  { font-size:11px; font-weight:600; color:var(--yellow); white-space:nowrap; }
+    /* ── AM alert rail: cross-cutting account health (Pace, Budget, Underspend, Media Fees, WoW, Churn) ── */
+    .alert-headline { display:flex; background:var(--s1); border:1px solid var(--border); border-radius:var(--radius); overflow:hidden; margin-bottom:10px; }
+    .alert-headline-stat { flex:1; padding:14px 18px; }
+    .alert-headline-stat + .alert-headline-stat { border-left:1px solid var(--border); }
+    .alert-headline-num { font-size:26px; font-weight:700; line-height:1; font-variant-numeric:tabular-nums; }
+    .alert-headline-label { font-size:10px; font-weight:600; text-transform:uppercase; letter-spacing:.5px; color:var(--text2); margin-top:5px; }
+    .alert-headline-sub { font-size:11px; color:var(--text2); margin-top:2px; }
+    .alert-sev-filter { display:flex; gap:6px; margin-bottom:10px; }
+    .alert-sev-btn { padding:6px 14px; border-radius:8px; font-size:11.5px; font-weight:600; cursor:pointer; border:1px solid var(--border); background:var(--s2); color:var(--text2); }
+    .alert-sev-btn.active { background:var(--s3); color:var(--text); border-color:currentColor; }
+    .alert-table { width:100%; border-collapse:collapse; background:var(--s1); border:1px solid var(--border); border-radius:var(--radius); overflow:hidden; }
+    .alert-table thead th { text-align:left; padding:8px 12px; font-size:10px; font-weight:600; text-transform:uppercase; letter-spacing:.5px; color:var(--text2); border-bottom:1px solid var(--border); background:var(--s2); }
+    .alert-row { border-left:3px solid transparent; cursor:pointer; }
+    .alert-row td { padding:9px 12px; border-bottom:1px solid #161616; vertical-align:middle; }
+    .alert-row:last-child td { border-bottom:none; }
+    .alert-row:hover { background:var(--s2); }
+    .alert-row.sev-red { border-left-color:var(--red); }
+    .alert-row.sev-orange { border-left-color:var(--orange); }
+    .alert-row.sev-churn { border-left-color:var(--churn); }
+    .alert-label { font-weight:600; white-space:nowrap; }
+    .alert-label.red { color:var(--red); }
+    .alert-label.orange { color:var(--orange); }
+    .alert-label.churn { color:var(--churn); }
+    .alert-amount { font-weight:700; font-variant-numeric:tabular-nums; white-space:nowrap; }
+    .alert-amount-sub { display:block; font-size:10.5px; color:var(--text2); font-weight:400; margin-top:1px; white-space:nowrap; }
+    .timing-badge { display:inline-block; font-size:10px; font-weight:700; border-radius:5px; padding:2px 7px; margin-right:5px; }
+    .timing-badge.soon { color:var(--red); background:rgba(255,85,85,.12); border:1px solid rgba(255,85,85,.3); }
+    .timing-badge.watch { color:var(--orange); background:rgba(255,160,64,.1); border:1px solid rgba(255,160,64,.3); }
+    .timing-badge.later { color:var(--text2); background:var(--s2); border:1px solid var(--border); }
+    .alert-others { color:var(--text2); font-size:11px; }
 
     /* Delivery table WoW sparkline */
     .spark-cell     { display:flex; align-items:center; gap:7px; justify-content:center; }
@@ -204,20 +222,20 @@
 <main>
   <!-- ═══ MANAGEMENT ═══ -->
   <div id="tab-management" class="tab-content active">
+    <div class="am-filter" id="global-am-filter"><!-- generated dynamically --></div>
     <div class="kpi-bar" id="kpi-bar"></div>
 
     <div class="card chart-full">
       <div class="section-header">
         <span class="section-title">Monthly Card-Linked Revenue</span>
-        <span class="section-sub">2024 · 2025 · 2026 actual + projection vs OKR</span>
+        <span class="section-sub">2025 · 2026 actual + projection vs OKR</span>
       </div>
       <div class="chart-legend">
-        <div class="legend-item"><div class="legend-dot" style="background:rgba(90,90,90,.8)"></div>2024</div>
         <div class="legend-item"><div class="legend-dot" style="background:rgba(180,180,180,.6)"></div>2025</div>
         <div class="legend-item"><div class="legend-dot" style="background:rgba(100,231,106,.92)"></div>2026 Actual</div>
         <div class="legend-item"><div class="legend-dot" style="background:rgba(100,231,106,.22);border:1px solid rgba(100,231,106,.4)"></div>2026 Proj.</div>
         <div class="legend-item"><div class="legend-dot" style="background:rgba(146,84,227,.55);border:1px solid rgba(146,84,227,.9)"></div>Expected (Signed+Open)</div>
-        <div class="legend-item"><div class="legend-line"></div>Monthly OKR</div>
+        <div class="legend-item" id="okr-legend-item"><div class="legend-line"></div>Monthly OKR</div>
       </div>
       <canvas id="main-chart"></canvas>
     </div>
@@ -258,18 +276,18 @@
 
   <!-- ═══ AM VIEW ═══ -->
   <div id="tab-am" class="tab-content">
-    <div class="am-select-bar" id="am-select-bar"><!-- generated dynamically --></div>
-    <div id="am-q-kpi-bar" class="am-q-kpi-bar" style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:14px"></div>
-    <div id="am-mf-alerts" style="margin-bottom:14px"></div>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+      <div class="am-select-bar" id="am-select-bar" style="margin-bottom:0"><!-- generated dynamically --></div>
+      <input type="text" id="am-search" placeholder="🔍 Search merchant…"
+        oninput="filterAMSearch(this.value)"
+        style="background:var(--s2);border:1px solid var(--border);border-radius:8px;color:var(--text);padding:7px 14px;font-size:13px;width:260px;outline:none;font-family:var(--font);transition:border-color .15s"
+        onfocus="this.style.borderColor='rgba(100,231,106,.5)'"
+        onblur="this.style.borderColor='var(--border)'">
+    </div>
+    <div id="am-q-kpi-bar" class="am-q-kpi-bar" style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:14px"></div>
+    <div id="am-alert-rail" style="margin-bottom:14px"></div>
     <div class="card">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
-        <div class="card-title" id="am-delivery-title" style="margin-bottom:0">DELIVERY — Portfolio</div>
-        <input type="text" id="am-search" placeholder="Search merchant…"
-          oninput="filterAMSearch(this.value)"
-          style="background:var(--s2);border:1px solid var(--border);border-radius:8px;color:var(--text);padding:6px 12px;font-size:12px;width:220px;outline:none;font-family:var(--font);transition:border-color .15s"
-          onfocus="this.style.borderColor='rgba(100,231,106,.5)'"
-          onblur="this.style.borderColor='var(--border)'">
-      </div>
+      <div class="card-title" id="am-delivery-title">DELIVERY — Portfolio</div>
       <div class="table-wrap" id="am-delivery-table-wrap"></div>
     </div>
   </div>
@@ -430,13 +448,13 @@
 <script>
 const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 
-/* ── Historical revenue (hardcoded, final) ── */
-const R24 = [671952,565875,615871,703340,738597,767482,874290,701441,620841,686759,950434,1099266];
-const R25_HARD = [726227,667280,583768,691001,690320,744567,775173,713803,681708,751957,1181813,1180760];
 let GDATA    = null;
 let activeAM = 'all';
 let activeMerchantsAM = 'all';
+let activeGlobalAM = 'all';
 let modalChart = null;
+let mainChart  = null;
+let qChart     = null;
 let tierChart  = null;
 let sortCol  = 'signed';
 let sortDir  = -1;
@@ -679,6 +697,13 @@ function fmtDeltaK(n) {
   const k = n/1000;
   return (k>=0?'+':'')+k.toFixed(1)+'K€';
 }
+/* K€ under €1M, M€ above — for full-budget totals ("of €1M signed"), where a T1 account's
+   signed budget can run well past what reads well in K. */
+function fmtBudget(n) {
+  if (n==null||isNaN(n)) return '—';
+  if (Math.abs(n) >= 1000000) return '€'+(n/1000000).toFixed(1).replace(/\.0$/,'')+'M';
+  return fmtK1(n);
+}
 /* always K€, always 1 decimal, no sign — reference/target values (signed or LY-equivalent) */
 function fmtK1(n) {
   if (n==null||isNaN(n)) return '—';
@@ -745,13 +770,13 @@ function getPacingCtx() {
   return { daysElapsed: d, daysInMonth };
 }
 /* Projects month-end delivery from the run rate observed so far, re-smoothed daily.
-   Muted (grey) through day 5 — a 1-2 day run rate is too noisy to alert on. */
+   Muted (grey) through day 4 — a 1-2 day run rate is too noisy to alert on. */
 function computePacing(now, target, ctx) {
   if (target == null || target <= 0 || !ctx) return null;
   const projected = (now / Math.max(ctx.daysElapsed, 1)) * ctx.daysInMonth;
   const pct   = Math.round(projected/target*100);
   const delta = projected - target;
-  const neutralized = ctx.daysElapsed <= 5;
+  const neutralized = ctx.daysElapsed <= 4;
   let color, dir;
   if      (pct > 120) { color = 'var(--red)';    dir = 'fast'; }
   else if (pct > 110) { color = 'var(--yellow)'; dir = 'fast'; }
@@ -822,13 +847,7 @@ function renderAll(data) {
   GDATA = data;
   document.getElementById('updated-at').textContent = 'Updated: '+data.updated_at;
   renderAMButtons(data.summary.ams || buildAMsFromMerchants(data.merchants));
-  renderKPIs(data.summary);
-  try { renderMainChart(data.chart_arrays); } catch(e) { console.error('renderMainChart',e); }
-  try { renderMonthlyTable(data.chart_arrays, data.summary.ytd_months); } catch(e) { console.error('renderMonthlyTable',e); }
-  try { renderQSection(data.quarterly, data.chart_arrays.R25); } catch(e) { console.error('renderQSection',e); }
-  try { renderTierSection(data.merchants, data.chart_arrays.R25); } catch(e) { console.error('renderTierSection',e); }
-  try { renderMFMgmtSection(data.merchants, data.summary.ytd_months); } catch(e) { console.error('renderMFMgmtSection',e); }
-  try { renderVerticalSection(data.merchants); } catch(e) { console.error('renderVerticalSection',e); }
+  renderGlobalSections(data, activeGlobalAM);
   try { renderMerchantTable('merchants-table-wrap', data.merchants, 'all'); } catch(e) { console.error('renderMerchantTable',e); }
   try { renderAMView(data.merchants, data.summary); } catch(e) { console.error('renderAMView',e); }
   fetch('./quarter_history.json')
@@ -844,6 +863,101 @@ function buildAMsFromMerchants(merchants) {
   return [...ams].sort();
 }
 
+/* ── Onglet Global : filtre AM ────────────────────────────────────────────────
+   Toutes les sections du Global tab (KPIs, chart mensuel, tableau mensuel, quarterly,
+   tier, media fees, vertical) sont dérivées ici pour un AM donné. Pour 'all', on
+   repasse tel quel les agrégats déjà calculés par n8n (data.summary/chart_arrays/
+   quarterly) — zéro risque de divergence sur la vue par défaut. Pour un AM précis, on
+   recalcule à partir des merchants filtrés, avec la même logique de split actual/proj
+   (via ytd_months) que le pipeline n8n. Seule la ligne OKR mensuelle reste une référence
+   globale non filtrée ; le 2025 (ca.R25, dérivé de monthly_25) est filtrable comme le 2026. ── */
+function filterMerchantsByAM(merchants, am) {
+  if (am === 'all') return merchants;
+  return Object.fromEntries(Object.entries(merchants).filter(([,m]) => m.am === am));
+}
+
+function deriveChartArraysForAM(merchants, am, ytdMonths, baseChartArrays) {
+  if (am === 'all') return baseChartArrays;
+  const R26A = new Array(12).fill(0);
+  const R26P = new Array(12).fill(0);
+  const R25  = new Array(12).fill(0);
+  const EXPECTED = new Array(12).fill(0);
+  const curMoIdx = ytdMonths - 1;
+  for (const m of Object.values(merchants)) {
+    for (let i=0; i<12; i++) {
+      R25[i] += (m.monthly_25 && m.monthly_25[i]) || 0;
+      const v26 = (m.monthly_26 && m.monthly_26[i]) || 0;
+      if (i < ytdMonths) R26A[i] += v26; else R26P[i] += v26;
+      EXPECTED[i] += m.is_capped
+        ? ((m.monthly_signed && m.monthly_signed[i] != null) ? m.monthly_signed[i] : v26)
+        : v26;
+    }
+    /* Le mois en cours ne contient dans monthly_26 que le réalisé MTD — le reste du mois
+       projeté vient du forecast Snowflake jour par jour (cf. update_data.py), pas de la
+       boucle ci-dessus (qui, pour ce mois, tombe dans la branche R26A). */
+    if (curMoIdx >= 0 && curMoIdx < 12 && m.current_month_forecast != null) {
+      R26P[curMoIdx] += Math.max(0, m.current_month_forecast);
+    }
+  }
+  return { ...baseChartArrays, R26A, R26P, R25, EXPECTED };
+}
+
+function deriveSummaryForAM(merchants, am, baseSummary) {
+  if (am === 'all') return baseSummary;
+  const rows = Object.values(merchants);
+  const ytd_actual   = rows.reduce((s,m)=>s+(m.actual_26||0), 0);
+  const ytd_25_total = rows.reduce((s,m)=>s+(m.actual_25_ytd||0), 0);
+  const ytd_yoy = ytd_25_total>0 ? Math.round((ytd_actual/ytd_25_total-1)*1000)/10 : 0;
+  const newClients = rows.filter(m=>m.is_new_client);
+
+  const q = currentQ();
+  const amOkr = getAMOkr(am);
+  const okrQuarters = Array.from({length:q}, (_,i) => amOkr[qLabel(i+1)]);
+  const ytd_okr_sum = okrQuarters.every(v=>v!=null) ? okrQuarters.reduce((a,b)=>a+b,0) : null;
+
+  return {
+    ...baseSummary,
+    ytd_actual,
+    ytd_yoy,
+    ytd_okr_sum,
+    active_merchants_26:     rows.length,
+    active_merchants_25_ytd: rows.filter(m=>(m.actual_25||0)>0).length,
+    new_clients_26:          newClients.length,
+    ytd_new_clients_revenue: newClients.reduce((s,m)=>s+(m.actual_26||0), 0),
+  };
+}
+
+function deriveQuarterlyForAM(am, R26A, R26P, baseQuarterly) {
+  if (am === 'all') return baseQuarterly;
+  const amOkr  = getAMOkr(am);
+  const qMapAM = ['Q1','Q1','Q1','Q2','Q2','Q2','Q3','Q3','Q3','Q4','Q4','Q4'];
+  const quarterly = {
+    Q1:{actual:0,proj:0,okr:amOkr.Q1}, Q2:{actual:0,proj:0,okr:amOkr.Q2},
+    Q3:{actual:0,proj:0,okr:amOkr.Q3}, Q4:{actual:0,proj:0,okr:amOkr.Q4},
+  };
+  for (let i=0; i<12; i++) {
+    const q = qMapAM[i];
+    quarterly[q].actual += R26A[i]||0;
+    quarterly[q].proj   += R26P[i]||0;
+  }
+  return quarterly;
+}
+
+function renderGlobalSections(data, am) {
+  const filteredMerchants = filterMerchantsByAM(data.merchants, am);
+  const ca        = deriveChartArraysForAM(filteredMerchants, am, data.summary.ytd_months, data.chart_arrays);
+  const summary    = deriveSummaryForAM(filteredMerchants, am, data.summary);
+  const quarterly  = deriveQuarterlyForAM(am, ca.R26A, ca.R26P, data.quarterly);
+
+  renderKPIs(summary);
+  try { renderMainChart(ca, am); } catch(e) { console.error('renderMainChart',e); }
+  try { renderMonthlyTable(ca, summary.ytd_months, am); } catch(e) { console.error('renderMonthlyTable',e); }
+  try { renderQSection(quarterly, ca.R25, am); } catch(e) { console.error('renderQSection',e); }
+  try { renderTierSection(filteredMerchants, ca.R25); } catch(e) { console.error('renderTierSection',e); }
+  try { renderMFMgmtSection(filteredMerchants, summary.ytd_months); } catch(e) { console.error('renderMFMgmtSection',e); }
+  try { renderVerticalSection(filteredMerchants); } catch(e) { console.error('renderVerticalSection',e); }
+}
+
 /* ── KPI Bar (3 cards, no month range in label) ── */
 function renderKPIs(s) {
   const ytdYoyHtml = s.ytd_yoy!=null
@@ -855,14 +969,44 @@ function renderKPIs(s) {
     ? `Jan–${MONTHS[s.ytd_months-1]} 2026`
     : '2026 YTD';
 
+  // New Client Revenue vs LY — n8n doit fournir s.ytd_new_clients_revenue_ly pour l'activer
+  const ncYoy = pct(s.ytd_new_clients_revenue, s.ytd_new_clients_revenue_ly);
+  const ncYoyHtml = ncYoy!=null
+    ? (ncYoy>=0 ? `<span class="pos">+${ncYoy}% vs LY</span> · ` : `<span class="neg">${ncYoy}% vs LY</span> · `)
+    : '';
+
+  // YTD vs OKR (cumul Q1…trimestre en cours) — même cible que la vue AM, agrégée sur tout le book.
+  // Quand s.ytd_okr_sum est fourni (vue Global filtrée par AM, cf. deriveSummaryForAM), on l'utilise
+  // tel quel — sinon (vue "all") on retombe sur GDATA.quarterly, agrégé sur tout le book.
+  const q          = currentQ();
+  let ytdOkrSum;
+  if (s.ytd_okr_sum !== undefined) {
+    ytdOkrSum = s.ytd_okr_sum;
+  } else {
+    const okrQuarters = GDATA && GDATA.quarterly
+      ? Array.from({length:q}, (_,i) => GDATA.quarterly[qLabel(i+1)] ? GDATA.quarterly[qLabel(i+1)].okr : null)
+      : [];
+    ytdOkrSum = okrQuarters.length && okrQuarters.every(v => v != null)
+      ? okrQuarters.reduce((a,b)=>a+b, 0) : null;
+  }
+  const ytdOkrPct  = ytdOkrSum ? Math.round(s.ytd_actual/ytdOkrSum*100) : null;
+  const ytdOkrColor= ytdOkrPct==null ? 'var(--text)' : ytdOkrPct>=90?'var(--green)':ytdOkrPct>=70?'var(--yellow)':'var(--red)';
+
   const kpis = [
     { label:'YTD Actual',
       value: fmtK(s.ytd_actual),
-      sub: (ytdYoyHtml ? ytdYoyHtml + ' · ' : '') + `<span class="neu">${ytdRange}</span>`,
+      sub: ytdYoyHtml || `<span class="neu">${ytdRange}</span>`,
+      clickable: false },
+    { label:`YTD vs Q1–${qLabel(q)} OKR`,
+      value: ytdOkrPct!=null ? ytdOkrPct+'%' : '—',
+      valueColor: ytdOkrColor,
+      sub: ytdOkrSum
+        ? `<span class="neu">${ytdRange}</span> vs ${fmtK(ytdOkrSum)} cible`
+        : `<span style="font-size:11px;color:var(--muted);font-style:italic">OKR not set</span>`,
       clickable: false },
     { label:'New Client Revenue',
       value: fmt(s.ytd_new_clients_revenue),
-      sub: `<span class="pos">${s.new_clients_26} new clients</span> <span class="neu">vs ${s.new_clients_25_ytd} last year</span>`,
+      sub: ncYoyHtml + `<span class="pos">${s.new_clients_26} new clients</span> <span class="neu">vs ${s.new_clients_25_ytd} last year</span>`,
       clickable: true, onclick: 'openNewClientsModal()' },
     { label:'Active Merchants 2026',
       value: s.active_merchants_26,
@@ -872,27 +1016,33 @@ function renderKPIs(s) {
   document.getElementById('kpi-bar').innerHTML = kpis.map(k=>`
     <div class="kpi${k.clickable?' clickable':''}"${k.onclick?` onclick="${k.onclick}"`:''}>
       <div class="kpi-label">${k.label}${k.clickable?' <span style="opacity:.45;font-size:9px">↗</span>':''}</div>
-      <div class="kpi-value">${k.value}</div>
+      <div class="kpi-value"${k.valueColor?` style="color:${k.valueColor}"`:''}>${k.value}</div>
       <div class="kpi-sub">${k.sub}</div>
     </div>`).join('');
 }
 
 /* ── Main chart ── */
-function renderMainChart(ca) {
-  new Chart(document.getElementById('main-chart').getContext('2d'),{
+function renderMainChart(ca, am) {
+  if (mainChart) { mainChart.destroy(); mainChart = null; }
+  // L'OKR n'a de sens qu'au niveau du book complet (aucune cible mensuelle par AM) —
+  // masqué dès qu'un AM précis est sélectionné.
+  const showOkr = am === 'all';
+  const okrLegendItem = document.getElementById('okr-legend-item');
+  if (okrLegendItem) okrLegendItem.style.display = showOkr ? '' : 'none';
+  mainChart = new Chart(document.getElementById('main-chart').getContext('2d'),{
     type:'bar',
     data:{ labels:MONTHS, datasets:[
-      {label:'2024',       data:R24,       backgroundColor:'rgba(80,80,80,.65)', stack:'s24', borderRadius:2},
-      {label:'2025',       data:R25_HARD,  backgroundColor:'rgba(170,170,170,.5)', stack:'s25', borderRadius:2},
+      {label:'2025',       data:ca.R25,    backgroundColor:'rgba(170,170,170,.5)', stack:'s25', borderRadius:2},
       {label:'2026 Act.',  data:ca.R26A,backgroundColor:'rgba(100,231,106,.9)', stack:'s26', borderRadius:2},
       {label:'2026 Proj.', data:ca.R26P,backgroundColor:'rgba(100,231,106,.18)',stack:'s26', borderRadius:2,
         borderColor:'rgba(100,231,106,.35)',borderWidth:1},
       {label:'Expected (Signed+Open)', data:ca.EXPECTED, backgroundColor:'rgba(146,84,227,.55)',
         stack:'sExp', borderRadius:2, borderColor:'rgba(146,84,227,.9)', borderWidth:1},
-      {label:'OKR', data:ca.OKR, type:'line', borderColor:'#E4FA62', borderDash:[5,4],
-        pointRadius:0, borderWidth:1.5, tension:0, fill:false, order:-1},
+      ...(showOkr ? [{label:'OKR', data:ca.OKR, type:'line', borderColor:'#E4FA62', borderDash:[5,4],
+        pointRadius:0, borderWidth:1.5, tension:0, fill:false, order:-1}] : []),
     ]},
     options:{ responsive:true, maintainAspectRatio:false,
+      interaction:{ mode:'index', intersect:false },
       plugins:{legend:{display:false}, tooltip:ttip()},
       onClick:(evt, elements, chart) => {
         if (!elements.length) return;
@@ -912,13 +1062,14 @@ function openMonthDrilldownModal(moIdx) {
   if (!GDATA) return;
   const monthLabel = MONTHS[moIdx];
   const curMoIdx = (GDATA.summary.ytd_months||1) - 1;
-  const list = Object.entries(GDATA.merchants)
+  const list = Object.entries(filterMerchantsByAM(GDATA.merchants, activeGlobalAM))
     .map(([id, m]) => ({ id, ...m, status: merchantMonthStatus(m, moIdx) }))
     .filter(r => r.status);
   const capped = list.filter(r => r.status.type==='capped').sort((a,b) => a.status.pct - b.status.pct);
   const open   = list.filter(r => r.status.type==='open').sort((a,b) => a.status.pct - b.status.pct);
 
-  document.getElementById('month-modal-title').textContent = `${monthLabel} 2026 — Delivery vs Plan`;
+  const amSuffix = activeGlobalAM === 'all' ? '' : ` — ${activeGlobalAM}`;
+  document.getElementById('month-modal-title').textContent = `${monthLabel} 2026 — Delivery vs Plan${amSuffix}`;
   document.getElementById('month-modal-sub').textContent =
     `${capped.length} capped (vs signed this month) · ${open.length} open (vs ${monthLabel} 2025)${paceGraceNote(moIdx===curMoIdx)} · click a column to sort`;
 
@@ -943,7 +1094,7 @@ function paceGraceNote(isCurrentMonth) {
   if (!isCurrentMonth) return '';
   const ctx = getPacingCtx();
   if (!ctx || ctx.daysElapsed > 5) return '';
-  return ` · grace period — day ${ctx.daysElapsed} of ${ctx.daysInMonth}, pacing alerts muted through day 5`;
+  return ` · grace period — day ${ctx.daysElapsed} of ${ctx.daysInMonth}, pacing alerts muted through day 4`;
 }
 
 /* ── Table partagée pace/delta (utilisée par le drilldown mois et le watchlist AM) — colonnes triables ── */
@@ -975,7 +1126,7 @@ function paceArrow(st, key) {
 function paceCellsHTML(p) {
   if (!p) return `<td style="text-align:right;padding:8px;color:var(--muted)">—</td><td style="text-align:right;padding:8px;color:var(--muted)">—</td>`;
   const arrow = p.dir==='fast' ? ' ▲' : p.dir==='slow' ? ' ▼' : '';
-  const tip = p.neutralized ? ` title="Grace period — day ${p.daysElapsed} of ${p.daysInMonth}, alert muted through day 5"` : '';
+  const tip = p.neutralized ? ` title="Grace period — day ${p.daysElapsed} of ${p.daysInMonth}, alert muted through day 4"` : '';
   return `<td${tip} style="text-align:right;padding:8px;font-weight:700;color:${p.color}">${p.pct}%${arrow}</td>
     <td style="text-align:right;padding:8px;font-variant-numeric:tabular-nums;color:${p.delta>=0?'var(--green)':'var(--red)'}">${fmtDeltaK(p.delta)}</td>`;
 }
@@ -1012,41 +1163,11 @@ function paceTableInner(tableId) {
   </table>`;
 }
 
-/* ── Watchlist AM View — merchants off-pace (capped/signed or open/LY) pour l'AM sélectionné ──
-   Filtre sur le pacing projeté (run-rate fin de mois), pas sur le MTD brut, pour éviter
-   le faux positif de début de mois : cf. grace period (day <=5) dans computePacing(). ── */
-function openWatchlistModal() {
-  if (!GDATA) return;
-  const curMoIdx  = (GDATA.summary.ytd_months||1) - 1;
-  const monthLabel = MONTHS[curMoIdx];
-  const rows = merchantRows(GDATA.merchants, activeAMView);
-  const list = rows
-    .map(r => ({ ...r, status: merchantMonthStatus(r, curMoIdx) }))
-    .filter(r => r.status && r.status.pacing && r.status.pacing.color === 'var(--red)');
-  const bySeverity = (a,b) => Math.abs(b.status.pacing.pct-100) - Math.abs(a.status.pacing.pct-100);
-  const capped = list.filter(r => r.status.type==='capped').sort(bySeverity);
-  const open   = list.filter(r => r.status.type==='open').sort(bySeverity);
-
-  const amLabel = activeAMView === 'all' ? 'All AMs' : activeAMView;
-  document.getElementById('month-modal-title').textContent = `⚠ Watchlist — ${amLabel}`;
-  document.getElementById('month-modal-sub').textContent =
-    `${monthLabel} 2026 · ${capped.length} capped off-pace · ${open.length} open off-pace${paceGraceNote(true)}`;
-
-  document.getElementById('month-modal-body').innerHTML = `
-    <div style="margin-bottom:18px">
-      <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--purple);margin-bottom:6px">Capped — vs signed this month</div>
-      ${renderPaceTable(capped, 'vs Signed', 'watch-capped')}
-    </div>
-    <div>
-      <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--text2);margin-bottom:6px">Open — vs ${monthLabel} 2025</div>
-      ${renderPaceTable(open, 'vs LY', 'watch-open')}
-    </div>`;
-
-  document.getElementById('month-modal-overlay').classList.add('open');
-}
-
 /* ── Monthly Performance Table (transposed: months = columns) ── */
-function renderMonthlyTable(ca, ytdMonths) {
+function renderMonthlyTable(ca, ytdMonths, am) {
+  // L'OKR n'a de sens qu'au niveau du book complet (aucune cible mensuelle par AM) —
+  // masqué dès qu'un AM précis est sélectionné, cf. renderMainChart/renderQSection.
+  const showOkr = am === 'all';
   // Pas de projection pour les mois complets passés ; projection visible pour le mois en cours et les mois futurs
   const actuals = ca.R26A.map(v => v || 0);
   const projs   = ca.R26P.map((v,i) => i < ytdMonths - 1 ? 0 : (v || 0));
@@ -1056,50 +1177,42 @@ function renderMonthlyTable(ca, ytdMonths) {
   const totalActual = actuals.reduce((a,b)=>a+b,0);
   const totalProj   = projs.reduce((a,b)=>a+b,0);
   const totalOkr    = okrs.reduce((a,b)=>a+b,0);
-  const total25     = R25_HARD.reduce((a,b)=>a+b,0);
-  const total24     = R24.reduce((a,b)=>a+b,0);
+  const total25     = r25.reduce((a,b)=>a+b,0);
 
   // Build column arrays (12 months + Total)
   const cols     = [...MONTHS, 'Total'];
   const aRow     = [...actuals, totalActual];
   const pRow     = [...projs,   totalProj];
   const oRow     = [...okrs,    totalOkr];
-  const r25Row   = [...R25_HARD, total25];
-  const r24Row   = [...R24,      total24];
+  const r25Row   = [...r25,     total25];
   const totRow   = aRow.map((a,i) => a + pRow[i]);
 
-  function fmtCell(v, style) {
-    return `<td style="text-align:right;${style}">${v>0?fmt(v):'—'}</td>`;
-  }
-
-  document.getElementById('monthly-table-wrap').innerHTML = `
-    <table class="perf-table">
-      <thead><tr>
-        <th class="row-label"></th>
-        ${cols.map((c,i) => `<th${i===cols.length-1?' style="border-left:1px solid var(--border)"':''}>${c}</th>`).join('')}
-      </tr></thead>
-      <tbody>
+  const rows = [];
+  rows.push(`
         <tr>
           <td class="row-label" style="color:var(--muted)">2025</td>
           ${r25Row.map((v,i) => {
             const sep = i===12 ? 'border-left:1px solid var(--border);' : '';
             return `<td style="text-align:right;${sep}color:var(--muted)">${v>0?fmt(v):'—'}</td>`;
           }).join('')}
-        </tr>
+        </tr>`);
+  if (showOkr) rows.push(`
         <tr>
           <td class="row-label" style="color:var(--muted)">OKR</td>
           ${oRow.map((v,i) => {
             const sep = i===12 ? 'border-left:1px solid var(--border);' : '';
             return `<td style="text-align:right;${sep}color:var(--muted)">${v>0?fmt(v):'—'}</td>`;
           }).join('')}
-        </tr>
+        </tr>`);
+  rows.push(`
         <tr>
           <td class="row-label" style="color:var(--green)">Actual</td>
           ${aRow.map((v,i) => {
             const sep = i===12 ? 'border-left:1px solid var(--border);' : '';
             return `<td style="text-align:right;${sep}color:${v>0?'var(--green)':'var(--muted)'}">${v>0?fmt(v):'—'}</td>`;
           }).join('')}
-        </tr>
+        </tr>`);
+  if (showOkr) rows.push(`
         <tr>
           <td class="row-label" style="color:var(--text2)">vs OKR</td>
           ${aRow.map((actual,i) => {
@@ -1109,21 +1222,24 @@ function renderMonthlyTable(ca, ytdMonths) {
             const c = v>=90?'var(--green)':v>=70?'var(--yellow)':'var(--red)';
             return `<td style="text-align:right;${sep}color:${c};font-weight:700">${v}%</td>`;
           }).join('')}
-        </tr>
+        </tr>`);
+  rows.push(`
         <tr style="border-top:1px solid var(--border)">
           <td class="row-label" style="color:rgba(100,231,106,.55)">Projection</td>
           ${pRow.map((v,i) => {
             const sep = i===12 ? 'border-left:1px solid var(--border);' : '';
             return `<td style="text-align:right;${sep}color:${v>0?'rgba(100,231,106,.55)':'var(--muted)'}">${v>0?fmt(v):'—'}</td>`;
           }).join('')}
-        </tr>
+        </tr>`);
+  rows.push(`
         <tr>
           <td class="row-label" style="color:var(--text);font-weight:700">Total A+P</td>
           ${totRow.map((v,i) => {
             const sep = i===12 ? 'border-left:1px solid var(--border);' : '';
             return `<td style="text-align:right;${sep}color:${v>0?'var(--text)':'var(--muted)'};font-weight:700">${v>0?fmt(v):'—'}</td>`;
           }).join('')}
-        </tr>
+        </tr>`);
+  if (showOkr) rows.push(`
         <tr>
           <td class="row-label" style="color:var(--text2)">vs OKR (A+P)</td>
           ${totRow.map((total,i) => {
@@ -1133,7 +1249,8 @@ function renderMonthlyTable(ca, ytdMonths) {
             const c = v>=90?'var(--green)':v>=70?'var(--yellow)':'var(--red)';
             return `<td style="text-align:right;${sep}color:${c};font-weight:700">${v}%</td>`;
           }).join('')}
-        </tr>
+        </tr>`);
+  rows.push(`
         <tr style="border-top:1px solid var(--border)">
           <td class="row-label" style="color:var(--text2)">vs 2025 (A+P)</td>
           ${totRow.map((total,i) => {
@@ -1143,13 +1260,23 @@ function renderMonthlyTable(ca, ytdMonths) {
             const c = v>=0?'var(--green)':'var(--red)';
             return `<td style="text-align:right;${sep}color:${c};font-weight:600">${v>=0?'+':''}${v}%</td>`;
           }).join('')}
-        </tr>
-      </tbody>
+        </tr>`);
+
+  document.getElementById('monthly-table-wrap').innerHTML = `
+    <table class="perf-table">
+      <thead><tr>
+        <th class="row-label"></th>
+        ${cols.map((c,i) => `<th${i===cols.length-1?' style="border-left:1px solid var(--border)"':''}>${c}</th>`).join('')}
+      </tr></thead>
+      <tbody>${rows.join('')}</tbody>
     </table>`;
 }
 
 /* ── Quarterly Performance (chart first, then transposed table) ── */
-function renderQSection(q, r25) {
+function renderQSection(q, r25, am) {
+  // L'OKR n'a de sens qu'au niveau du book complet — masqué dès qu'un AM précis est
+  // sélectionné (cf. renderMainChart/renderMonthlyTable pour la même règle).
+  const showOkr = am === 'all';
   const quarters = ['Q1','Q2','Q3','Q4'];
   const q25 = [
     r25.slice(0,3).reduce((a,b)=>a+b,0),
@@ -1159,13 +1286,14 @@ function renderQSection(q, r25) {
   ];
 
   // ── Chart ──
-  new Chart(document.getElementById('q-chart').getContext('2d'),{
+  if (qChart) { qChart.destroy(); qChart = null; }
+  qChart = new Chart(document.getElementById('q-chart').getContext('2d'),{
     type:'bar',
     data:{ labels:quarters, datasets:[
       {label:'2025',   data:q25,                           backgroundColor:'rgba(150,150,150,.4)', borderRadius:3},
       {label:'Actual', data:quarters.map(k=>q[k].actual),  backgroundColor:'rgba(100,231,106,.85)', stack:'s26', borderRadius:3},
       {label:'Proj.',  data:quarters.map(k=>q[k].proj),    backgroundColor:'rgba(100,231,106,.28)', stack:'s26', borderRadius:3, borderColor:'rgba(100,231,106,.45)',borderWidth:1},
-      {label:'OKR',    data:quarters.map(k=>q[k].okr),     type:'line', borderColor:'#E4FA62', borderDash:[4,3], pointRadius:3, pointBackgroundColor:'#E4FA62', borderWidth:1.5, tension:0, fill:false, order:-1},
+      ...(showOkr ? [{label:'OKR', data:quarters.map(k=>q[k].okr), type:'line', borderColor:'#E4FA62', borderDash:[4,3], pointRadius:3, pointBackgroundColor:'#E4FA62', borderWidth:1.5, tension:0, fill:false, order:-1}] : []),
     ]},
     options:{ responsive:true, maintainAspectRatio:false,
       onClick:(evt, elements) => {
@@ -1195,37 +1323,32 @@ function renderQSection(q, r25) {
   const oRow    = [...quarters.map(k=>q[k].okr),    totalOkr];
   const totRow  = aRow.map((a,i) => a + pRow[i]);
 
-  document.getElementById('q-table-wrap').innerHTML = `
-    <table class="perf-table">
-      <thead><tr>
-        <th class="row-label"></th>
-        ${cols.map((c,i) => i===4
-          ? `<th style="border-left:1px solid var(--border)">${c}</th>`
-          : `<th style="cursor:pointer" onclick="openQuarterModal('${c}')" title="Win/Loss vs LY for ${c}">${c}</th>`
-        ).join('')}
-      </tr></thead>
-      <tbody>
+  const rows = [];
+  rows.push(`
         <tr>
           <td class="row-label" style="color:var(--muted)">2025</td>
           ${a25Row.map((v,i) => {
             const sep = i===4?'border-left:1px solid var(--border);':'';
             return `<td style="text-align:right;${sep}color:var(--muted)">${v>0?fmt(v):'—'}</td>`;
           }).join('')}
-        </tr>
+        </tr>`);
+  if (showOkr) rows.push(`
         <tr>
           <td class="row-label" style="color:var(--muted)">OKR</td>
           ${oRow.map((v,i) => {
             const sep = i===4?'border-left:1px solid var(--border);':'';
             return `<td style="text-align:right;${sep}color:var(--muted)">${v>0?fmt(v):'—'}</td>`;
           }).join('')}
-        </tr>
+        </tr>`);
+  rows.push(`
         <tr>
           <td class="row-label" style="color:var(--green)">Actual</td>
           ${aRow.map((v,i) => {
             const sep = i===4?'border-left:1px solid var(--border);':'';
             return `<td style="text-align:right;${sep}color:${v>0?'var(--green)':'var(--muted)'}">${v>0?fmt(v):'—'}</td>`;
           }).join('')}
-        </tr>
+        </tr>`);
+  if (showOkr) rows.push(`
         <tr>
           <td class="row-label" style="color:var(--text2)">vs OKR</td>
           ${aRow.map((actual,i) => {
@@ -1235,21 +1358,24 @@ function renderQSection(q, r25) {
             const c = v>=90?'var(--green)':v>=70?'var(--yellow)':'var(--red)';
             return `<td style="text-align:right;${sep}color:${c};font-weight:700">${v}%</td>`;
           }).join('')}
-        </tr>
+        </tr>`);
+  rows.push(`
         <tr style="border-top:1px solid var(--border)">
           <td class="row-label" style="color:rgba(100,231,106,.55)">Projection</td>
           ${pRow.map((v,i) => {
             const sep = i===4?'border-left:1px solid var(--border);':'';
             return `<td style="text-align:right;${sep}color:${v>0?'rgba(100,231,106,.55)':'var(--muted)'}">${v>0?fmt(v):'—'}</td>`;
           }).join('')}
-        </tr>
+        </tr>`);
+  rows.push(`
         <tr>
           <td class="row-label" style="color:var(--text);font-weight:700">Total A+P</td>
           ${totRow.map((v,i) => {
             const sep = i===4?'border-left:1px solid var(--border);':'';
             return `<td style="text-align:right;${sep}color:${v>0?'var(--text)':'var(--muted)'};font-weight:700">${v>0?fmt(v):'—'}</td>`;
           }).join('')}
-        </tr>
+        </tr>`);
+  if (showOkr) rows.push(`
         <tr>
           <td class="row-label" style="color:var(--text2)">vs OKR (A+P)</td>
           ${totRow.map((total,i) => {
@@ -1259,7 +1385,8 @@ function renderQSection(q, r25) {
             const c = v>=90?'var(--green)':v>=70?'var(--yellow)':'var(--red)';
             return `<td style="text-align:right;${sep}color:${c};font-weight:700">${v}%</td>`;
           }).join('')}
-        </tr>
+        </tr>`);
+  rows.push(`
         <tr>
           <td class="row-label" style="color:var(--text2)">vs 2025 (A+P)</td>
           ${totRow.map((total,i) => {
@@ -1269,8 +1396,18 @@ function renderQSection(q, r25) {
             const c = v>=0?'var(--green)':'var(--red)';
             return `<td style="text-align:right;${sep}color:${c};font-weight:600">${v>=0?'+':''}${v}%</td>`;
           }).join('')}
-        </tr>
-      </tbody>
+        </tr>`);
+
+  document.getElementById('q-table-wrap').innerHTML = `
+    <table class="perf-table">
+      <thead><tr>
+        <th class="row-label"></th>
+        ${cols.map((c,i) => i===4
+          ? `<th style="border-left:1px solid var(--border)">${c}</th>`
+          : `<th style="cursor:pointer" onclick="openQuarterModal('${c}')" title="Win/Loss vs LY for ${c}">${c}</th>`
+        ).join('')}
+      </tr></thead>
+      <tbody>${rows.join('')}</tbody>
     </table>`;
 }
 
@@ -1401,7 +1538,7 @@ function renderTierSection(merchants, r25Portfolio) {
     g.a26  += m.actual_26 || 0;
     g.p26  += m.proj_26   || 0;
     g.ytd26 += m.actual_26 || 0;
-    if (ytdM > 0) g.ytd25 += (m.monthly_25||[]).slice(0, ytdM).reduce((s,x)=>s+x, 0);
+    g.ytd25 += m.actual_25_ytd || 0;
     g.count++;
   }
 
@@ -1475,9 +1612,15 @@ function renderTierSection(merchants, r25Portfolio) {
   const totYoy = totalA25 > 0 ? Math.round((totAP/totalA25-1)*100) : null;
   const totYoyHtml = totYoy!=null ? `<span style="color:${totYoy>=0?'var(--green)':'var(--red)'};font-weight:700">${totYoy>=0?'+':''}${totYoy}%</span>` : '—';
   const totYtdDelta = totalYtd26 - totalYtd25;
-  // Use Snowflake-computed ytd_yoy for the total % (avoids distortion from new 2026 merchants with no 2025 history)
-  const sfYtdPct = GDATA && GDATA.summary.ytd_yoy != null ? GDATA.summary.ytd_yoy : null;
-  const totYtdPct = sfYtdPct;
+  // Sur le book complet (non filtré par AM), on préfère le ytd_yoy calculé côté n8n : il
+  // inclut aussi les merchants qui avaient du revenu en 2025 mais n'en ont plus du tout en
+  // 2026 (churn), absents de `merchants` ici et donc invisibles à un recalcul local. Sur une
+  // vue filtrée par AM en revanche, GDATA.summary.ytd_yoy (global) ne veut plus rien dire —
+  // on retombe sur le calcul local, seule option disponible pour ce sous-ensemble.
+  const isFullBook = merchants === GDATA.merchants;
+  const totYtdPct = isFullBook && GDATA.summary.ytd_yoy != null
+    ? GDATA.summary.ytd_yoy
+    : (totalYtd25 > 0 ? Math.round((totalYtd26/totalYtd25-1)*100) : null);
 
   document.getElementById('tier-table-wrap').innerHTML = `
     <table>
@@ -1665,9 +1808,7 @@ function renderVerticalSection(merchants) {
     const g = groups[v]||groups['Autres'];
     g.a25 += m.actual_25||0; g.a26 += m.actual_26||0; g.p26 += m.proj_26||0; g.count++;
     g.ytd26 += m.actual_26 || 0;
-    if (ytdM > 0) {
-      g.ytd25 += (m.monthly_25||[]).slice(0, ytdM).reduce((s,x)=>s+x, 0);
-    }
+    g.ytd25 += m.actual_25_ytd || 0;
   }
   const active = [...VORDER,'Autres'].filter(v=>(groups[v].a26+groups[v].p26+groups[v].a25)>0);
   active.sort((a,b)=>(groups[b].a26+groups[b].p26)-(groups[a].a26+groups[a].p26));
@@ -1711,8 +1852,15 @@ function renderVerticalSection(merchants) {
   const totYoyVal=totAP-totA25;
   const totYoyHtml=totA25>0?`<span style="color:${totYoy>=0?'var(--green)':'var(--red)'};font-weight:700">${totYoy>=0?'+':''}${fmt(totYoyVal)}</span><br><span style="font-size:10px;font-weight:400;opacity:.7">${totYoy>=0?'+':''}${totYoy}%</span>`:'—';
   const totYtdDelta=totYtd26-totYtd25;
-  // Use Snowflake-computed ytd_yoy for the total % (avoids distortion from new 2026 merchants with no 2025 history)
-  const totYtdPct = GDATA && GDATA.summary.ytd_yoy != null ? GDATA.summary.ytd_yoy : (totYtd25>0?Math.round((totYtd26/totYtd25-1)*100):null);
+  // Sur le book complet (non filtré par AM), on préfère le ytd_yoy calculé côté n8n : il
+  // inclut aussi les merchants qui avaient du revenu en 2025 mais n'en ont plus du tout en
+  // 2026 (churn), absents de `merchants` ici et donc invisibles à un recalcul local. Sur une
+  // vue filtrée par AM en revanche, GDATA.summary.ytd_yoy (global) ne veut plus rien dire —
+  // on retombe sur le calcul local, seule option disponible pour ce sous-ensemble.
+  const isFullBook = merchants === GDATA.merchants;
+  const totYtdPct = isFullBook && GDATA.summary.ytd_yoy != null
+    ? GDATA.summary.ytd_yoy
+    : (totYtd25>0 ? Math.round((totYtd26/totYtd25-1)*100) : null);
   const ytdRangeLabel = ytdM>0 ? `YTD vs LY (Jan–${MONTHS[ytdM-1]})` : 'YTD vs LY';
   document.getElementById('vertical-table-wrap').innerHTML=`
     <table>
@@ -1804,9 +1952,8 @@ function merchantRows(merchants, amFilter) {
                        av=av??-999; bv=bv??-999; break;
         case 'ytd':    av=a.actual_26||0;          bv=b.actual_26||0; break;
         case 'ytd_vs_ly': {
-          const ytdM = GDATA.summary.ytd_months;
-          const ay = (a.monthly_25||[]).slice(0,ytdM).reduce((s,v)=>s+v,0);
-          const by = (b.monthly_25||[]).slice(0,ytdM).reduce((s,v)=>s+v,0);
+          const ay = a.actual_25_ytd || 0;
+          const by = b.actual_25_ytd || 0;
           av = ay>0 ? (a.actual_26||0)/ay : -999;
           bv = by>0 ? (b.actual_26||0)/by : -999;
           break;
@@ -1817,9 +1964,8 @@ function merchantRows(merchants, amFilter) {
         case 'mf_ly':  av=a.media_fees_ly||0;     bv=b.media_fees_ly||0; break;
         case 'yoy_val': av=a.actual_25>0?(a.signed||0)-a.actual_25:-999999; bv=b.actual_25>0?(b.signed||0)-b.actual_25:-999999; break;
         case 'ytd_val': {
-          const ytdMv = GDATA.summary.ytd_months;
-          const ay25v = (a.monthly_25||[]).slice(0,ytdMv).reduce((s,v)=>s+v,0);
-          const by25v = (b.monthly_25||[]).slice(0,ytdMv).reduce((s,v)=>s+v,0);
+          const ay25v = a.actual_25_ytd || 0;
+          const by25v = b.actual_25_ytd || 0;
           av = ay25v>=1000 ? (a.actual_26||0)-ay25v : -999999;
           bv = by25v>=1000 ? (b.actual_26||0)-by25v : -999999;
           break;
@@ -1854,8 +2000,7 @@ function renderMerchantTable(wrapId, merchants, amFilter) {
       <th class="num sortable ${cc('mf_ly')}" data-col="mf_ly" onclick="sortBy('mf_ly')">MF LY</th>
     </tr></thead>
     <tbody>${rows.map(r=>{
-      const ytdM = GDATA.summary.ytd_months;
-      const ytd25 = (r.monthly_25||[]).slice(0, ytdM).reduce((s,v)=>s+v, 0);
+      const ytd25 = r.actual_25_ytd || 0;
       const yoy = r.actual_25>0 ? pctStr(r.signed, r.actual_25) : '<span class="neu">—</span>';
       const yoyVal = r.actual_25>0 ? (r.signed||0)-r.actual_25 : null;
       const yoyValHtml = yoyVal!=null
@@ -2005,13 +2150,16 @@ const AM_OKR_DATA = {
   'Romain':    { Q1: null, Q2: null, Q3: 682521,  Q4: null },
 };
 // Fallback propre pour tout AM non listé (nouveau, etc.)
-// Pour 'all', on agrège les targets de tous les AM = vue manager de l'équipe.
+// Pour 'all', on utilise la cible globale du book (GDATA.quarterly, fournie par n8n) plutôt que
+// d'agréger les cibles individuelles des AM — celles-ci sont souvent partiellement renseignées
+// (ex: seul Q3 est connu pour la plupart des AM), ce qui faussait la cible cumulée affichée.
 function getAMOkr(am) {
   if (am === 'all') {
     const totals = { Q1: null, Q2: null, Q3: null, Q4: null };
-    for (const q of ['Q1','Q2','Q3','Q4']) {
-      const vals = Object.values(AM_OKR_DATA).map(o => o[q]).filter(v => v != null);
-      totals[q] = vals.length ? vals.reduce((a,b) => a+b, 0) : null;
+    if (GDATA && GDATA.quarterly) {
+      for (const q of ['Q1','Q2','Q3','Q4']) {
+        totals[q] = GDATA.quarterly[q] ? GDATA.quarterly[q].okr : null;
+      }
     }
     return totals;
   }
@@ -2047,6 +2195,22 @@ function renderAMButtons(ams) {
       `<button class="am-btn${am===activeMerchantsAM?' active':''}"
          onclick="filterMerchantsAM('${am}',this)">${am}</button>`
     ).join('');
+
+  // ── Global tab filter ──
+  document.getElementById('global-am-filter').innerHTML =
+    `<button class="am-btn${activeGlobalAM==='all'?' active':''}"
+       onclick="filterGlobalAM('all',this)">All</button>` +
+    ams.map(am =>
+      `<button class="am-btn${am===activeGlobalAM?' active':''}"
+         onclick="filterGlobalAM('${am}',this)">${am}</button>`
+    ).join('');
+}
+
+function filterGlobalAM(am, btn) {
+  activeGlobalAM = am;
+  document.querySelectorAll('#global-am-filter .am-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  renderGlobalSections(GDATA, activeGlobalAM);
 }
 
 function selectAMView(am, btn) {
@@ -2062,7 +2226,7 @@ function renderAMView(merchants, summary) {
 
 function renderAMViewFull(merchants, summary) {
   renderAMQKPIs(merchants, activeAMView, summary);
-  renderAMMFAlerts(merchants, activeAMView);
+  renderAMAlertRail(merchants, activeAMView);
   renderAMDeliveryTable(merchants, activeAMView, summary);
 }
 
@@ -2076,26 +2240,20 @@ function renderAMQKPIs(merchants, am, summary) {
   const qPct   = qOkr ? Math.round(qRev/qOkr*100) : null;
   const qColor = qPct==null?'var(--text)':qPct>=90?'var(--green)':qPct>=70?'var(--yellow)':'var(--red)';
 
-  // YTD vs cumulative OKR (Q1+Q2+… through current Q)
-  const rows      = merchantRows(merchants, am);
-  const ytd       = rows.reduce((s,r)=>s+(r.actual_26||0), 0);
-  const ytdOkrSum = Array.from({length:q},(_,i)=>amOkr[qLabel(i+1)]||0).reduce((s,v)=>s+v,0) || null;
-  const ytdPct  = ytdOkrSum ? Math.round(ytd/ytdOkrSum*100) : null;
-  const ytdColor= ytdPct==null?'var(--text)':ytdPct>=90?'var(--green)':ytdPct>=70?'var(--yellow)':'var(--red)';
+  const rows        = merchantRows(merchants, am);
 
-  // MF alert count
-  const mfAlerts = rows.filter(r => (r.media_fees_ly||0)>0 && (r.media_fees_ytd||0)===0).length;
-
-  // Open budget
-  const openBdg = rows.reduce((s,r)=>s+(r.remaining_budget||0),0);
-
-  // Pace vs plan — mois en cours (curMoIdx), tous merchants de la vue (y compris 'all')
-  // Basé sur le pacing projeté fin de mois (run-rate), pas le MTD brut — cf. merchantMonthStatus().
-  const curMoIdx  = (summary.ytd_months||1) - 1;
-  const paceList  = rows.map(r => merchantMonthStatus(r, curMoIdx)).filter(Boolean);
-  const paceRed   = paceList.filter(s => s.pacing && s.pacing.color==='var(--red)');
-  const cappedRed = paceRed.filter(s => s.type==='capped').length;
-  const openRed   = paceRed.filter(s => s.type==='open').length;
+  // "YTD vs Q1–${qLabel(q)} OKR" — uniquement pertinent pour 'all' : aucun objectif n'est
+  // configuré par AM individuellement pour l'instant (cf. AM_OKR_DATA), donc la tuile
+  // n'affiche jamais que "OKR not set" dès qu'un AM précis est sélectionné.
+  const showOkrTile = am === 'all';
+  let ytd, ytdOkrSum, ytdPct, ytdColor;
+  if (showOkrTile) {
+    ytd = rows.reduce((s,r)=>s+(r.actual_26||0), 0);
+    const ytdQuarters = Array.from({length:q},(_,i)=>amOkr[qLabel(i+1)]);
+    ytdOkrSum = ytdQuarters.every(v=>v!=null) ? ytdQuarters.reduce((s,v)=>s+v,0) : null;
+    ytdPct    = ytdOkrSum ? Math.round(ytd/ytdOkrSum*100) : null;
+    ytdColor  = ytdPct==null?'var(--text)':ytdPct>=90?'var(--green)':ytdPct>=70?'var(--yellow)':'var(--red)';
+  }
 
   const qProgressHtml = `
     <div class="q-progress-wrap">
@@ -2110,6 +2268,7 @@ function renderAMQKPIs(merchants, am, summary) {
 
   const okrPlaceholder = `<span style="font-size:11px;color:var(--muted);font-style:italic">OKR not set</span>`;
 
+  document.getElementById('am-q-kpi-bar').style.gridTemplateColumns = showOkrTile ? 'repeat(3,1fr)' : 'repeat(2,1fr)';
   document.getElementById('am-q-kpi-bar').innerHTML = `
     <div class="kpi">
       <div class="kpi-label">${qLabel(q)} Achievement</div>
@@ -2119,31 +2278,240 @@ function renderAMQKPIs(merchants, am, summary) {
         : okrPlaceholder}</div>
       ${qProgressHtml}
     </div>
-    <div class="kpi">
+    ${showOkrTile ? `<div class="kpi">
       <div class="kpi-label">YTD vs Q1–${qLabel(q)} OKR</div>
       <div class="kpi-value" style="color:${ytdColor}">${fmtK(ytd)}</div>
       <div class="kpi-sub">${ytdOkrSum
         ? `<span style="color:${ytdColor};font-weight:700">${ytdPct}%</span> <span class="neu">vs ${fmtK(ytdOkrSum)} cible</span>`
         : okrPlaceholder}</div>
-    </div>
+    </div>` : ''}
     <div class="kpi">
       <div class="kpi-label">Merchants · ${am}</div>
       <div class="kpi-value">${rows.length}</div>
       <div class="kpi-sub">${rows.filter(r=>r.is_new_client).length} new clients · ${rows.filter(r=>(r.actual_26||0)>0).length} active</div>
     </div>
-    <div class="kpi" style="cursor:pointer" onclick="openWatchlistModal()">
-      <div class="kpi-label">⚠ Watchlist</div>
-      <div class="kpi-value" style="color:${paceRed.length>0?'var(--red)':'var(--green)'}">${paceRed.length}</div>
-      <div class="kpi-sub">${paceRed.length>0
-        ? `${cappedRed} capped off-pace · ${openRed} open off-pace`
-        : '<span class="neu">All on track</span>'}</div>
-    </div>
     `;
 }
 
-/* ── Media Fees alert section — désactivé ── */
-function renderAMMFAlerts() {
-  document.getElementById('am-mf-alerts').innerHTML = '';
+/* ── Alert rail: cross-cutting account health (Pace, Budget, Underspend, Media Fees, WoW, Churn) ──
+   Replaces the old single-purpose Watchlist tile. One row per account — the worst issue is shown,
+   the rest listed alongside — sorted by Tier first (T1 always highest priority), then severity. */
+let activeAlertSev = 'red';
+let lastAMAlerts   = [];
+
+/* Pace: tracks the current month's projected run-rate once it's past its 4-day grace period
+   (same computePacing() logic as the Delivery table's Pace column) — before that the signal is
+   unreliable, so it falls back to last month's final result, labeled "closed" so it's never
+   confused with a projection.
+   Each reason carries a label (what), an amount + amountSub (how much), and a timing badge/date
+   (by when) — three separated facts instead of one blended sentence.
+   A single bad week only reads as Urgent when the account's own pace is *also* off track (a
+   healthy month absorbs one rough week — see the WoW block below); it still shows, just as Watch. */
+function computeAccountAlert(id, m) {
+  const ytdMonths = GDATA.summary.ytd_months || 1;
+  const curMoIdx  = ytdMonths - 1;
+  const augIdx    = curMoIdx - 1;
+  const m26 = m.monthly_26 || [];
+  const m25 = m.monthly_25 || [];
+  const signed = m.monthly_signed || [];
+  const reasons = [];
+  let paceHealthPct = null;
+
+  const isChurn = (m26[augIdx]||0) === 0 && (m26[curMoIdx]||0) === 0;
+
+  const ctx = getPacingCtx();
+  const useCurrent = !!(ctx && ctx.daysElapsed > 4);
+  const paceMoIdx = useCurrent ? curMoIdx : augIdx;
+  if (paceMoIdx >= 0) {
+    const target = m.is_capped ? signed[paceMoIdx] : m25[paceMoIdx];
+    const cur = m26[paceMoIdx] || 0;
+    if (target != null && target > 0) {
+      if (useCurrent) {
+        const p = computePacing(cur, target, ctx);
+        if (p && !p.neutralized) {
+          paceHealthPct = p.pct;
+          const sev = p.color==='var(--red)' ? 1 : p.color==='var(--yellow)' ? 2 : null;
+          if (sev) {
+            const behind = p.delta < 0;
+            const amountSub = m.is_capped ? `vs ${fmtK1(target)} signed` : `vs ${fmtK1(target)} same month 2025`;
+            reasons.push({ sev,
+              label: `${behind?'🐌 Pace behind target':'🚀 Pace ahead of target'} — ${p.pct}% (proj.)`,
+              amount: `${p.delta>=0?'+':'-'}${fmtK1(Math.abs(p.delta))}`, amountSub,
+              timingText:'proj.', timingCls:'watch', timingDate:`by ${MONTHS[curMoIdx]} end` });
+          }
+        }
+      } else {
+        const pctVal = Math.round(cur/target*100);
+        paceHealthPct = pctVal;
+        if (pctVal < 90) {
+          const sev = pctVal < 70 ? 1 : 2;
+          const amountSub = m.is_capped ? `vs ${fmtK1(target)} signed` : `vs ${fmtK1(target)} same month 2025`;
+          reasons.push({ sev,
+            label: `🐌 Pace behind target — ${pctVal}%`,
+            amount: `-${fmtK1(Math.abs(cur-target))}`, amountSub,
+            timingText:'closed', timingCls:'later', timingDate:MONTHS[paceMoIdx] });
+        }
+      }
+    }
+  }
+
+  if (m.crossing_date) {
+    const d = new Date(m.crossing_date);
+    const daysLeft = Math.round((d - Date.now())/86400000);
+    if (daysLeft >= 0 && daysLeft <= 30) {
+      const sev = daysLeft <= 7 ? 1 : 2;
+      reasons.push({ sev,
+        label: '⏰ Budget ending soon', amount:'—', amountSub:'',
+        timingText:`${daysLeft}d`, timingCls: daysLeft<=7?'soon':'watch', timingDate:`${MONTHS[d.getMonth()]} ${d.getDate()}` });
+    }
+  }
+
+  const rab = m.required_additional_budget;
+  const totalBudget = signed26(m);
+  if (rab != null && rab < -15000) {
+    const riskPct = totalBudget > 0 ? Math.round(Math.abs(rab)/totalBudget*100) : null;
+    reasons.push({ sev:2,
+      label: `📊 Underspend risk${riskPct!=null?` — ${riskPct}%`:''}`,
+      amount: `-${fmtK1(Math.abs(rab))}`, amountSub: totalBudget>0 ? `of ${fmtBudget(totalBudget)} signed` : '',
+      timingText:'by', timingCls:'later', timingDate:'Dec 31' });
+  } else if (rab != null && rab > 15000 && m.is_capped) {
+    // Only a real overspend when the signed budget actually covers the rest of the year —
+    // otherwise there's simply no signed commitment yet for the coming months (crossing_date,
+    // above, already flags that case with a precise date; no need to guess here too).
+    const remaining = signed.slice(curMoIdx);
+    const fullYearSigned = remaining.length > 0 && remaining.every(v => v != null);
+    if (fullYearSigned) {
+      const pctOf = totalBudget > 0 ? Math.round(rab/totalBudget*100) : null;
+      reasons.push({ sev:2,
+        label: `⚠ Overspend risk${pctOf!=null?` — ${pctOf}%`:''}`,
+        amount: `+${fmtK1(rab)}`, amountSub:'needed to sustain pace',
+        timingText:'by', timingCls:'later', timingDate:'Dec 31' });
+    }
+  }
+
+  if ((m.media_fees_ly||0) > 0 && (m.media_fees_ytd||0) === 0) {
+    reasons.push({ sev:2,
+      label: '🔕 Media Fees stopped', amount: fmtK1(m.media_fees_ly), amountSub:'spent LY',
+      timingText:'—', timingCls:'later', timingDate:'' });
+  }
+
+  const wr = m.weekly_revenue;
+  if (wr && wr.length >= 2 && wr[wr.length-2] > 0) {
+    const last = wr[wr.length-1], prev = wr[wr.length-2];
+    const wowPct = Math.round((last-prev)/prev*100);
+    if (wowPct <= -30) {
+      const paceHealthy = paceHealthPct != null && paceHealthPct >= 90;
+      const sev = (wowPct <= -60 && !paceHealthy) ? 1 : 2;
+      reasons.push({ sev,
+        label: '📉 Revenue dip, last week',
+        amount: `-${fmtK1(Math.abs(last-prev))}`, amountSub:`vs the week before (${wowPct}%)`,
+        timingText:'this wk', timingCls: sev===1?'soon':'watch', timingDate:'' });
+    }
+  }
+
+  if (!reasons.length && !isChurn) return null;
+
+  if (isChurn) {
+    let lastNonzero = -1;
+    for (let i=0; i<=curMoIdx; i++) if ((m26[i]||0) > 0) lastNonzero = i;
+    const monthsDark = curMoIdx - lastNonzero;
+    const label = lastNonzero === -1 ? `😴 No revenue in 2026` : `😴 No revenue since ${MONTHS[lastNonzero+1]}`;
+    const hasLY = (m.actual_25||0) > 0;
+    return { id, am: m.am, tier: TIER_MAP[id]||'?', sev:'churn',
+      label, amount: hasLY ? fmtK1(m.actual_25) : '—', amountSub: hasLY ? 'in 2025' : '',
+      timingText:`${monthsDark}mo`, timingCls:'later', timingDate:'dark',
+      others: reasons.map(r=>`${r.label} (${r.amount})`) };
+  }
+
+  reasons.sort((a,b)=>a.sev-b.sev);
+  const top = reasons[0];
+  return {
+    id, am: m.am, tier: TIER_MAP[id]||'?',
+    sev: top.sev===1 ? 'red' : 'orange',
+    label: top.label, amount: top.amount, amountSub: top.amountSub,
+    timingText: top.timingText, timingCls: top.timingCls, timingDate: top.timingDate,
+    others: reasons.slice(1).map(r=>`${r.label} (${r.amount})`),
+  };
+}
+
+function computeAMAlerts(merchants, am) {
+  const filtered = filterMerchantsByAM(merchants, am);
+  const alerts = [];
+  for (const [id, m] of Object.entries(filtered)) {
+    const a = computeAccountAlert(id, m);
+    if (a) alerts.push(a);
+  }
+  const sevOrder  = {red:0, orange:1, churn:2};
+  const tierOrder = {T1:0, T2:1, T3:2, '?':3};
+  alerts.sort((a,b) => (tierOrder[a.tier]??3)-(tierOrder[b.tier]??3) || sevOrder[a.sev]-sevOrder[b.sev]);
+  return alerts;
+}
+
+function setAlertSevFilter(sev, btn) {
+  activeAlertSev = sev;
+  document.querySelectorAll('#am-alert-sev-filter .alert-sev-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  renderAlertTable();
+}
+
+function renderAlertTable() {
+  const filtered = activeAlertSev === 'all' ? lastAMAlerts : lastAMAlerts.filter(a=>a.sev===activeAlertSev);
+  const tbody = document.getElementById('am-alert-tbody');
+  if (!tbody) return;
+  tbody.innerHTML = filtered.length ? filtered.map(a => `
+    <tr class="alert-row sev-${a.sev}" onclick="openWowModal('${a.id}')">
+      <td class="merchant-name">${merchantLabel(a.id)}<span class="am-pill">${a.am||'—'}</span>${tierBadge(a.id)}</td>
+      <td><span class="alert-label ${a.sev}">${a.label}</span></td>
+      <td><span class="alert-amount">${a.amount}</span>${a.amountSub ? `<span class="alert-amount-sub">${a.amountSub}</span>` : ''}</td>
+      <td>${a.timingDate ? `<span class="timing-badge ${a.timingCls}">${a.timingText}</span> ${a.timingDate}` : `<span class="timing-badge ${a.timingCls}">${a.timingText}</span>`}</td>
+      <td class="alert-others">${a.others.length ? a.others.join(' · ') : '—'}</td>
+    </tr>`).join('') : `<tr><td colspan="5" style="padding:20px;text-align:center;color:var(--muted)">No accounts in this category.</td></tr>`;
+}
+
+function renderAMAlertRail(merchants, am) {
+  lastAMAlerts = computeAMAlerts(merchants, am);
+  activeAlertSev = 'red';
+  const total  = Object.keys(filterMerchantsByAM(merchants, am)).length;
+  const red    = lastAMAlerts.filter(a=>a.sev==='red').length;
+  const orange = lastAMAlerts.filter(a=>a.sev==='orange').length;
+  const churn  = lastAMAlerts.filter(a=>a.sev==='churn').length;
+  const clean  = total - lastAMAlerts.length;
+
+  document.getElementById('am-alert-rail').innerHTML = `
+    <div class="alert-headline">
+      <div class="alert-headline-stat">
+        <div class="alert-headline-num" style="color:var(--red)">${red}</div>
+        <div class="alert-headline-label">🔴 Urgent</div>
+        <div class="alert-headline-sub">needs action this week</div>
+      </div>
+      <div class="alert-headline-stat">
+        <div class="alert-headline-num" style="color:var(--orange)">${orange}</div>
+        <div class="alert-headline-label">🟠 Watch</div>
+        <div class="alert-headline-sub">not critical, keep an eye on it</div>
+      </div>
+      <div class="alert-headline-stat">
+        <div class="alert-headline-num" style="color:var(--churn)">${churn}</div>
+        <div class="alert-headline-label">😴 Churn</div>
+        <div class="alert-headline-sub">2+ months with no revenue</div>
+      </div>
+      <div class="alert-headline-stat">
+        <div class="alert-headline-num" style="color:var(--green)">${clean}</div>
+        <div class="alert-headline-label">✓ No signal</div>
+        <div class="alert-headline-sub">out of ${total} accounts</div>
+      </div>
+    </div>
+    <div class="alert-sev-filter" id="am-alert-sev-filter">
+      <div class="alert-sev-btn" onclick="setAlertSevFilter('all', this)">All (${lastAMAlerts.length})</div>
+      <div class="alert-sev-btn active" style="color:var(--red)" onclick="setAlertSevFilter('red', this)">🔴 Urgent (${red})</div>
+      <div class="alert-sev-btn" style="color:var(--orange)" onclick="setAlertSevFilter('orange', this)">🟠 Watch (${orange})</div>
+      <div class="alert-sev-btn" style="color:var(--churn)" onclick="setAlertSevFilter('churn', this)">😴 Churn (${churn})</div>
+    </div>
+    <table class="alert-table">
+      <thead><tr><th>Merchant</th><th>Alert</th><th>Amount at stake</th><th>Timing</th><th>Other signals</th></tr></thead>
+      <tbody id="am-alert-tbody"></tbody>
+    </table>
+  `;
+  renderAlertTable();
 }
 
 /* ── WoW sparkline (uses r.weekly_revenue = [w-4,w-3,w-2,w-1] if available) ── */
@@ -2240,12 +2608,20 @@ function openWowModal(mid) {
   let curMonthRemainderRaw = 0;
   const qCurPos = qMonthIdxs.indexOf(curMoIdx2);
   if (qCurPos !== -1) {
-    const pctx = getPacingCtx();
-    if (pctx) {
-      const mtdRaw = m.monthly_26[curMoIdx2] || 0;
-      const projectedTotalRaw = (mtdRaw / Math.max(pctx.daysElapsed,1)) * pctx.daysInMonth;
-      curMonthRemainderRaw = Math.max(0, projectedTotalRaw - mtdRaw);
+    if (m.current_month_forecast != null) {
+      // Vrai forecast Snowflake (jour par jour) pour les jours restants du mois —
+      // toujours préférable à une extrapolation run-rate, qui peut s'envoler si les
+      // premiers jours du mois sont anormalement hauts ou bas (cf. update_data.py).
+      curMonthRemainderRaw = Math.max(0, m.current_month_forecast);
       rev26Proj[qCurPos] = Math.round(curMonthRemainderRaw/1000*10)/10;
+    } else {
+      const pctx = getPacingCtx();
+      if (pctx) {
+        const mtdRaw = m.monthly_26[curMoIdx2] || 0;
+        const projectedTotalRaw = (mtdRaw / Math.max(pctx.daysElapsed,1)) * pctx.daysInMonth;
+        curMonthRemainderRaw = Math.max(0, projectedTotalRaw - mtdRaw);
+        rev26Proj[qCurPos] = Math.round(curMonthRemainderRaw/1000*10)/10;
+      }
     }
   }
   const qRev26 = qMonthIdxs.reduce((s,i) => s+(m.monthly_26[i]||0), 0) + curMonthRemainderRaw;
@@ -2550,7 +2926,7 @@ function renderAMDeliveryTable(merchants, am, summary) {
         ${sh('avb','Actual vs Budget')}
         <th style="cursor:pointer;user-select:none;text-align:center;white-space:nowrap" onclick="amSortBy('wow')">WoW${sc('wow')}</th>
         ${sh('mf','Q MF','var(--purple)')}
-        <th class="num" style="white-space:nowrap" title="Capped: month actual+proj vs signed/validated (Airtable) · Open: vs same month last year">Pace</th>
+        <th class="num" style="white-space:nowrap" title="Projected month-end run-rate vs target (Capped: vs signed/validated · Open: vs same month last year) — muted during the first 4 days of the month">Pace</th>
       </tr></thead>
       <tbody>${filteredRows.map(r => {
         const isCapped = r.budget_type === 'capped';
@@ -2577,10 +2953,20 @@ function renderAMDeliveryTable(merchants, am, summary) {
         const avbCell = isCapped && avb!=null
           ? `${budgetGauge(avb)} `
           : '<span class="neu">—</span>';
+        /* Le point/pct affiché ici doit refléter le projeté fin de mois (pacing), pas le
+           MTD brut — sinon tout le book paraît rouge en tout début de mois. On retombe
+           sur le MTD brut seulement si le pacing n'a pas pu être calculé (pas de date
+           de référence exploitable). */
         const paceStatus = merchantMonthStatus(r, curMoIdx);
-        const paceCell = paceStatus
-          ? `<span style="display:inline-flex;align-items:center;gap:4px;color:${paceStatus.color};font-weight:700">
-               <span style="width:7px;height:7px;border-radius:50%;background:${paceStatus.color};display:inline-block;flex-shrink:0"></span>${paceStatus.pct}%
+        const paceDisplay = paceStatus ? (paceStatus.pacing || paceStatus) : null;
+        const paceTip = paceDisplay && paceDisplay.neutralized
+          ? ` title="Grace period — day ${paceDisplay.daysElapsed} of ${paceDisplay.daysInMonth}, projection muted through day 4"`
+          : paceDisplay && paceDisplay.daysElapsed != null
+          ? ` title="Projected month-end vs target (run-rate as of day ${paceDisplay.daysElapsed}/${paceDisplay.daysInMonth})"`
+          : '';
+        const paceCell = paceDisplay
+          ? `<span${paceTip} style="display:inline-flex;align-items:center;gap:4px;color:${paceDisplay.color};font-weight:700">
+               <span style="width:7px;height:7px;border-radius:50%;background:${paceDisplay.color};display:inline-block;flex-shrink:0"></span>${paceDisplay.pct}%
              </span>`
           : '<span class="neu">—</span>';
         return `<tr style="cursor:pointer" onclick="openWowModal('${r.id}')">
@@ -2627,12 +3013,11 @@ function openTierModal(tier) {
   };
   const tc = TIER_COLORS[tier] || {};
 
-  // Build list of merchants in this tier with their delta vs 2025
-  const list = Object.entries(GDATA.merchants)
+  // Build list of merchants in this tier (filtré par l'AM actif de l'onglet Global) avec leur delta vs 2025
+  const list = Object.entries(filterMerchantsByAM(GDATA.merchants, activeGlobalAM))
     .filter(([id]) => TIER_MAP[id] === tier)
     .map(([id, m]) => {
-      const ytdM = GDATA.summary.ytd_months;
-      const ytd25 = (m.monthly_25||[]).slice(0, ytdM).reduce((s,v)=>s+v, 0);
+      const ytd25 = m.actual_25_ytd || 0;
       const ap = m.actual_26||0;
       const delta = ap - ytd25;
       return { id, m, ap, delta, ytd25 };
@@ -2641,10 +3026,11 @@ function openTierModal(tier) {
   const tops  = list.filter(r => r.delta >= 0).sort((a,b) => b.delta - a.delta);
   const flops = list.filter(r => r.delta < 0).sort((a,b) => a.delta - b.delta);
 
+  const amSuffix = activeGlobalAM === 'all' ? '' : ` · ${activeGlobalAM}`;
   document.getElementById('tier-modal-title').innerHTML =
     `<span style="color:${tc.label}">${tier}</span> — Tops & Flops`;
   document.getElementById('tier-modal-sub').textContent =
-    `${list.length} merchants · YTD ${GDATA.summary.ytd_months>0?'Jan–'+['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][GDATA.summary.ytd_months-1]:''} 2026 vs same period 2025`;
+    `${list.length} merchants · YTD ${GDATA.summary.ytd_months>0?'Jan–'+['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][GDATA.summary.ytd_months-1]:''} 2026 vs same period 2025${amSuffix}`;
 
   function makeCol(items, isFlop) {
     if (!items.length) return `<div style="color:var(--muted);font-size:12px;padding:12px 0">No merchants</div>`;
@@ -2785,7 +3171,7 @@ function renderMerchantsKPIs(merchants, am, summary) {
 /* ── New Clients Modal ── */
 function openNewClientsModal() {
   if (!GDATA) return;
-  const newClients = Object.entries(GDATA.merchants)
+  const newClients = Object.entries(filterMerchantsByAM(GDATA.merchants, activeGlobalAM))
     .filter(([,m]) => m.is_new_client)
     .map(([id,m]) => ({ id, ...m }))
     .sort((a,b) => (b.actual_26||0) - (a.actual_26||0));
@@ -2793,20 +3179,25 @@ function openNewClientsModal() {
   const ytdRange = GDATA.summary.ytd_months > 0
     ? `Jan–${MONTHS[GDATA.summary.ytd_months-1]} 2026`
     : '2026 YTD';
+  const amSuffix = activeGlobalAM === 'all' ? '' : ` · ${activeGlobalAM}`;
   document.getElementById('nc-modal-sub').textContent =
-    `${newClients.length} new clients · ${ytdRange}`;
+    `${newClients.length} new clients · ${ytdRange}${amSuffix}`;
+  // "vs 2025 New Clients" compare au total du book (n8n) — pas de référence 2025 par AM
+  // disponible, donc masqué dès qu'un AM précis est sélectionné (cf. règle OKR ci-dessus).
+  const vsLastYearTile = activeGlobalAM === 'all' ? `
+      <div class="modal-kpi">
+        <div class="modal-kpi-label">vs 2025 New Clients</div>
+        <div class="modal-kpi-value" style="color:var(--text2)">${newClients.length} <span style="font-size:13px">vs ${GDATA.summary.new_clients_25_ytd}</span></div>
+        <div class="modal-kpi-sub">last year (YTD)</div>
+      </div>` : '';
   document.getElementById('nc-modal-body').innerHTML = `
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:20px">
+    <div style="display:grid;grid-template-columns:${activeGlobalAM === 'all' ? '1fr 1fr' : '1fr'};gap:10px;margin-bottom:20px">
       <div class="modal-kpi">
         <div class="modal-kpi-label">Total New Client Revenue</div>
         <div class="modal-kpi-value" style="color:var(--green)">${fmt(totalRev)}</div>
         <div class="modal-kpi-sub">${ytdRange}</div>
       </div>
-      <div class="modal-kpi">
-        <div class="modal-kpi-label">vs 2025 New Clients</div>
-        <div class="modal-kpi-value" style="color:var(--text2)">${newClients.length} <span style="font-size:13px">vs ${GDATA.summary.new_clients_25_ytd}</span></div>
-        <div class="modal-kpi-sub">last year (YTD)</div>
-      </div>
+      ${vsLastYearTile}
     </div>
     <table class="modal-table">
       <thead><tr>
@@ -2842,6 +3233,10 @@ function openModal(merchantId) {
   const yoyHtml = yoy!=null
     ? (yoy>=0 ? `<span class="pos">+${yoy}%</span>` : `<span class="neg">${yoy}%</span>`)
     : '<span class="neu">—</span>';
+  const ytdYoy = m.actual_25_ytd>0 ? pct(m.actual_26, m.actual_25_ytd) : null;
+  const ytdYoyHtml = ytdYoy!=null
+    ? (ytdYoy>=0 ? `<span class="pos">+${ytdYoy}% vs LY</span>` : `<span class="neg">${ytdYoy}% vs LY</span>`)
+    : `<span class="neu">${GDATA.summary.ytd_months>0?`Jan–${MONTHS[GDATA.summary.ytd_months-1]} 2026`:'2026 YTD'}</span>`;
   document.getElementById('modal-title').textContent = merchantLabel(merchantId);
   document.getElementById('modal-sub').innerHTML =
     `<span class="am-pill">${m.am}</span>${m.is_new_client?' <span class="badge-new">new</span>':''}`;
@@ -2854,7 +3249,7 @@ function openModal(merchantId) {
     <div class="modal-kpi">
       <div class="modal-kpi-label">YTD Actual</div>
       <div class="modal-kpi-value" style="color:var(--green)">${fmt(m.actual_26)}</div>
-      <div class="modal-kpi-sub">${GDATA.summary.ytd_months>0?`Jan–${MONTHS[GDATA.summary.ytd_months-1]} 2026`:'2026 YTD'}</div>
+      <div class="modal-kpi-sub">${ytdYoyHtml}</div>
     </div>
     <div class="modal-kpi">
       <div class="modal-kpi-label">FY 2025</div>
@@ -2904,12 +3299,20 @@ function openModal(merchantId) {
   const curMoIdx = ytdM - 1;
   let curMonthProjected = false;
   if (!isEstimated && curMoIdx >= 0 && curMoIdx < 12) {
-    const ctx = getPacingCtx();
-    if (ctx) {
-      const mtd = m26_display[curMoIdx] || 0;
-      const projectedTotal = (mtd / Math.max(ctx.daysElapsed,1)) * ctx.daysInMonth;
-      m26_proj[curMoIdx] = Math.max(0, Math.round(projectedTotal - mtd));
+    if (m.current_month_forecast != null) {
+      // Vrai forecast Snowflake (jour par jour) pour les jours restants du mois —
+      // toujours préférable à une extrapolation run-rate, qui peut s'envoler si les
+      // premiers jours du mois sont anormalement hauts ou bas (cf. update_data.py).
+      m26_proj[curMoIdx] = Math.max(0, Math.round(m.current_month_forecast));
       curMonthProjected = true;
+    } else {
+      const ctx = getPacingCtx();
+      if (ctx) {
+        const mtd = m26_display[curMoIdx] || 0;
+        const projectedTotal = (mtd / Math.max(ctx.daysElapsed,1)) * ctx.daysInMonth;
+        m26_proj[curMoIdx] = Math.max(0, Math.round(projectedTotal - mtd));
+        curMonthProjected = true;
+      }
     }
   }
   if (modalChart) { modalChart.destroy(); modalChart=null; }
@@ -3029,10 +3432,10 @@ function openVerticalModal(vertical) {
   const ytdM = GDATA.summary.ytd_months;
   const color = VERTICAL_LABEL_COLORS[vertical] || 'var(--text)';
 
-  const list = Object.entries(GDATA.merchants)
+  const list = Object.entries(filterMerchantsByAM(GDATA.merchants, activeGlobalAM))
     .filter(([id]) => (VERTICAL_MAP[id]||'Autres') === vertical)
     .map(([id, m]) => {
-      const ytd25 = (m.monthly_25||[]).slice(0, ytdM).reduce((s,v)=>s+v, 0);
+      const ytd25 = m.actual_25_ytd || 0;
       const ap = m.actual_26||0;
       const delta = ap - ytd25;
       return { id, m, ap, delta, ytd25 };
@@ -3041,10 +3444,11 @@ function openVerticalModal(vertical) {
   const tops  = list.filter(r => r.delta >= 0).sort((a,b) => b.delta - a.delta);
   const flops = list.filter(r => r.delta < 0).sort((a,b) => a.delta - b.delta);
 
+  const amSuffix = activeGlobalAM === 'all' ? '' : ` · ${activeGlobalAM}`;
   document.getElementById('vertical-modal-title').innerHTML =
     `<span style="color:${color}">${vertical}</span>`;
   document.getElementById('vertical-modal-sub').textContent =
-    `${list.length} merchants · YTD ${ytdM>0?'Jan–'+MONTHS[ytdM-1]:''} 2026 vs same period 2025`;
+    `${list.length} merchants · YTD ${ytdM>0?'Jan–'+MONTHS[ytdM-1]:''} 2026 vs same period 2025${amSuffix}`;
 
   const thStyle = 'text-align:right;padding:6px 8px;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.4px;color:var(--text2);border-bottom:1px solid var(--border)';
   function makeCol(items, isFlop) {
@@ -3154,7 +3558,7 @@ function closeVerticalModal() {
 function openMFDetailModal(label, sub, monthIndices) {
   if (!GDATA) return;
 
-  const rows = Object.entries(GDATA.merchants).map(([id, m]) => {
+  const rows = Object.entries(filterMerchantsByAM(GDATA.merchants, activeGlobalAM)).map(([id, m]) => {
     const mf25 = m.monthly_mf_25 || [];
     const mf26 = m.monthly_mf_26 || [];
     const v25 = monthIndices.reduce((s,i) => s + (mf25[i]||0), 0);
@@ -3167,9 +3571,10 @@ function openMFDetailModal(label, sub, monthIndices) {
   const tops    = rows.filter(r => r.delta >= 0 && !(r.v25 === 0 && r.v26 > 0)).sort((a,b) => b.delta - a.delta);
   const flops   = rows.filter(r => r.delta < 0 && !(r.v25 > 0 && r.v26 === 0)).sort((a,b) => a.delta - b.delta);
 
+  const amSuffix = activeGlobalAM === 'all' ? '' : ` · ${activeGlobalAM}`;
   document.getElementById('mf-detail-modal-title').textContent = `Media Fees — ${label}`;
   document.getElementById('mf-detail-modal-sub').textContent =
-    `${sub} · ${stopped.length} stopped ordering · ${started.length} new order`;
+    `${sub} · ${stopped.length} stopped ordering · ${started.length} new order${amSuffix}`;
 
   const thStyle = 'text-align:right;padding:6px 8px;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.4px;color:var(--text2);border-bottom:1px solid var(--border)';
   function makeTable(items, tagLabel, tagColor) {
@@ -3225,7 +3630,7 @@ function closeMFDetailModal() {
 }
 
 /* ── Bootstrap ── */
-const INLINE_DATA = {"updated_at":"08/09/2026","summary":{"ams":["Clément","Eloïse","Eva","Romain","Théo"],"ytd_actual":7083934,"ytd_months":9,"fy_projection":8727552,"fy_pct_okr":69.8,"okr_total":12494718,"active_merchants_26":77,"active_merchants_25_ytd":92,"new_clients_26":10,"new_clients_25_ytd":13,"ytd_new_clients_revenue":493173,"ytd_25":5877958,"ytd_yoy":20.5},"chart_arrays":{"R26A":[824560,808666,830135,817485,940801,884371,860791,843136,273989,0,0,0],"R26P":[0,0,0,0,0,0,0,0,344605,491175,533931,618512],"R25":[694830,639744,555668,656625,640573,705129,744176,697657,666643,736727,1146468,1164661],"R24":[13800,28400,38200,204112,746599,804652,876982,709724,629343,690135,953395,1105978],"OKR":[779345,854922,839481,937582,997523,1105331,1066096,987765,1165013,1114888,1260476,1386296],"EXPECTED":[824560,808666,830135,817485,940801,884371,848316,697776,671635,593431,643982,721637]},"quarterly":{"Q1":{"actual":2463361,"proj":0,"okr":2473748},"Q2":{"actual":2642657,"proj":0,"okr":3040436},"Q3":{"actual":1977916,"proj":344605,"okr":3218874},"Q4":{"actual":0,"proj":1643618,"okr":3761660}},"fy_card":{"capped_total":8654460,"capped_pct":69.3,"uncapped_total":417686,"uncapped_pct":3.3},"merchants":{"adopt":{"am":"Romain","budget_type":"capped","is_capped":true,"monthly_signed":[null,null,null,null,null,null,28512,22757,16799,17304,29940,46041],"is_new_client":false,"signed_26":315959,"open_budget":175000,"remaining_budget":130438,"actual_26":185521,"proj_26":130438,"actual_25":14510,"actual_25_ytd":14510,"monthly_26":[2540,18304,26231,22756,33908,30913,26566,19254,5049,22186,33407,59598],"current_month_forecast":15247,"monthly_25":[3935,9975,600,0,0,0,0,0,0,0,0,0],"media_fees_ytd":8000,"media_fees_ly":0,"media_fees_q":0,"monthly_mf_26":[0,4000,0,0,4000,0,0,0,0,0,0,0],"monthly_mf_25":[0,0,0,0,0,0,0,0,0,0,0,0],"weekly_revenue":[3895,3763,3652,3476],"crossing_date":"2026-12-30","required_additional_budget":3392.538803991,"mf_from_current_month":10000},"alinea":{"am":"Eloïse","budget_type":"capped","is_capped":true,"monthly_signed":[null,null,null,null,null,null,null,null,null,null,null,null],"is_new_client":false,"signed_26":20000,"open_budget":null,"remaining_budget":0,"actual_26":36796,"proj_26":0,"actual_25":143629,"actual_25_ytd":83751,"monthly_26":[14527,22269,0,0,0,0,0,0,0,0,0,0],"current_month_forecast":0,"monthly_25":[3116,9242,21105,4358,11086,9292,12048,10061,10482,22137,11726,18976],"media_fees_ytd":0,"media_fees_ly":4000,"media_fees_q":0,"monthly_mf_26":[0,0,0,0,0,0,0,0,0,0,0,0],"monthly_mf_25":[0,0,2000,0,2000,0,0,0,0,2500,0,2500],"weekly_revenue":null,"crossing_date":null,"required_additional_budget":null,"mf_from_current_month":null},"allopneus":{"am":"Eva","budget_type":"capped","is_capped":true,"monthly_signed":[null,null,null,null,null,null,null,null,null,null,null,null],"is_new_client":false,"signed_26":null,"open_budget":null,"remaining_budget":null,"actual_26":5313,"proj_26":0,"actual_25":54565,"actual_25_ytd":37829,"monthly_26":[4834,479,0,0,0,0,0,0,0,0,0,0],"current_month_forecast":0,"monthly_25":[6031,4766,5085,5459,3909,5535,3816,0,7688,6525,3513,2238],"media_fees_ytd":0,"media_fees_ly":3000,"media_fees_q":0,"monthly_mf_26":[0,0,0,0,0,0,0,0,0,0,0,0],"monthly_mf_25":[0,0,0,0,0,0,0,0,3000,0,0,0],"weekly_revenue":null,"crossing_date":null,"required_additional_budget":null,"mf_from_current_month":null},"b-and-m":{"am":"Romain","budget_type":"capped","is_capped":true,"monthly_signed":[null,null,null,null,null,null,8000,13000,10000,12000,18000,14000],"is_new_client":true,"signed_26":155000,"open_budget":120000,"remaining_budget":76838,"actual_26":78162,"proj_26":47055,"actual_25":0,"actual_25_ytd":0,"monthly_26":[18002,4836,16024,0,0,6868,11769,17979,2684,12073,13164,15324],"current_month_forecast":6495,"monthly_25":[0,0,0,0,0,0,0,0,0,0,0,0],"media_fees_ytd":8000,"media_fees_ly":0,"media_fees_q":5000,"monthly_mf_26":[0,0,0,0,0,3000,0,5000,0,0,0,0],"monthly_mf_25":[0,0,0,0,0,0,0,0,0,0,0,0],"weekly_revenue":[2352,3467,2595,2093],"crossing_date":null,"required_additional_budget":-34584.519223805,"mf_from_current_month":null},"beauteprivee":{"am":"Romain","budget_type":"open","is_capped":false,"monthly_signed":[null,null,null,null,null,null,null,null,null,null,null,null],"is_new_client":false,"signed_26":null,"open_budget":null,"remaining_budget":null,"actual_26":36498,"proj_26":0,"actual_25":63704,"actual_25_ytd":40196,"monthly_26":[5589,4243,5553,3925,4238,4505,3314,3970,1161,0,0,0],"current_month_forecast":0,"monthly_25":[4760,3907,5885,4994,5425,4924,4476,4367,4175,5700,7860,7231],"media_fees_ytd":0,"media_fees_ly":0,"media_fees_q":0,"monthly_mf_26":[0,0,0,0,0,0,0,0,0,0,0,0],"monthly_mf_25":[0,0,0,0,0,0,0,0,0,0,0,0],"weekly_revenue":[708,797,844,944],"crossing_date":null,"required_additional_budget":null,"mf_from_current_month":null},"bizzbee":{"am":"Théo","budget_type":"capped","is_capped":true,"monthly_signed":[null,null,null,null,null,null,null,null,null,null,null,null],"is_new_client":false,"signed_26":null,"open_budget":null,"remaining_budget":null,"actual_26":0,"proj_26":0,"actual_25":37907,"actual_25_ytd":27110,"monthly_26":[0,0,0,0,0,0,0,0,0,0,0,0],"current_month_forecast":0,"monthly_25":[2049,1832,2770,3260,3696,4488,3497,4160,4437,4042,798,2878],"media_fees_ytd":0,"media_fees_ly":0,"media_fees_q":0,"monthly_mf_26":[0,0,0,0,0,0,0,0,0,0,0,0],"monthly_mf_25":[0,0,0,0,0,0,0,0,0,0,0,0],"weekly_revenue":null,"crossing_date":null,"required_additional_budget":null,"mf_from_current_month":null},"boulanger":{"am":"Eloïse","budget_type":"capped","is_capped":true,"monthly_signed":[null,null,null,null,null,null,84454,47232,48315,null,null,null],"is_new_client":false,"signed_26":350907,"open_budget":180000,"remaining_budget":16491,"actual_26":334416,"proj_26":0,"actual_25":126482,"actual_25_ytd":17890,"monthly_26":[37488,25344,20349,27932,28830,43409,69245,64394,17425,0,0,0],"current_month_forecast":0,"monthly_25":[0,0,0,0,0,54,9502,6507,5121,14724,42405,48169],"media_fees_ytd":8000,"media_fees_ly":2500,"media_fees_q":0,"monthly_mf_26":[3000,0,0,5000,0,0,0,0,0,0,0,0],"monthly_mf_25":[0,0,0,0,0,0,2500,0,0,0,0,0],"weekly_revenue":[11655,11739,15769,22406],"crossing_date":"2026-09-05","required_additional_budget":300681.859251848,"mf_from_current_month":10000},"brico-depot":{"am":"Eloïse","budget_type":"capped","is_capped":true,"monthly_signed":[null,null,null,null,null,null,null,null,null,null,null,null],"is_new_client":false,"signed_26":50000,"open_budget":null,"remaining_budget":0,"actual_26":67196,"proj_26":0,"actual_25":270531,"actual_25_ytd":186429,"monthly_26":[5914,0,9540,35040,16702,0,0,0,0,0,0,0],"current_month_forecast":0,"monthly_25":[15470,37268,17868,19746,19710,22258,19583,27170,18762,27802,32372,12522],"media_fees_ytd":11000,"media_fees_ly":23000,"media_fees_q":0,"monthly_mf_26":[0,0,6000,5000,0,0,0,0,0,0,0,0],"monthly_mf_25":[5000,8000,0,0,0,5000,0,5000,0,5000,5000,0],"weekly_revenue":null,"crossing_date":null,"required_additional_budget":null,"mf_from_current_month":null},"bricomarche":{"am":"Eloïse","budget_type":"capped","is_capped":true,"monthly_signed":[null,null,null,null,null,null,null,null,null,null,null,null],"is_new_client":false,"signed_26":null,"open_budget":null,"remaining_budget":null,"actual_26":48732,"proj_26":0,"actual_25":2094,"actual_25_ytd":0,"monthly_26":[16945,16750,15037,0,0,0,0,0,0,0,0,0],"current_month_forecast":0,"monthly_25":[0,0,0,0,0,0,0,0,0,0,0,2094],"media_fees_ytd":0,"media_fees_ly":0,"media_fees_q":0,"monthly_mf_26":[0,0,0,0,0,0,0,0,0,0,0,0],"monthly_mf_25":[0,0,0,0,0,0,0,0,0,0,0,0],"weekly_revenue":null,"crossing_date":null,"required_additional_budget":null,"mf_from_current_month":null},"but":{"am":"Eloïse","budget_type":"capped","is_capped":true,"monthly_signed":[null,null,null,null,null,null,null,null,null,null,null,null],"is_new_client":false,"signed_26":null,"open_budget":null,"remaining_budget":null,"actual_26":37788,"proj_26":0,"actual_25":296178,"actual_25_ytd":241411,"monthly_26":[25171,12617,0,0,0,0,0,0,0,0,0,0],"current_month_forecast":0,"monthly_25":[145483,92928,0,0,0,0,0,0,4270,11637,26031,15829],"media_fees_ytd":5000,"media_fees_ly":3000,"media_fees_q":0,"monthly_mf_26":[5000,0,0,0,0,0,0,0,0,0,0,0],"monthly_mf_25":[0,0,0,0,0,0,0,0,3000,3000,5000,5000],"weekly_revenue":null,"crossing_date":null,"required_additional_budget":null,"mf_from_current_month":null},"carrefour":{"am":"Eva","budget_type":"capped","is_capped":true,"monthly_signed":[null,null,null,null,null,null,32222,32458,33179,32584,40438,45263],"is_new_client":false,"signed_26":616163,"open_budget":616163,"remaining_budget":191308,"actual_26":424855,"proj_26":175457,"actual_25":348175,"actual_25_ytd":120137,"monthly_26":[44548,41285,43297,47903,53553,50945,56249,62773,24302,47224,47178,44590],"current_month_forecast":36466,"monthly_25":[0,0,0,0,0,0,52006,47813,34763,38390,77446,97757],"media_fees_ytd":103277,"media_fees_ly":41609,"media_fees_q":33625,"monthly_mf_26":[12000,12000,12000,12000,12000,9652,9625,12000,12000,0,0,0],"monthly_mf_25":[0,0,0,0,0,0,17609,12000,12000,12000,12000,12000],"weekly_revenue":[11359,10404,8447,7399],"crossing_date":"2026-12-24","required_additional_budget":13222.798854735,"mf_from_current_month":12000},"celio":{"am":"Clément","budget_type":"capped","is_capped":true,"monthly_signed":[null,null,null,null,null,null,null,null,2070,2790,2650,5760],"is_new_client":false,"signed_26":35000,"open_budget":20000,"remaining_budget":11194,"actual_26":23806,"proj_26":8293,"actual_25":27020,"actual_25_ytd":0,"monthly_26":[13988,5537,3468,0,0,0,0,0,813,2620,2118,1964],"current_month_forecast":1591,"monthly_25":[0,0,0,0,0,0,0,0,0,0,7503,19517],"media_fees_ytd":3000,"media_fees_ly":0,"media_fees_q":0,"monthly_mf_26":[3000,0,0,0,0,0,0,0,0,0,0,0],"monthly_mf_25":[0,0,0,0,0,0,0,0,0,0,0,3000],"weekly_revenue":[736],"crossing_date":null,"required_additional_budget":-11040.412610105,"mf_from_current_month":null},"certideal":{"am":"Clément","budget_type":"open","is_capped":false,"monthly_signed":[null,null,null,null,null,null,null,null,null,null,null,null],"is_new_client":false,"signed_26":null,"open_budget":null,"remaining_budget":null,"actual_26":75676,"proj_26":45347,"actual_25":99159,"actual_25_ytd":54273,"monthly_26":[8832,6607,7111,6852,10969,14075,10616,8370,2244,4987,16291,18584],"current_month_forecast":5486,"monthly_25":[7520,4215,5570,5437,5912,6444,7787,6399,10438,6141,18613,14683],"media_fees_ytd":7000,"media_fees_ly":3000,"media_fees_q":0,"monthly_mf_26":[0,0,0,0,3000,4000,0,0,0,0,0,0],"monthly_mf_25":[0,0,0,0,0,0,0,0,3000,0,4000,0],"weekly_revenue":[1726,1589,2633,1630],"crossing_date":null,"required_additional_budget":null,"mf_from_current_month":null},"chronodrive":{"am":"Eva","budget_type":"capped","is_capped":true,"monthly_signed":[null,null,null,null,null,null,null,4274,11269,9269,2712,null],"is_new_client":false,"signed_26":70000,"open_budget":35000,"remaining_budget":14430,"actual_26":55570,"proj_26":14430,"actual_25":62435,"actual_25_ytd":35647,"monthly_26":[10635,8438,11563,9620,5384,0,0,6030,3900,8145,636,0],"current_month_forecast":5650,"monthly_25":[7978,2052,0,0,7491,11229,502,0,13228,7827,8221,3907],"media_fees_ytd":0,"media_fees_ly":3000,"media_fees_q":0,"monthly_mf_26":[0,0,0,0,0,0,0,0,0,0,0,0],"monthly_mf_25":[0,0,0,0,0,0,0,0,3000,0,0,0],"weekly_revenue":[16,2816,2139,2610],"crossing_date":"2026-11-10","required_additional_budget":2443.530165606,"mf_from_current_month":null},"damart":{"am":"Eloïse","budget_type":"open","is_capped":false,"monthly_signed":[null,null,null,null,null,null,null,null,null,null,null,null],"is_new_client":false,"signed_26":null,"open_budget":null,"remaining_budget":null,"actual_26":20415,"proj_26":28660,"actual_25":50375,"actual_25_ytd":16237,"monthly_26":[5852,3368,2308,1665,1773,1641,1743,1535,530,5298,10294,11280],"current_month_forecast":1788,"monthly_25":[4753,2850,1649,1342,1387,1307,1162,1230,2565,4902,16378,10850],"media_fees_ytd":0,"media_fees_ly":0,"media_fees_q":0,"monthly_mf_26":[0,0,0,0,0,0,0,0,0,0,0,0],"monthly_mf_25":[0,0,0,0,0,0,0,0,0,0,3000,0],"weekly_revenue":[301,359,401,257],"crossing_date":null,"required_additional_budget":null,"mf_from_current_month":null},"decathlon":{"am":"Eloïse","budget_type":"capped","is_capped":true,"monthly_signed":[null,null,null,null,null,null,9431,10683,6404,null,null,null],"is_new_client":false,"signed_26":81781,"open_budget":31517,"remaining_budget":4516,"actual_26":77265,"proj_26":4516,"actual_25":50268,"actual_25_ytd":50268,"monthly_26":[0,12005,7884,8008,13398,6990,6727,17403,4850,1775,0,0],"current_month_forecast":2741,"monthly_25":[0,0,371,9199,12417,12281,16000,0,0,0,0,0],"media_fees_ytd":12500,"media_fees_ly":16000,"media_fees_q":5000,"monthly_mf_26":[0,2500,0,0,2500,2500,2500,0,2500,0,0,0],"monthly_mf_25":[0,0,0,0,0,0,16000,0,0,0,0,0],"weekly_revenue":[3565,3367,3728,1733],"crossing_date":"2026-10-20","required_additional_budget":19103.777448491,"mf_from_current_month":10000},"etam":{"am":"Eloïse","budget_type":"capped","is_capped":true,"monthly_signed":[null,null,null,null,null,null,null,null,null,null,null,null],"is_new_client":false,"signed_26":null,"open_budget":null,"remaining_budget":null,"actual_26":109317,"proj_26":0,"actual_25":342793,"actual_25_ytd":211466,"monthly_26":[26349,16362,22988,26422,17196,0,0,0,0,0,0,0],"current_month_forecast":0,"monthly_25":[27717,23189,19763,19019,24027,37638,32780,20533,20680,19785,51311,46351],"media_fees_ytd":10000,"media_fees_ly":5000,"media_fees_q":0,"monthly_mf_26":[0,0,5000,5000,0,0,0,0,0,0,0,0],"monthly_mf_25":[0,5000,0,0,0,0,0,0,0,0,2500,0],"weekly_revenue":null,"crossing_date":null,"required_additional_budget":null,"mf_from_current_month":null},"feed":{"am":"Eva","budget_type":"open","is_capped":false,"monthly_signed":[null,null,null,null,null,null,null,null,null,null,null,null],"is_new_client":false,"signed_26":null,"open_budget":null,"remaining_budget":null,"actual_26":1371,"proj_26":1690,"actual_25":3520,"actual_25_ytd":2640,"monthly_26":[80,150,260,120,110,150,183,202,116,624,369,295],"current_month_forecast":402,"monthly_25":[360,340,520,270,180,340,220,300,350,330,190,120],"media_fees_ytd":0,"media_fees_ly":0,"media_fees_q":0,"monthly_mf_26":[0,0,0,0,0,0,0,0,0,0,0,0],"monthly_mf_25":[0,0,0,0,0,0,0,0,0,0,0,0],"weekly_revenue":[20,60,60,60],"crossing_date":null,"required_additional_budget":null,"mf_from_current_month":null},"flunch":{"am":"Romain","budget_type":"capped","is_capped":true,"monthly_signed":[null,null,null,null,null,null,null,null,null,null,null,null],"is_new_client":false,"signed_26":null,"open_budget":null,"remaining_budget":null,"actual_26":5380,"proj_26":0,"actual_25":40062,"actual_25_ytd":17832,"monthly_26":[5380,0,0,0,0,0,0,0,0,0,0,0],"current_month_forecast":0,"monthly_25":[17832,0,0,0,0,0,0,0,0,0,3406,18824],"media_fees_ytd":0,"media_fees_ly":0,"media_fees_q":0,"monthly_mf_26":[0,0,0,0,0,0,0,0,0,0,0,0],"monthly_mf_25":[0,0,0,0,0,0,0,0,0,0,0,5000],"weekly_revenue":null,"crossing_date":null,"required_additional_budget":null,"mf_from_current_month":null},"gambettes-box":{"am":"Eva","budget_type":"open","is_capped":false,"monthly_signed":[null,null,null,null,null,null,null,null,null,null,null,null],"is_new_client":false,"signed_26":null,"open_budget":null,"remaining_budget":null,"actual_26":3843,"proj_26":50322,"actual_25":8896,"actual_25_ytd":1983,"monthly_26":[1132,481,314,258,144,126,98,434,856,14596,15415,14463],"current_month_forecast":5847,"monthly_25":[763,0,311,439,101,36,15,78,1609,2374,1794,1376],"media_fees_ytd":0,"media_fees_ly":0,"media_fees_q":0,"monthly_mf_26":[0,0,0,0,0,0,0,0,0,0,0,0],"monthly_mf_25":[0,0,0,0,0,0,0,0,0,0,0,0],"weekly_revenue":[12,28,311,136],"crossing_date":null,"required_additional_budget":null,"mf_from_current_month":null},"gaumont-pathe":{"am":"Théo","budget_type":"capped","is_capped":true,"monthly_signed":[null,null,null,null,null,null,null,null,null,null,null,null],"is_new_client":false,"signed_26":null,"open_budget":null,"remaining_budget":null,"actual_26":7851,"proj_26":0,"actual_25":47408,"actual_25_ytd":23912,"monthly_26":[7851,0,0,0,0,0,0,0,0,0,0,0],"current_month_forecast":0,"monthly_25":[0,0,0,7153,8730,4787,3242,0,0,4810,1017,17669],"media_fees_ytd":0,"media_fees_ly":0,"media_fees_q":0,"monthly_mf_26":[0,0,0,0,0,0,0,0,0,0,0,0],"monthly_mf_25":[0,0,0,0,0,0,0,0,0,0,0,0],"weekly_revenue":null,"crossing_date":null,"required_additional_budget":null,"mf_from_current_month":null},"heetch":{"am":"Eva","budget_type":"open","is_capped":false,"monthly_signed":[null,null,null,null,null,null,null,null,null,null,null,null],"is_new_client":false,"signed_26":null,"open_budget":null,"remaining_budget":null,"actual_26":18753,"proj_26":0,"actual_25":47945,"actual_25_ytd":28930,"monthly_26":[3958,2930,2690,2910,3430,2835,0,0,0,0,0,0],"current_month_forecast":0,"monthly_25":[3010,3440,3340,3380,3640,3765,3495,3795,3505,3635,3650,9290],"media_fees_ytd":0,"media_fees_ly":0,"media_fees_q":0,"monthly_mf_26":[0,0,0,0,0,0,0,0,0,0,0,0],"monthly_mf_25":[0,0,0,0,0,0,0,0,0,0,0,5000],"weekly_revenue":[10],"crossing_date":null,"required_additional_budget":null,"mf_from_current_month":null},"hellofresh":{"am":"Eva","budget_type":"open","is_capped":false,"monthly_signed":[null,null,null,null,null,null,null,null,null,null,null,null],"is_new_client":false,"signed_26":null,"open_budget":null,"remaining_budget":null,"actual_26":272710,"proj_26":128745,"actual_25":358496,"actual_25_ytd":245014,"monthly_26":[65359,47256,35162,21042,19350,19098,22932,24909,17602,35212,36686,32950],"current_month_forecast":23898,"monthly_25":[43606,36954,38020,20970,21904,23088,18158,21260,52661,36362,22700,22813],"media_fees_ytd":35000,"media_fees_ly":14000,"media_fees_q":10000,"monthly_mf_26":[10000,10000,5000,0,0,0,5000,0,5000,0,0,0],"monthly_mf_25":[0,0,0,0,2000,2000,2000,2000,6000,4000,0,6000],"weekly_revenue":[3510,4770,8532,9360],"crossing_date":null,"required_additional_budget":null,"mf_from_current_month":null},"hema":{"am":"Eloïse","budget_type":"capped","is_capped":true,"monthly_signed":[null,null,null,null,null,null,10322,10496,11530,11830,15195,21913],"is_new_client":false,"signed_26":120000,"open_budget":120000,"remaining_budget":70165,"actual_26":49835,"proj_26":39430,"actual_25":120271,"actual_25_ytd":67701,"monthly_26":[5105,5236,4758,4343,4439,7819,7588,8190,2357,8666,9517,15334],"current_month_forecast":5913,"monthly_25":[2944,3095,8887,10528,3364,10539,10342,10580,11289,16734,7179,24790],"media_fees_ytd":0,"media_fees_ly":30000,"media_fees_q":0,"monthly_mf_26":[0,0,0,0,0,0,0,0,0,0,0,0],"monthly_mf_25":[0,0,5000,5000,0,5000,5000,5000,5000,10000,0,10000],"weekly_revenue":[1615,1692,1796,1727],"crossing_date":null,"required_additional_budget":-64102.362664126,"mf_from_current_month":5000},"horace":{"am":"Romain","budget_type":"open","is_capped":false,"monthly_signed":[null,null,null,null,null,null,null,null,null,null,null,null],"is_new_client":false,"signed_26":null,"open_budget":null,"remaining_budget":null,"actual_26":20680,"proj_26":11147,"actual_25":38830,"actual_25_ytd":20550,"monthly_26":[2880,3180,2870,2190,2370,2170,2150,2156,714,2184,2692,4611],"current_month_forecast":1660,"monthly_25":[2010,2210,2040,7150,1980,1600,1640,1300,1750,2170,5070,9910],"media_fees_ytd":0,"media_fees_ly":4000,"media_fees_q":0,"monthly_mf_26":[0,0,0,0,0,0,0,0,0,0,0,0],"monthly_mf_25":[0,0,0,4000,0,0,0,0,0,0,0,0],"weekly_revenue":[440,380,480,480],"crossing_date":null,"required_additional_budget":null,"mf_from_current_month":null},"instant-gaming":{"am":"Eva","budget_type":"open","is_capped":false,"monthly_signed":[null,null,null,null,null,null,null,null,null,null,null,null],"is_new_client":false,"signed_26":null,"open_budget":null,"remaining_budget":null,"actual_26":5540,"proj_26":0,"actual_25":28049,"actual_25_ytd":17909,"monthly_26":[2458,2109,973,0,0,0,0,0,0,0,0,0],"current_month_forecast":0,"monthly_25":[2259,2243,2173,1858,2027,2002,2346,2368,2327,2459,3093,2894],"media_fees_ytd":0,"media_fees_ly":0,"media_fees_q":0,"monthly_mf_26":[0,0,0,0,0,0,0,0,0,0,0,0],"monthly_mf_25":[0,0,0,0,0,0,0,0,0,0,0,0],"weekly_revenue":null,"crossing_date":null,"required_additional_budget":null,"mf_from_current_month":null},"jules":{"am":"Eloïse","budget_type":"capped","is_capped":true,"monthly_signed":[null,null,null,null,null,null,5862,4010,4128,5812,6146,13043],"is_new_client":false,"signed_26":62000,"open_budget":24000,"remaining_budget":0,"actual_26":65106,"proj_26":0,"actual_25":95135,"actual_25_ytd":66701,"monthly_26":[10402,6178,5717,6668,7638,14634,7987,5882,0,0,0,0],"current_month_forecast":0,"monthly_25":[9492,6096,10454,6014,7851,15261,8595,1062,4551,6187,8390,11182],"media_fees_ytd":3000,"media_fees_ly":6000,"media_fees_q":0,"monthly_mf_26":[0,0,0,0,0,3000,0,0,0,0,0,0],"monthly_mf_25":[0,0,3000,0,0,3000,0,0,0,0,0,0],"weekly_revenue":[1085,1102,1245,432],"crossing_date":null,"required_additional_budget":-17355.659674,"mf_from_current_month":3000},"kiabi":{"am":"Eloïse","budget_type":"capped","is_capped":true,"monthly_signed":[null,null,null,null,null,null,49389,52266,47290,43179,36981,34105],"is_new_client":false,"signed_26":537269,"open_budget":20000,"remaining_budget":57291,"actual_26":479978,"proj_26":0,"actual_25":622395,"actual_25_ytd":447548,"monthly_26":[30883,38550,37778,50197,86526,76352,65669,94023,0,0,0,0],"current_month_forecast":0,"monthly_25":[32909,24966,44161,52222,60258,70534,40956,83244,73385,39514,39928,60318],"media_fees_ytd":31000,"media_fees_ly":39000,"media_fees_q":20000,"monthly_mf_26":[0,5000,0,0,6000,0,0,20000,0,0,0,0],"monthly_mf_25":[5000,0,0,0,5000,10000,0,10000,9000,0,5000,10000],"weekly_revenue":[13440,38778,40756,23535],"crossing_date":"2026-08-22","required_additional_budget":265238.06870893,"mf_from_current_month":30000},"kiko":{"am":"Romain","budget_type":"capped","is_capped":true,"monthly_signed":[null,null,null,null,null,null,null,null,null,null,null,null],"is_new_client":false,"signed_26":null,"open_budget":null,"remaining_budget":null,"actual_26":6361,"proj_26":0,"actual_25":158204,"actual_25_ytd":124559,"monthly_26":[6361,0,0,0,0,0,0,0,0,0,0,0],"current_month_forecast":0,"monthly_25":[10982,15614,11276,25510,13492,12916,14343,15276,10672,3887,5379,18857],"media_fees_ytd":0,"media_fees_ly":13000,"media_fees_q":0,"monthly_mf_26":[0,0,0,0,0,0,0,0,0,0,0,0],"monthly_mf_25":[0,5000,0,8000,0,0,0,0,0,0,0,0],"weekly_revenue":null,"crossing_date":null,"required_additional_budget":null,"mf_from_current_month":null},"lalalab":{"am":"Théo","budget_type":"open","is_capped":false,"monthly_signed":[null,null,null,null,null,null,null,null,null,null,null,null],"is_new_client":false,"signed_26":null,"open_budget":null,"remaining_budget":null,"actual_26":15718,"proj_26":14048,"actual_25":30908,"actual_25_ytd":15756,"monthly_26":[1628,1764,960,956,1368,1144,1207,2847,3844,2345,3446,5995],"current_month_forecast":2261,"monthly_25":[1540,2730,1016,1088,1308,2050,1316,3560,2412,1508,4522,7858],"media_fees_ytd":3000,"media_fees_ly":4000,"media_fees_q":3000,"monthly_mf_26":[0,0,0,0,0,0,0,0,3000,0,0,0],"monthly_mf_25":[0,1000,0,0,0,1000,0,2000,0,0,2000,3000],"weekly_revenue":[480,519,973,547],"crossing_date":null,"required_additional_budget":null,"mf_from_current_month":null},"le-closet":{"am":"Eva","budget_type":"open","is_capped":false,"monthly_signed":[null,null,null,null,null,null,null,null,null,null,null,null],"is_new_client":false,"signed_26":null,"open_budget":null,"remaining_budget":null,"actual_26":4372,"proj_26":2396,"actual_25":9381,"actual_25_ytd":5955,"monthly_26":[630,666,582,492,546,470,416,402,168,652,706,638],"current_month_forecast":401,"monthly_25":[960,660,825,615,615,585,585,690,1155,990,885,816],"media_fees_ytd":0,"media_fees_ly":0,"media_fees_q":0,"monthly_mf_26":[0,0,0,0,0,0,0,0,0,0,0,0],"monthly_mf_25":[0,0,0,0,0,0,0,0,0,0,0,0],"weekly_revenue":[71,100,116,109],"crossing_date":null,"required_additional_budget":null,"mf_from_current_month":null},"leroy-merlin":{"am":"Eloïse","budget_type":"capped","is_capped":true,"monthly_signed":[null,null,null,null,null,null,125655,64246,63477,112548,90718,44346],"is_new_client":false,"signed_26":1000000,"open_budget":1000000,"remaining_budget":333227,"actual_26":666773,"proj_26":249013,"actual_25":797480,"actual_25_ytd":670416,"monthly_26":[33893,75312,69678,122283,107725,66873,102227,69544,19238,75291,70086,53971],"current_month_forecast":49665,"monthly_25":[58692,82720,69755,143321,125842,67165,84001,35011,16044,39363,51400,24166],"media_fees_ytd":13000,"media_fees_ly":15000,"media_fees_q":8000,"monthly_mf_26":[0,5000,0,0,0,0,5000,0,3000,5000,5000,0],"monthly_mf_25":[0,0,0,5000,5000,0,5000,0,0,5000,0,0],"weekly_revenue":[14137,13502,13709,11289],"crossing_date":null,"required_additional_budget":-93768.14841983,"mf_from_current_month":13000},"les-raffineurs":{"am":"Eva","budget_type":"open","is_capped":false,"monthly_signed":[null,null,null,null,null,null,null,null,null,null,null,null],"is_new_client":false,"signed_26":null,"open_budget":null,"remaining_budget":null,"actual_26":4134,"proj_26":7572,"actual_25":11632,"actual_25_ytd":3499,"monthly_26":[570,562,401,436,550,878,328,320,89,543,1311,5438],"current_month_forecast":280,"monthly_25":[376,372,372,293,475,635,451,376,447,435,2104,5296],"media_fees_ytd":0,"media_fees_ly":0,"media_fees_q":0,"monthly_mf_26":[0,0,0,0,0,0,0,0,0,0,0,0],"monthly_mf_25":[0,0,0,0,0,0,0,0,0,0,0,0],"weekly_revenue":[43,101,88,55],"crossing_date":null,"required_additional_budget":null,"mf_from_current_month":null},"maisons-du-monde":{"am":"Eloïse","budget_type":"capped","is_capped":true,"monthly_signed":[null,null,null,null,null,null,19087,10626,11656,12416,27346,30887],"is_new_client":false,"signed_26":182017,"open_budget":112017,"remaining_budget":82836,"actual_26":99181,"proj_26":64111,"actual_25":172075,"actual_25_ytd":81701,"monthly_26":[32488,16988,17763,8459,0,0,4341,15257,3885,12799,17508,23122],"current_month_forecast":10683,"monthly_25":[0,0,0,9099,18828,12595,19190,13300,18482,16648,35613,28320],"media_fees_ytd":7500,"media_fees_ly":8450,"media_fees_q":2500,"monthly_mf_26":[5000,0,0,0,0,0,0,2500,0,0,0,0],"monthly_mf_25":[0,0,0,1725,4225,0,0,0,2500,0,3000,5000],"weekly_revenue":[2319,3057,3074,2867],"crossing_date":null,"required_additional_budget":-25715.769979897,"mf_from_current_month":15000},"natura-force":{"am":"—","budget_type":"open","is_capped":false,"monthly_signed":[null,null,null,null,null,null,null,null,null,null,null,null],"is_new_client":false,"signed_26":null,"open_budget":null,"remaining_budget":null,"actual_26":101,"proj_26":0,"actual_25":63,"actual_25_ytd":26,"monthly_26":[6,13,16,18,12,35,1,0,0,0,0,0],"current_month_forecast":0,"monthly_25":[0,0,1,0,0,12,13,0,0,0,31,6],"media_fees_ytd":0,"media_fees_ly":0,"media_fees_q":0,"monthly_mf_26":[0,0,0,0,0,0,0,0,0,0,0,0],"monthly_mf_25":[0,0,0,0,0,0,0,0,0,0,0,0],"weekly_revenue":null,"crossing_date":null,"required_additional_budget":null,"mf_from_current_month":null},"nespresso":{"am":"Eva","budget_type":"capped","is_capped":true,"monthly_signed":[null,null,null,null,null,null,null,null,null,null,null,null],"is_new_client":false,"signed_26":55000,"open_budget":27000,"remaining_budget":0,"actual_26":62102,"proj_26":0,"actual_25":88695,"actual_25_ytd":53849,"monthly_26":[5910,8908,7266,5994,7895,6864,6032,7662,5571,0,0,0],"current_month_forecast":0,"monthly_25":[0,0,6421,10432,9117,12414,5196,3930,10443,5165,15325,10252],"media_fees_ytd":5000,"media_fees_ly":15000,"media_fees_q":2500,"monthly_mf_26":[0,2500,0,0,0,0,0,0,2500,0,0,0],"monthly_mf_25":[0,0,0,5000,0,5000,0,0,5000,0,5000,0],"weekly_revenue":[1507,1303,1802,2646],"crossing_date":"2026-11-05","required_additional_budget":16946.621584372,"mf_from_current_month":2500},"nocibe":{"am":"Romain","budget_type":"capped","is_capped":true,"monthly_signed":[null,null,null,null,null,null,35993,35006,35549,null,null,null],"is_new_client":false,"signed_26":289429,"open_budget":168024,"remaining_budget":24140,"actual_26":265289,"proj_26":24140,"actual_25":238150,"actual_25_ytd":51179,"monthly_26":[19290,29456,14314,25066,56710,40440,39099,32519,8395,5907,0,0],"current_month_forecast":18233,"monthly_25":[0,0,0,0,12737,17801,17097,3544,0,15164,77137,94670],"media_fees_ytd":20000,"media_fees_ly":10000,"media_fees_q":10000,"monthly_mf_26":[0,5000,0,0,5000,0,5000,5000,0,0,0,0],"monthly_mf_25":[0,0,0,0,3000,4000,3000,0,0,0,5000,10000],"weekly_revenue":[4502,4860,7619,5294],"crossing_date":"2026-10-07","required_additional_budget":237801.732733846,"mf_from_current_month":null},"pokawa":{"am":"Romain","budget_type":"capped","is_capped":true,"monthly_signed":[null,null,null,null,null,null,6292,6287,5051,null,null,null],"is_new_client":false,"signed_26":65203,"open_budget":29000,"remaining_budget":1530,"actual_26":63673,"proj_26":1530,"actual_25":68854,"actual_25_ytd":51500,"monthly_26":[4716,5202,11926,7310,7965,8380,13261,3935,978,788,0,0],"current_month_forecast":742,"monthly_25":[0,8585,4339,4903,5701,9630,5428,5488,10769,4603,4645,4763],"media_fees_ytd":10000,"media_fees_ly":13000,"media_fees_q":5000,"monthly_mf_26":[0,0,5000,0,0,0,5000,0,0,0,0,0],"monthly_mf_25":[0,5000,0,0,0,3000,0,0,5000,0,0,0],"weekly_revenue":[913,776,747,722],"crossing_date":"2026-10-27","required_additional_budget":6497.329865885,"mf_from_current_month":3000},"printemps":{"am":"Eloïse","budget_type":"capped","is_capped":true,"monthly_signed":[null,null,null,null,null,null,10742,7125,7267,9316,14318,21561],"is_new_client":false,"signed_26":165000,"open_budget":20000,"remaining_budget":69836,"actual_26":95164,"proj_26":60327,"actual_25":159847,"actual_25_ytd":77526,"monthly_26":[13760,8144,8530,9130,11061,16314,15802,9527,2896,11808,14377,27007],"current_month_forecast":7136,"monthly_25":[8761,11448,5855,5862,6577,13725,10503,7291,13075,16736,23797,36217],"media_fees_ytd":5000,"media_fees_ly":15000,"media_fees_q":0,"monthly_mf_26":[0,0,0,0,0,5000,0,0,0,0,0,0],"monthly_mf_25":[0,5000,0,0,0,5000,0,0,5000,5000,5000,5000],"weekly_revenue":[1645,1835,2301,2057],"crossing_date":null,"required_additional_budget":-61609.971175406,"mf_from_current_month":10000},"prismashop":{"am":"—","budget_type":"open","is_capped":false,"monthly_signed":[null,null,null,null,null,null,null,null,null,null,null,null],"is_new_client":false,"signed_26":null,"open_budget":null,"remaining_budget":null,"actual_26":5549,"proj_26":0,"actual_25":8856,"actual_25_ytd":6216,"monthly_26":[872,512,704,616,712,824,824,485,0,0,0,0],"current_month_forecast":0,"monthly_25":[728,680,1656,680,480,624,592,552,608,552,720,984],"media_fees_ytd":0,"media_fees_ly":0,"media_fees_q":0,"monthly_mf_26":[0,0,0,0,0,0,0,0,0,0,0,0],"monthly_mf_25":[0,0,0,0,0,0,0,0,0,0,0,0],"weekly_revenue":[224,184,16,8],"crossing_date":null,"required_additional_budget":null,"mf_from_current_month":null},"privatesportshop":{"am":"Eva","budget_type":"open","is_capped":false,"monthly_signed":[null,null,null,null,null,null,null,null,null,null,null,null],"is_new_client":false,"signed_26":null,"open_budget":null,"remaining_budget":null,"actual_26":10527,"proj_26":7697,"actual_25":15470,"actual_25_ytd":10076,"monthly_26":[1319,1116,1312,1065,1132,1135,1182,1676,590,1657,2654,2309],"current_month_forecast":1077,"monthly_25":[1295,1059,1207,1168,1377,1078,1206,1229,1368,1268,1663,1552],"media_fees_ytd":0,"media_fees_ly":0,"media_fees_q":0,"monthly_mf_26":[0,0,0,0,0,0,0,0,0,0,0,0],"monthly_mf_25":[0,0,0,0,0,0,0,0,0,0,0,0],"weekly_revenue":[338,343,359,481],"crossing_date":null,"required_additional_budget":null,"mf_from_current_month":null},"promod":{"am":"Eloïse","budget_type":"capped","is_capped":true,"monthly_signed":[null,null,null,null,null,null,null,null,null,null,null,null],"is_new_client":false,"signed_26":null,"open_budget":null,"remaining_budget":null,"actual_26":1153,"proj_26":0,"actual_25":60282,"actual_25_ytd":39758,"monthly_26":[1153,0,0,0,0,0,0,0,0,0,0,0],"current_month_forecast":0,"monthly_25":[3443,4057,4920,4867,5933,6442,5830,2874,4219,4164,6028,7505],"media_fees_ytd":0,"media_fees_ly":0,"media_fees_q":0,"monthly_mf_26":[0,0,0,0,0,0,0,0,0,0,0,0],"monthly_mf_25":[0,0,0,0,0,0,0,0,0,0,0,0],"weekly_revenue":null,"crossing_date":null,"required_additional_budget":-5765.03,"mf_from_current_month":5000},"quitoque":{"am":"Eva","budget_type":"open","is_capped":false,"monthly_signed":[null,null,null,null,null,null,null,null,null,null,null,null],"is_new_client":false,"signed_26":null,"open_budget":null,"remaining_budget":null,"actual_26":10205,"proj_26":10256,"actual_25":16865,"actual_25_ytd":12555,"monthly_26":[2246,1853,1035,490,977,844,430,1391,939,2848,3017,2343],"current_month_forecast":2049,"monthly_25":[2290,3234,1134,940,796,588,383,946,3307,1467,870,910],"media_fees_ytd":0,"media_fees_ly":1500,"media_fees_q":0,"monthly_mf_26":[0,0,0,0,0,0,0,0,0,0,0,0],"monthly_mf_25":[0,0,0,0,0,0,0,0,1500,0,0,0],"weekly_revenue":[131,375,584,621],"crossing_date":null,"required_additional_budget":null,"mf_from_current_month":null},"rougegorge":{"am":"Théo","budget_type":"open","is_capped":false,"monthly_signed":[null,null,null,null,null,null,null,null,null,null,null,null],"is_new_client":false,"signed_26":null,"open_budget":null,"remaining_budget":null,"actual_26":44296,"proj_26":10064,"actual_25":73841,"actual_25_ytd":58088,"monthly_26":[8369,4987,2416,2736,2943,8674,8893,4381,897,1811,2505,4101],"current_month_forecast":1647,"monthly_25":[3593,3068,551,6605,10692,13461,12785,6209,2976,2568,4176,7157],"media_fees_ytd":2000,"media_fees_ly":4000,"media_fees_q":0,"monthly_mf_26":[0,0,0,0,0,2000,0,0,0,0,0,0],"monthly_mf_25":[0,0,0,0,2000,2000,0,0,0,0,0,0],"weekly_revenue":[846,825,1116,944],"crossing_date":null,"required_additional_budget":null,"mf_from_current_month":null},"sephora":{"am":"Romain","budget_type":"open","is_capped":false,"monthly_signed":[null,null,null,null,null,null,null,null,null,null,null,null],"is_new_client":false,"signed_26":null,"open_budget":null,"remaining_budget":null,"actual_26":302115,"proj_26":249779,"actual_25":252776,"actual_25_ytd":112250,"monthly_26":[29862,25067,26340,21198,50349,51043,44699,36908,16649,47811,68385,104278],"current_month_forecast":29306,"monthly_25":[151,5113,111,7116,10310,26623,33812,20827,31886,24377,55108,37342],"media_fees_ytd":15000,"media_fees_ly":25000,"media_fees_q":5000,"monthly_mf_26":[5000,0,0,0,5000,0,0,0,5000,0,0,0],"monthly_mf_25":[0,5000,0,7000,10000,0,0,0,3000,0,10000,0],"weekly_revenue":[7131,7099,8377,8095],"crossing_date":null,"required_additional_budget":null,"mf_from_current_month":null},"showroomprive":{"am":"Eloïse","budget_type":"capped","is_capped":true,"monthly_signed":[null,null,null,null,null,null,17606,6262,6906,11805,13275,15425],"is_new_client":false,"signed_26":null,"open_budget":null,"remaining_budget":null,"actual_26":167874,"proj_26":32387,"actual_25":267341,"actual_25_ytd":147263,"monthly_26":[17847,15260,16241,23314,23609,36839,18424,9153,7187,14122,10144,0],"current_month_forecast":8121,"monthly_25":[12045,17259,14567,14198,22040,29717,17727,15330,15766,21409,47457,39826],"media_fees_ytd":20000,"media_fees_ly":12000,"media_fees_q":5000,"monthly_mf_26":[0,0,0,5000,0,10000,0,0,5000,0,0,0],"monthly_mf_25":[0,5000,0,0,0,7000,0,0,0,0,5000,5000],"weekly_revenue":[1996,2328,1504,988],"crossing_date":"2026-11-17","required_additional_budget":25148.890945925,"mf_from_current_month":5000},"stych":{"am":"Eva","budget_type":"open","is_capped":false,"monthly_signed":[null,null,null,null,null,null,null,null,null,null,null,null],"is_new_client":false,"signed_26":null,"open_budget":null,"remaining_budget":null,"actual_26":12208,"proj_26":12039,"actual_25":14460,"actual_25_ytd":9060,"monthly_26":[1680,1160,1640,760,1440,1360,2169,1412,587,3342,3590,2835],"current_month_forecast":2272,"monthly_25":[1340,840,1280,1080,760,920,1280,1320,1080,1360,2200,1000],"media_fees_ytd":0,"media_fees_ly":0,"media_fees_q":0,"monthly_mf_26":[0,0,0,0,0,0,0,0,0,0,0,0],"monthly_mf_25":[0,0,0,0,0,0,0,0,0,0,0,0],"weekly_revenue":[200,320,360,560],"crossing_date":null,"required_additional_budget":null,"mf_from_current_month":null},"subway":{"am":"Romain","budget_type":"capped","is_capped":true,"monthly_signed":[null,null,null,null,null,null,11686,12731,13464,12727,11612,12887],"is_new_client":false,"signed_26":150000,"open_budget":150000,"remaining_budget":68081,"actual_26":81919,"proj_26":36432,"actual_25":82092,"actual_25_ytd":36621,"monthly_26":[2670,7874,12236,9339,9766,10493,12912,9194,7435,8767,7709,9445],"current_month_forecast":10511,"monthly_25":[0,4597,10372,0,0,15457,285,0,15214,10494,9770,15903],"media_fees_ytd":11000,"media_fees_ly":6000,"media_fees_q":8000,"monthly_mf_26":[0,0,3000,0,0,0,3000,0,5000,0,0,0],"monthly_mf_25":[0,0,0,0,0,3000,0,0,3000,0,0,3000],"weekly_revenue":[2031,1848,1798,1813],"crossing_date":null,"required_additional_budget":-29726.451518188,"mf_from_current_month":10000},"the-bradery":{"am":"Clément","budget_type":"open","is_capped":false,"monthly_signed":[null,null,null,null,null,null,null,null,null,null,null,null],"is_new_client":false,"signed_26":null,"open_budget":null,"remaining_budget":null,"actual_26":103329,"proj_26":99784,"actual_25":123556,"actual_25_ytd":71171,"monthly_26":[9407,11762,15617,13450,14446,12555,10171,10130,5791,31353,25051,32192],"current_month_forecast":11188,"monthly_25":[5914,5247,17256,8377,8939,10479,6576,5897,9199,11996,15900,17776],"media_fees_ytd":0,"media_fees_ly":5000,"media_fees_q":0,"monthly_mf_26":[0,0,0,0,0,0,0,0,0,0,0,0],"monthly_mf_25":[0,0,5000,0,0,0,0,0,0,0,0,0],"weekly_revenue":[1829,2461,2362,4269],"crossing_date":null,"required_additional_budget":null,"mf_from_current_month":null},"uber":{"am":"Eva","budget_type":"capped","is_capped":true,"monthly_signed":[null,null,null,null,null,null,72422,67578,60000,null,null,null],"is_new_client":false,"signed_26":401666.67,"open_budget":60000,"remaining_budget":0,"actual_26":545685,"proj_26":0,"actual_25":1066567,"actual_25_ytd":788903,"monthly_26":[112765,94573,46188,26431,56754,29795,77333,79022,22824,0,0,0],"current_month_forecast":0,"monthly_25":[58247,82655,88358,80411,88692,102075,111194,138973,38299,86123,83056,108484],"media_fees_ytd":0,"media_fees_ly":10000,"media_fees_q":0,"monthly_mf_26":[0,0,0,0,0,0,0,0,0,0,0,0],"monthly_mf_25":[0,0,5000,0,0,0,0,0,5000,0,0,0],"weekly_revenue":[20718,18619,4316,14455],"crossing_date":"2026-09-16","required_additional_budget":426097.938727303,"mf_from_current_month":null},"uber-eats":{"am":"Eva","budget_type":"capped","is_capped":true,"monthly_signed":[null,null,null,null,null,null,22000,0,55000,null,null,null],"is_new_client":false,"signed_26":239354,"open_budget":75000,"remaining_budget":0,"actual_26":401780,"proj_26":0,"actual_25":584526,"actual_25_ytd":381051,"monthly_26":[61970,55354,55235,53110,60468,67634,24088,7182,16739,0,0,0],"current_month_forecast":0,"monthly_25":[75931,43716,41701,35176,35501,37259,44197,51193,51480,52398,55966,60008],"media_fees_ytd":5000,"media_fees_ly":5000,"media_fees_q":0,"monthly_mf_26":[0,0,0,0,0,5000,0,0,0,0,0,0],"monthly_mf_25":[5000,0,0,0,0,0,0,0,0,0,0,0],"weekly_revenue":[1992,1735,363,7773],"crossing_date":"2026-09-14","required_additional_budget":228302.347689642,"mf_from_current_month":5000},"ultra-premium-direct":{"am":"Eloïse","budget_type":"open","is_capped":false,"monthly_signed":[null,null,null,null,null,null,null,null,null,null,null,null],"is_new_client":false,"signed_26":null,"open_budget":null,"remaining_budget":null,"actual_26":35834,"proj_26":0,"actual_25":70777,"actual_25_ytd":25270,"monthly_26":[20322,13979,1533,0,0,0,0,0,0,0,0,0],"current_month_forecast":0,"monthly_25":[0,0,0,0,0,0,4428,10679,15164,11243,14803,14460],"media_fees_ytd":16000,"media_fees_ly":11500,"media_fees_q":0,"monthly_mf_26":[10000,6000,0,0,0,0,0,0,0,0,0,0],"monthly_mf_25":[0,0,0,0,0,0,0,4000,7500,4000,5000,4000],"weekly_revenue":null,"crossing_date":null,"required_additional_budget":null,"mf_from_current_month":null},"ulysse":{"am":"Eva","budget_type":"open","is_capped":false,"monthly_signed":[null,null,null,null,null,null,null,null,null,null,null,null],"is_new_client":false,"signed_26":null,"open_budget":null,"remaining_budget":null,"actual_26":6610,"proj_26":6648,"actual_25":6360,"actual_25_ytd":4600,"monthly_26":[540,780,860,760,840,720,794,1056,260,1585,2196,2163],"current_month_forecast":704,"monthly_25":[520,460,560,460,640,440,740,620,480,480,420,540],"media_fees_ytd":0,"media_fees_ly":0,"media_fees_q":0,"monthly_mf_26":[0,0,0,0,0,0,0,0,0,0,0,0],"monthly_mf_25":[0,0,0,0,0,0,0,0,0,0,0,0],"weekly_revenue":[280,260,200,140],"crossing_date":null,"required_additional_budget":null,"mf_from_current_month":null},"vente-privee":{"am":"Eloïse","budget_type":"capped","is_capped":true,"monthly_signed":[null,null,null,null,null,null,29551,10449,null,null,null,null],"is_new_client":false,"signed_26":240000,"open_budget":40000,"remaining_budget":0,"actual_26":240092,"proj_26":0,"actual_25":339425,"actual_25_ytd":183731,"monthly_26":[28472,25430,33850,27641,30954,32019,24422,32613,4691,0,0,0],"current_month_forecast":0,"monthly_25":[19262,19059,23962,18013,19960,24777,22883,26753,26748,38482,62318,37208],"media_fees_ytd":0,"media_fees_ly":0,"media_fees_q":0,"monthly_mf_26":[0,0,0,0,0,0,0,0,0,0,0,0],"monthly_mf_25":[0,0,0,0,0,0,0,0,0,0,0,0],"weekly_revenue":[6340,5839,7685,6993],"crossing_date":"2026-09-04","required_additional_budget":160745.778000715,"mf_from_current_month":10000},"vertbaudet":{"am":"Eloïse","budget_type":"capped","is_capped":true,"monthly_signed":[null,null,null,null,null,null,10586,2590,4496,null,null,null],"is_new_client":false,"signed_26":110894,"open_budget":29222,"remaining_budget":30141,"actual_26":80753,"proj_26":26398,"actual_25":138092,"actual_25_ytd":79218,"monthly_26":[22026,8494,10418,6344,3161,9918,8484,6439,5469,7142,11820,3593],"current_month_forecast":3844,"monthly_25":[12592,4964,14205,9292,7511,7888,10642,8752,10298,9968,31175,10805],"media_fees_ytd":13000,"media_fees_ly":5000,"media_fees_q":4000,"monthly_mf_26":[4000,0,0,0,0,5000,0,0,4000,0,0,0],"monthly_mf_25":[0,0,5000,0,0,0,0,0,0,0,4000,0],"weekly_revenue":[856,1204,2510,1106],"crossing_date":null,"required_additional_budget":-5530.743078258,"mf_from_current_month":8000},"zadig-et-voltaire":{"am":"Théo","budget_type":"open","is_capped":false,"monthly_signed":[null,null,null,null,null,null,null,null,null,null,null,null],"is_new_client":false,"signed_26":null,"open_budget":null,"remaining_budget":null,"actual_26":17901,"proj_26":7878,"actual_25":29882,"actual_25_ytd":13010,"monthly_26":[2655,1294,1432,1172,1368,1546,2431,2284,3719,32,2228,4192],"current_month_forecast":1426,"monthly_25":[0,0,0,149,1662,1643,2332,3547,4350,4282,4781,7136],"media_fees_ytd":3000,"media_fees_ly":4000,"media_fees_q":3000,"monthly_mf_26":[0,0,0,0,0,0,0,0,3000,0,0,0],"monthly_mf_25":[0,0,0,0,0,0,0,1000,3000,2000,2000,1500],"weekly_revenue":[386,509,423,493],"crossing_date":null,"required_additional_budget":null,"mf_from_current_month":null},"zoomalia":{"am":"Eloïse","budget_type":"open","is_capped":false,"monthly_signed":[null,null,null,null,null,null,null,null,null,null,null,null],"is_new_client":false,"signed_26":null,"open_budget":null,"remaining_budget":null,"actual_26":42510,"proj_26":23967,"actual_25":91311,"actual_25_ytd":62688,"monthly_26":[4431,4089,4937,5142,5301,5488,5778,5663,1681,6163,6498,7224],"current_month_forecast":4082,"monthly_25":[6310,10855,7456,8463,7453,6293,7016,6520,6714,8047,7774,8410],"media_fees_ytd":0,"media_fees_ly":3000,"media_fees_q":0,"monthly_mf_26":[0,0,0,0,0,0,0,0,0,0,0,0],"monthly_mf_25":[0,3000,0,0,0,0,0,0,0,0,0,0],"weekly_revenue":[1022,997,1159,1241],"crossing_date":null,"required_additional_budget":null,"mf_from_current_month":null},"beauty-success":{"am":"Romain","budget_type":"capped","is_capped":true,"monthly_signed":[null,null,null,null,null,null,null,5144,6721,1716,2331,6634],"is_new_client":false,"signed_26":35000,"open_budget":35000,"remaining_budget":10271,"actual_26":24729,"proj_26":10271,"actual_25":0,"actual_25_ytd":0,"monthly_26":[0,0,0,1673,5110,5758,5798,5962,428,2190,2621,3996],"current_month_forecast":1465,"monthly_25":[0,0,0,0,0,0,0,0,0,0,0,0],"media_fees_ytd":11999,"media_fees_ly":0,"media_fees_q":6666,"monthly_mf_26":[0,0,0,0,2000,3333,3333,3333,0,0,0,0],"monthly_mf_25":[0,0,0,0,0,0,0,0,0,0,0,0],"weekly_revenue":[598,607,479,257],"crossing_date":"2026-12-19","required_additional_budget":2617.959650991,"mf_from_current_month":null},"blablacar":{"am":"Clément","budget_type":"capped","is_capped":true,"monthly_signed":[null,null,null,null,null,null,12611,12427,14337,null,null,null],"is_new_client":true,"signed_26":86000,"open_budget":null,"remaining_budget":0,"actual_26":129348,"proj_26":0,"actual_25":0,"actual_25_ytd":0,"monthly_26":[0,11370,14393,21394,23075,16785,21284,18461,2586,0,0,0],"current_month_forecast":0,"monthly_25":[0,0,0,0,0,0,0,0,0,0,0,0],"media_fees_ytd":5000,"media_fees_ly":0,"media_fees_q":0,"monthly_mf_26":[0,0,0,0,5000,0,0,0,0,0,0,0],"monthly_mf_25":[0,0,0,0,0,0,0,0,0,0,0,0],"weekly_revenue":[4420,3733,3337,2126],"crossing_date":null,"required_additional_budget":null,"mf_from_current_month":null},"castorama":{"am":"Eloïse","budget_type":"capped","is_capped":true,"monthly_signed":[null,null,null,null,null,null,36251,37698,28929,29695,25178,24979],"is_new_client":false,"signed_26":370000,"open_budget":370000,"remaining_budget":138751,"actual_26":231249,"proj_26":88428,"actual_25":345287,"actual_25_ytd":341374,"monthly_26":[0,29819,48907,31651,29841,21796,33404,29369,6462,25845,23273,23631],"current_month_forecast":15679,"monthly_25":[65861,39184,35940,75709,18040,22435,48996,29060,10062,0,0,0],"media_fees_ytd":10000,"media_fees_ly":15000,"media_fees_q":0,"monthly_mf_26":[0,0,5000,5000,0,0,0,0,0,0,0,0],"monthly_mf_25":[5000,0,0,5000,0,0,5000,0,0,0,0,0],"weekly_revenue":[5600,6324,5862,4751],"crossing_date":null,"required_additional_budget":-51933.67029286,"mf_from_current_month":2500},"galeries-lafayette":{"am":"Eloïse","budget_type":"capped","is_capped":true,"monthly_signed":[null,null,null,null,null,null,13170,10110,10890,12870,16560,30765],"is_new_client":false,"signed_26":null,"open_budget":null,"remaining_budget":null,"actual_26":8000,"proj_26":0,"actual_25":15000,"actual_25_ytd":5000,"monthly_26":[0,0,0,0,0,0,0,0,8000,0,0,0],"current_month_forecast":0,"monthly_25":[0,0,0,0,0,0,0,0,5000,0,5000,5000],"media_fees_ytd":8000,"media_fees_ly":5000,"media_fees_q":8000,"monthly_mf_26":[0,0,0,0,0,0,0,0,8000,0,0,0],"monthly_mf_25":[0,0,0,0,0,0,0,0,5000,0,5000,5000],"weekly_revenue":[2040,2565,2430,1935],"crossing_date":null,"required_additional_budget":-85780,"mf_from_current_month":8000},"kfc":{"am":"Romain","budget_type":"capped","is_capped":true,"monthly_signed":[null,null,null,null,null,null,26706,22681,18174,17787,20078,25156],"is_new_client":false,"signed_26":263447,"open_budget":138000,"remaining_budget":76745,"actual_26":186702,"proj_26":76745,"actual_25":97565,"actual_25_ytd":22692,"monthly_26":[0,28877,27632,28852,10994,31328,25838,25319,7862,16054,24706,28392],"current_month_forecast":7592,"monthly_25":[0,0,0,0,0,0,981,16551,16970,34278,28785,0],"media_fees_ytd":20000,"media_fees_ly":0,"media_fees_q":5000,"monthly_mf_26":[0,0,5000,5000,0,5000,0,0,5000,0,0,0],"monthly_mf_25":[0,0,0,0,0,0,0,0,0,5000,5000,0],"weekly_revenue":[6612,6261,2362,1984],"crossing_date":"2026-12-31","required_additional_budget":269.938990512,"mf_from_current_month":5000},"monoprix":{"am":"Eva","budget_type":"capped","is_capped":true,"monthly_signed":[null,null,null,null,null,null,null,19470,46542,39050,39168,42832],"is_new_client":false,"signed_26":298892,"open_budget":98892,"remaining_budget":174507,"actual_26":124385,"proj_26":105551,"actual_25":53161,"actual_25_ytd":16873,"monthly_26":[0,13487,19940,18841,23092,27411,0,9899,11715,25644,25310,34030],"current_month_forecast":20568,"monthly_25":[0,0,0,0,0,0,0,7302,19105,16335,10419,0],"media_fees_ytd":15000,"media_fees_ly":5000,"media_fees_q":5000,"monthly_mf_26":[0,5000,0,0,0,5000,0,0,5000,0,0,5000],"monthly_mf_25":[0,0,0,0,0,0,0,0,5000,0,0,0],"weekly_revenue":[8,3557,4526,4405],"crossing_date":null,"required_additional_budget":-72449.056193904,"mf_from_current_month":10000},"chaussea":{"am":"Clément","budget_type":"capped","is_capped":true,"monthly_signed":[null,null,null,null,null,null,null,20000,null,null,null,null],"is_new_client":false,"signed_26":120000,"open_budget":null,"remaining_budget":0,"actual_26":138763,"proj_26":0,"actual_25":62127,"actual_25_ytd":0,"monthly_26":[0,0,44622,5798,0,47642,8555,32146,0,0,0,0],"current_month_forecast":0,"monthly_25":[0,0,0,0,0,0,0,0,0,0,46675,15452],"media_fees_ytd":15000,"media_fees_ly":0,"media_fees_q":5000,"monthly_mf_26":[0,0,5000,0,0,5000,0,5000,0,0,0,0],"monthly_mf_25":[0,0,0,0,0,0,0,0,0,0,0,5000],"weekly_revenue":[7871,15489,2274,13],"crossing_date":null,"required_additional_budget":null,"mf_from_current_month":null},"dominos-pizza":{"am":"Romain","budget_type":"capped","is_capped":true,"monthly_signed":[null,null,null,null,null,null,null,6159,5379,3462,null,null],"is_new_client":true,"signed_26":51000,"open_budget":15000,"remaining_budget":4169,"actual_26":46831,"proj_26":4169,"actual_25":0,"actual_25_ytd":0,"monthly_26":[0,0,12103,13212,13471,0,0,6619,1426,1399,0,0],"current_month_forecast":2770,"monthly_25":[0,0,0,0,0,0,0,0,0,0,0,0],"media_fees_ytd":0,"media_fees_ly":0,"media_fees_q":0,"monthly_mf_26":[0,0,0,0,0,0,0,0,0,0,0,0],"monthly_mf_25":[0,0,0,0,0,0,0,0,0,0,0,0],"weekly_revenue":[1483,1431,1241,904],"crossing_date":"2026-10-12","required_additional_budget":15617.362348734,"mf_from_current_month":null},"gemo":{"am":"Eloïse","budget_type":"capped","is_capped":true,"monthly_signed":[null,null,null,null,null,null,null,null,null,null,null,null],"is_new_client":false,"signed_26":null,"open_budget":null,"remaining_budget":null,"actual_26":0,"proj_26":0,"actual_25":59926,"actual_25_ytd":0,"monthly_26":[0,0,0,0,0,0,0,0,0,0,0,0],"current_month_forecast":0,"monthly_25":[0,0,0,0,0,0,0,0,0,0,20987,38939],"media_fees_ytd":0,"media_fees_ly":0,"media_fees_q":0,"monthly_mf_26":[0,0,0,0,0,0,0,0,0,0,0,0],"monthly_mf_25":[0,0,0,0,0,0,0,0,0,0,0,5000],"weekly_revenue":null,"crossing_date":null,"required_additional_budget":null,"mf_from_current_month":null},"krys":{"am":"Clément","budget_type":"capped","is_capped":true,"monthly_signed":[null,null,null,null,null,null,7751,5682,5851,6781,6377,8565],"is_new_client":true,"signed_26":95000,"open_budget":60000,"remaining_budget":22127,"actual_26":72873,"proj_26":22127,"actual_25":0,"actual_25_ytd":0,"monthly_26":[0,0,2350,7010,17222,10576,27204,6313,2198,8070,6830,1209],"current_month_forecast":6018,"monthly_25":[0,0,0,0,0,0,0,0,0,0,0,0],"media_fees_ytd":10000,"media_fees_ly":0,"media_fees_q":5000,"monthly_mf_26":[0,0,0,0,5000,0,5000,0,0,0,0,0],"monthly_mf_25":[0,0,0,0,0,0,0,0,0,0,0,0],"weekly_revenue":[961,1236,2002,1666],"crossing_date":"2026-12-05","required_additional_budget":6479.140262412,"mf_from_current_month":5000},"leon":{"am":"—","budget_type":"open","is_capped":false,"monthly_signed":[null,null,null,null,null,null,null,null,null,null,null,null],"is_new_client":true,"signed_26":null,"open_budget":null,"remaining_budget":null,"actual_26":40493,"proj_26":0,"actual_25":0,"actual_25_ytd":0,"monthly_26":[0,0,14883,15033,10577,0,0,0,0,0,0,0],"current_month_forecast":0,"monthly_25":[0,0,0,0,0,0,0,0,0,0,0,0],"media_fees_ytd":0,"media_fees_ly":0,"media_fees_q":0,"monthly_mf_26":[0,0,0,0,0,0,0,0,0,0,0,0],"monthly_mf_25":[0,0,0,0,0,0,0,0,0,0,0,0],"weekly_revenue":null,"crossing_date":null,"required_additional_budget":null,"mf_from_current_month":null},"aroma-zone":{"am":"Romain","budget_type":"capped","is_capped":true,"monthly_signed":[null,null,null,null,null,null,12415,8000,null,null,null,null],"is_new_client":true,"signed_26":40000,"open_budget":40000,"remaining_budget":3871,"actual_26":36129,"proj_26":3832,"actual_25":0,"actual_25_ytd":0,"monthly_26":[0,0,0,5255,6728,6794,6618,9016,1718,0,0,0],"current_month_forecast":3832,"monthly_25":[0,0,0,0,0,0,0,0,0,0,0,0],"media_fees_ytd":0,"media_fees_ly":0,"media_fees_q":0,"monthly_mf_26":[0,0,0,0,0,0,0,0,0,0,0,0],"monthly_mf_25":[0,0,0,0,0,0,0,0,0,0,0,0],"weekly_revenue":[2373,2059,1497,1169],"crossing_date":"2026-09-30","required_additional_budget":25256.945884859,"mf_from_current_month":null},"hippopotamus":{"am":"Romain","budget_type":"capped","is_capped":true,"monthly_signed":[null,null,null,null,null,null,null,null,null,null,null,null],"is_new_client":true,"signed_26":50000,"open_budget":null,"remaining_budget":0,"actual_26":54694,"proj_26":0,"actual_25":0,"actual_25_ytd":0,"monthly_26":[0,0,0,17203,19453,18038,0,0,0,0,0,0],"current_month_forecast":0,"monthly_25":[0,0,0,0,0,0,0,0,0,0,0,0],"media_fees_ytd":0,"media_fees_ly":0,"media_fees_q":0,"monthly_mf_26":[0,0,0,0,0,0,0,0,0,0,0,0],"monthly_mf_25":[0,0,0,0,0,0,0,0,0,0,0,0],"weekly_revenue":null,"crossing_date":null,"required_additional_budget":null,"mf_from_current_month":null},"histoire-d-or":{"am":"Clément","budget_type":"capped","is_capped":true,"monthly_signed":[null,null,null,null,null,null,null,null,null,null,null,null],"is_new_client":true,"signed_26":15000,"open_budget":null,"remaining_budget":0,"actual_26":15145,"proj_26":0,"actual_25":0,"actual_25_ytd":0,"monthly_26":[0,0,0,0,13228,1917,0,0,0,0,0,0],"current_month_forecast":0,"monthly_25":[0,0,0,0,0,0,0,0,0,0,0,0],"media_fees_ytd":0,"media_fees_ly":0,"media_fees_q":0,"monthly_mf_26":[0,0,0,0,0,0,0,0,0,0,0,0],"monthly_mf_25":[0,0,0,0,0,0,0,0,0,0,0,0],"weekly_revenue":null,"crossing_date":null,"required_additional_budget":null,"mf_from_current_month":null},"citadium":{"am":"Eloïse","budget_type":"capped","is_capped":true,"monthly_signed":[null,null,null,null,null,null,2850,4575,4485,3270,4104,9045],"is_new_client":false,"signed_26":50000,"open_budget":50000,"remaining_budget":36515,"actual_26":13485,"proj_26":18422,"actual_25":37235,"actual_25_ytd":3585,"monthly_26":[0,0,0,0,0,330,4256,4568,4331,3052,4492,8469],"current_month_forecast":2409,"monthly_25":[0,0,0,0,0,0,0,1830,4815,6750,8985,14855],"media_fees_ytd":3000,"media_fees_ly":0,"media_fees_q":3000,"monthly_mf_26":[0,0,0,0,0,0,0,0,3000,0,0,0],"monthly_mf_25":[0,0,0,0,0,0,0,0,0,0,0,3000],"weekly_revenue":[840,780,1080,1035],"crossing_date":null,"required_additional_budget":-18709.057958944,"mf_from_current_month":3000},"nicolas":{"am":"Romain","budget_type":"capped","is_capped":true,"monthly_signed":[null,null,null,null,null,null,6000,5000,5000,null,null,null],"is_new_client":true,"signed_26":22000,"open_budget":22000,"remaining_budget":6100,"actual_26":15900,"proj_26":5922,"actual_25":0,"actual_25_ytd":0,"monthly_26":[0,0,0,0,0,1181,9244,4397,1078,2777,0,0],"current_month_forecast":3145,"monthly_25":[0,0,0,0,0,0,0,0,0,0,0,0],"media_fees_ytd":5000,"media_fees_ly":0,"media_fees_q":5000,"monthly_mf_26":[0,0,0,0,0,0,5000,0,0,0,0,0],"monthly_mf_25":[0,0,0,0,0,0,0,0,0,0,0,0],"weekly_revenue":[897,757,1036,804],"crossing_date":"2026-10-19","required_additional_budget":25615.126334292,"mf_from_current_month":null},"adoptparfums":{"am":"—","budget_type":"open","is_capped":false,"monthly_signed":[null,null,null,null,null,null,null,null,null,null,null,null],"is_new_client":false,"signed_26":null,"open_budget":null,"remaining_budget":null,"actual_26":6,"proj_26":0,"actual_25":0,"actual_25_ytd":0,"monthly_26":[0,0,0,0,0,0,6,0,0,0,0,0],"current_month_forecast":0,"monthly_25":[0,0,0,0,0,0,0,0,0,0,0,0],"media_fees_ytd":0,"media_fees_ly":0,"media_fees_q":0,"monthly_mf_26":[0,0,0,0,0,0,0,0,0,0,0,0],"monthly_mf_25":[0,0,0,0,0,0,0,0,0,0,0,0],"weekly_revenue":null,"crossing_date":null,"required_additional_budget":null,"mf_from_current_month":null},"carrefour-onetime-7":{"am":"—","budget_type":"open","is_capped":false,"monthly_signed":[null,null,null,null,null,null,null,null,null,null,null,null],"is_new_client":false,"signed_26":null,"open_budget":null,"remaining_budget":null,"actual_26":10,"proj_26":0,"actual_25":0,"actual_25_ytd":0,"monthly_26":[0,0,0,0,0,0,0,10,0,0,0,0],"current_month_forecast":0,"monthly_25":[0,0,0,0,0,0,0,0,0,0,0,0],"media_fees_ytd":0,"media_fees_ly":0,"media_fees_q":0,"monthly_mf_26":[0,0,0,0,0,0,0,0,0,0,0,0],"monthly_mf_25":[0,0,0,0,0,0,0,0,0,0,0,0],"weekly_revenue":[10],"crossing_date":null,"required_additional_budget":null,"mf_from_current_month":null},"nocibé":{"am":"—","budget_type":"open","is_capped":false,"monthly_signed":[null,null,null,null,null,null,null,null,null,null,null,null],"is_new_client":false,"signed_26":null,"open_budget":null,"remaining_budget":null,"actual_26":13,"proj_26":0,"actual_25":0,"actual_25_ytd":0,"monthly_26":[0,0,0,0,0,0,0,13,0,0,0,0],"current_month_forecast":0,"monthly_25":[0,0,0,0,0,0,0,0,0,0,0,0],"media_fees_ytd":0,"media_fees_ly":0,"media_fees_q":0,"monthly_mf_26":[0,0,0,0,0,0,0,0,0,0,0,0],"monthly_mf_25":[0,0,0,0,0,0,0,0,0,0,0,0],"weekly_revenue":[13],"crossing_date":null,"required_additional_budget":null,"mf_from_current_month":null},"photoweb":{"am":"—","budget_type":"open","is_capped":false,"monthly_signed":[null,null,null,null,null,null,null,null,null,null,null,null],"is_new_client":true,"signed_26":null,"open_budget":null,"remaining_budget":null,"actual_26":3598,"proj_26":20749,"actual_25":0,"actual_25_ytd":0,"monthly_26":[0,0,0,0,0,0,0,2538,1060,3788,5701,8946],"current_month_forecast":2315,"monthly_25":[0,0,0,0,0,0,0,0,0,0,0,0],"media_fees_ytd":0,"media_fees_ly":0,"media_fees_q":0,"monthly_mf_26":[0,0,0,0,0,0,0,0,0,0,0,0],"monthly_mf_25":[0,0,0,0,0,0,0,0,0,0,0,0],"weekly_revenue":[774,703,735,774],"crossing_date":null,"required_additional_budget":null,"mf_from_current_month":null}}};
+const INLINE_DATA = {"updated_at":"08/09/2026","summary":{"ams":["Clément","Eloïse","Eva","Romain","Théo"],"ytd_actual":7110345,"ytd_months":9,"fy_projection":8759888,"fy_pct_okr":70.1,"okr_total":12494718,"active_merchants_26":77,"active_merchants_25_ytd":92,"new_clients_26":10,"new_clients_25_ytd":13,"ytd_new_clients_revenue":485931,"ytd_25":5877957,"ytd_yoy":21},"chart_arrays":{"R26A":[824560,808666,830135,817485,940801,884387,860345,879428,264538,0,0,0],"R26P":[0,0,0,0,0,0,0,0,344159,490974,534569,624000],"R25":[694830,639744,555668,656624,640573,705129,744175,697656,666644,736727,1146468,1164661],"R24":[13800,28400,38200,204112,746599,804652,876982,709724,629343,690135,953395,1105978],"OKR":[779345,854922,839481,937582,997523,1105331,1066096,987765,1165013,1114888,1260476,1386296],"EXPECTED":[824560,808666,830135,817485,940801,884387,848347,697710,667953,596341,647648,725331]},"quarterly":{"Q1":{"actual":2463361,"proj":0,"okr":2473748},"Q2":{"actual":2642673,"proj":0,"okr":3040436},"Q3":{"actual":2004311,"proj":344159,"okr":3218874},"Q4":{"actual":0,"proj":1649543,"okr":3761660}},"fy_card":{"capped_total":8704445,"capped_pct":69.7,"uncapped_total":399599,"uncapped_pct":3.2},"merchants":{"adopt":{"am":"Romain","budget_type":"capped","is_capped":true,"monthly_signed":[null,null,null,null,null,null,28512,22757,16799,17304,29940,46041],"is_new_client":false,"signed_26":315959,"open_budget":175000,"remaining_budget":130503,"actual_26":185456,"proj_26":130503,"actual_25":14510,"actual_25_ytd":14510,"monthly_26":[2540,18304,26231,22756,33908,30913,26552,19261,4991,22196,33429,59612],"current_month_forecast":15266,"monthly_25":[3935,9975,600,0,0,0,0,0,0,0,0,0],"media_fees_ytd":8000,"media_fees_ly":0,"media_fees_q":0,"monthly_mf_26":[0,4000,0,0,4000,0,0,0,0,0,0,0],"monthly_mf_25":[0,0,0,0,0,0,0,0,0,0,0,0],"weekly_revenue":[3895,3763,3652,3476],"crossing_date":"2026-12-30","required_additional_budget":3141.314158405,"mf_from_current_month":10000},"alinea":{"am":"Eloïse","budget_type":"capped","is_capped":true,"monthly_signed":[null,null,null,null,null,null,null,null,null,null,null,null],"is_new_client":false,"signed_26":20000,"open_budget":null,"remaining_budget":0,"actual_26":36796,"proj_26":0,"actual_25":143629,"actual_25_ytd":83751,"monthly_26":[14527,22269,0,0,0,0,0,0,0,0,0,0],"current_month_forecast":0,"monthly_25":[3116,9242,21105,4358,11086,9292,12048,10061,10482,22137,11726,18976],"media_fees_ytd":0,"media_fees_ly":4000,"media_fees_q":0,"monthly_mf_26":[0,0,0,0,0,0,0,0,0,0,0,0],"monthly_mf_25":[0,0,2000,0,2000,0,0,0,0,2500,0,2500],"weekly_revenue":null,"crossing_date":null,"required_additional_budget":null,"mf_from_current_month":null},"allopneus":{"am":"Eva","budget_type":"capped","is_capped":true,"monthly_signed":[null,null,null,null,null,null,null,null,null,null,null,null],"is_new_client":false,"signed_26":null,"open_budget":null,"remaining_budget":null,"actual_26":5313,"proj_26":0,"actual_25":54565,"actual_25_ytd":37829,"monthly_26":[4834,479,0,0,0,0,0,0,0,0,0,0],"current_month_forecast":0,"monthly_25":[6031,4766,5085,5459,3909,5535,3816,0,7688,6525,3513,2238],"media_fees_ytd":0,"media_fees_ly":3000,"media_fees_q":0,"monthly_mf_26":[0,0,0,0,0,0,0,0,0,0,0,0],"monthly_mf_25":[0,0,0,0,0,0,0,0,3000,0,0,0],"weekly_revenue":null,"crossing_date":null,"required_additional_budget":null,"mf_from_current_month":null},"b-and-m":{"am":"Romain","budget_type":"capped","is_capped":true,"monthly_signed":[null,null,null,null,null,null,8000,13000,10000,12000,18000,14000],"is_new_client":true,"signed_26":155000,"open_budget":120000,"remaining_budget":76902,"actual_26":78098,"proj_26":46856,"actual_25":0,"actual_25_ytd":0,"monthly_26":[18002,4836,16024,0,0,6868,11772,17986,2610,12013,13109,15263],"current_month_forecast":6472,"monthly_25":[0,0,0,0,0,0,0,0,0,0,0,0],"media_fees_ytd":8000,"media_fees_ly":0,"media_fees_q":5000,"monthly_mf_26":[0,0,0,0,0,3000,0,5000,0,0,0,0],"monthly_mf_25":[0,0,0,0,0,0,0,0,0,0,0,0],"weekly_revenue":[2352,3467,2595,2093],"crossing_date":null,"required_additional_budget":-34826.456508388,"mf_from_current_month":null},"beauteprivee":{"am":"Romain","budget_type":"open","is_capped":false,"monthly_signed":[null,null,null,null,null,null,null,null,null,null,null,null],"is_new_client":false,"signed_26":null,"open_budget":null,"remaining_budget":null,"actual_26":36575,"proj_26":20009,"actual_25":63704,"actual_25_ytd":40196,"monthly_26":[5589,4243,5553,3925,4238,4505,3317,3969,1236,4813,5959,6310],"current_month_forecast":2926,"monthly_25":[4760,3907,5885,4994,5425,4924,4476,4367,4175,5700,7860,7231],"media_fees_ytd":0,"media_fees_ly":0,"media_fees_q":0,"monthly_mf_26":[0,0,0,0,0,0,0,0,0,0,0,0],"monthly_mf_25":[0,0,0,0,0,0,0,0,0,0,0,0],"weekly_revenue":[708,797,844,944],"crossing_date":null,"required_additional_budget":null,"mf_from_current_month":null},"bizzbee":{"am":"Théo","budget_type":"capped","is_capped":true,"monthly_signed":[null,null,null,null,null,null,null,null,null,null,null,null],"is_new_client":false,"signed_26":null,"open_budget":null,"remaining_budget":null,"actual_26":0,"proj_26":0,"actual_25":37907,"actual_25_ytd":27110,"monthly_26":[0,0,0,0,0,0,0,0,0,0,0,0],"current_month_forecast":0,"monthly_25":[2049,1832,2770,3260,3696,4488,3497,4160,4437,4042,798,2878],"media_fees_ytd":0,"media_fees_ly":0,"media_fees_q":0,"monthly_mf_26":[0,0,0,0,0,0,0,0,0,0,0,0],"monthly_mf_25":[0,0,0,0,0,0,0,0,0,0,0,0],"weekly_revenue":null,"crossing_date":null,"required_additional_budget":null,"mf_from_current_month":null},"boulanger":{"am":"Eloïse","budget_type":"capped","is_capped":true,"monthly_signed":[null,null,null,null,null,null,84454,47232,48315,null,null,null],"is_new_client":false,"signed_26":350907,"open_budget":180000,"remaining_budget":16487,"actual_26":334420,"proj_26":0,"actual_25":126482,"actual_25_ytd":17890,"monthly_26":[37488,25344,20349,27932,28830,43409,69216,64373,17479,0,0,0],"current_month_forecast":0,"monthly_25":[0,0,0,0,0,54,9502,6507,5121,14724,42405,48169],"media_fees_ytd":8000,"media_fees_ly":2500,"media_fees_q":0,"monthly_mf_26":[3000,0,0,5000,0,0,0,0,0,0,0,0],"monthly_mf_25":[0,0,0,0,0,0,2500,0,0,0,0,0],"weekly_revenue":[11655,11739,15769,22406],"crossing_date":"2026-09-05","required_additional_budget":297903.168589123,"mf_from_current_month":10000},"brico-depot":{"am":"Eloïse","budget_type":"capped","is_capped":true,"monthly_signed":[null,null,null,null,null,null,null,null,null,null,null,null],"is_new_client":false,"signed_26":50000,"open_budget":null,"remaining_budget":0,"actual_26":67196,"proj_26":0,"actual_25":270531,"actual_25_ytd":186429,"monthly_26":[5914,0,9540,35040,16702,0,0,0,0,0,0,0],"current_month_forecast":0,"monthly_25":[15470,37268,17868,19746,19710,22258,19583,27170,18762,27802,32372,12522],"media_fees_ytd":11000,"media_fees_ly":23000,"media_fees_q":0,"monthly_mf_26":[0,0,6000,5000,0,0,0,0,0,0,0,0],"monthly_mf_25":[5000,8000,0,0,0,5000,0,5000,0,5000,5000,0],"weekly_revenue":null,"crossing_date":null,"required_additional_budget":null,"mf_from_current_month":null},"bricomarche":{"am":"Eloïse","budget_type":"capped","is_capped":true,"monthly_signed":[null,null,null,null,null,null,null,null,null,null,null,null],"is_new_client":false,"signed_26":null,"open_budget":null,"remaining_budget":null,"actual_26":48732,"proj_26":0,"actual_25":2094,"actual_25_ytd":0,"monthly_26":[16945,16750,15037,0,0,0,0,0,0,0,0,0],"current_month_forecast":0,"monthly_25":[0,0,0,0,0,0,0,0,0,0,0,2094],"media_fees_ytd":0,"media_fees_ly":0,"media_fees_q":0,"monthly_mf_26":[0,0,0,0,0,0,0,0,0,0,0,0],"monthly_mf_25":[0,0,0,0,0,0,0,0,0,0,0,0],"weekly_revenue":null,"crossing_date":null,"required_additional_budget":null,"mf_from_current_month":null},"but":{"am":"Eloïse","budget_type":"capped","is_capped":true,"monthly_signed":[null,null,null,null,null,null,null,null,null,null,null,null],"is_new_client":false,"signed_26":null,"open_budget":null,"remaining_budget":null,"actual_26":37788,"proj_26":0,"actual_25":296178,"actual_25_ytd":241411,"monthly_26":[25171,12617,0,0,0,0,0,0,0,0,0,0],"current_month_forecast":0,"monthly_25":[145483,92928,0,0,0,0,0,0,4270,11637,26031,15829],"media_fees_ytd":5000,"media_fees_ly":3000,"media_fees_q":0,"monthly_mf_26":[5000,0,0,0,0,0,0,0,0,0,0,0],"monthly_mf_25":[0,0,0,0,0,0,0,0,3000,3000,5000,5000],"weekly_revenue":null,"crossing_date":null,"required_additional_budget":null,"mf_from_current_month":null},"carrefour":{"am":"Eva","budget_type":"capped","is_capped":true,"monthly_signed":[null,null,null,null,null,null,32222,32458,33179,32584,40438,45263],"is_new_client":false,"signed_26":616163,"open_budget":616163,"remaining_budget":192171,"actual_26":423992,"proj_26":177291,"actual_25":348175,"actual_25_ytd":120137,"monthly_26":[44548,41285,43297,47903,53553,50945,56032,62484,23945,46819,46791,47495],"current_month_forecast":36186,"monthly_25":[0,0,0,0,0,0,52006,47813,34763,38390,77446,97757],"media_fees_ytd":103277,"media_fees_ly":41609,"media_fees_q":33625,"monthly_mf_26":[12000,12000,12000,12000,12000,9652,9625,12000,12000,0,0,0],"monthly_mf_25":[0,0,0,0,0,0,17609,12000,12000,12000,12000,12000],"weekly_revenue":[11359,10404,8447,7399],"crossing_date":"2026-12-26","required_additional_budget":10860.764853915,"mf_from_current_month":12000},"celio":{"am":"Clément","budget_type":"capped","is_capped":true,"monthly_signed":[null,null,null,null,null,null,null,null,2070,2790,2650,5760],"is_new_client":false,"signed_26":35000,"open_budget":20000,"remaining_budget":11356,"actual_26":23644,"proj_26":6449,"actual_25":27020,"actual_25_ytd":0,"monthly_26":[13988,5537,3468,0,0,0,0,0,651,1948,1636,1597],"current_month_forecast":1268,"monthly_25":[0,0,0,0,0,0,0,0,0,0,7503,19517],"media_fees_ytd":3000,"media_fees_ly":0,"media_fees_q":0,"monthly_mf_26":[3000,0,0,0,0,0,0,0,0,0,0,0],"monthly_mf_25":[0,0,0,0,0,0,0,0,0,0,0,3000],"weekly_revenue":[736],"crossing_date":null,"required_additional_budget":-13012.36466955,"mf_from_current_month":null},"certideal":{"am":"Clément","budget_type":"open","is_capped":false,"monthly_signed":[null,null,null,null,null,null,null,null,null,null,null,null],"is_new_client":false,"signed_26":null,"open_budget":null,"remaining_budget":null,"actual_26":75580,"proj_26":45111,"actual_25":99159,"actual_25_ytd":54273,"monthly_26":[8832,6607,7111,6852,10969,14076,10622,8352,2159,4955,16210,18485],"current_month_forecast":5461,"monthly_25":[7520,4215,5570,5437,5912,6444,7787,6399,10438,6141,18613,14683],"media_fees_ytd":7000,"media_fees_ly":3000,"media_fees_q":0,"monthly_mf_26":[0,0,0,0,3000,4000,0,0,0,0,0,0],"monthly_mf_25":[0,0,0,0,0,0,0,0,3000,0,4000,0],"weekly_revenue":[1726,1589,2633,1630],"crossing_date":null,"required_additional_budget":null,"mf_from_current_month":null},"chronodrive":{"am":"Eva","budget_type":"capped","is_capped":true,"monthly_signed":[null,null,null,null,null,null,null,4274,11269,9269,2712,null],"is_new_client":false,"signed_26":70000,"open_budget":35000,"remaining_budget":14623,"actual_26":55377,"proj_26":14623,"actual_25":62435,"actual_25_ytd":35647,"monthly_26":[10635,8438,11563,9620,5384,0,0,6016,3721,8017,1024,0],"current_month_forecast":5582,"monthly_25":[7978,2052,0,0,7491,11229,502,0,13228,7827,8221,3907],"media_fees_ytd":0,"media_fees_ly":3000,"media_fees_q":0,"monthly_mf_26":[0,0,0,0,0,0,0,0,0,0,0,0],"monthly_mf_25":[0,0,0,0,0,0,0,0,3000,0,0,0],"weekly_revenue":[16,2816,2139,2610],"crossing_date":"2026-11-05","required_additional_budget":26970.719006622,"mf_from_current_month":null},"damart":{"am":"Eloïse","budget_type":"open","is_capped":false,"monthly_signed":[null,null,null,null,null,null,null,null,null,null,null,null],"is_new_client":false,"signed_26":null,"open_budget":null,"remaining_budget":null,"actual_26":20447,"proj_26":28795,"actual_25":50375,"actual_25_ytd":16237,"monthly_26":[5852,3368,2308,1665,1773,1642,1747,1538,554,5328,10342,11328],"current_month_forecast":1797,"monthly_25":[4753,2850,1649,1342,1387,1307,1162,1230,2565,4902,16378,10850],"media_fees_ytd":0,"media_fees_ly":0,"media_fees_q":0,"monthly_mf_26":[0,0,0,0,0,0,0,0,0,0,0,0],"monthly_mf_25":[0,0,0,0,0,0,0,0,0,0,3000,0],"weekly_revenue":[301,359,401,257],"crossing_date":null,"required_additional_budget":null,"mf_from_current_month":null},"decathlon":{"am":"Eloïse","budget_type":"capped","is_capped":true,"monthly_signed":[null,null,null,null,null,null,9431,10683,6404,null,null,null],"is_new_client":false,"signed_26":81781,"open_budget":31517,"remaining_budget":4494,"actual_26":77287,"proj_26":4494,"actual_25":50268,"actual_25_ytd":50268,"monthly_26":[0,12005,7884,8008,13398,6989,6728,17432,4843,1766,0,0],"current_month_forecast":2728,"monthly_25":[0,0,371,9199,12417,12281,16000,0,0,0,0,0],"media_fees_ytd":12500,"media_fees_ly":16000,"media_fees_q":5000,"monthly_mf_26":[0,2500,0,0,2500,2500,2500,0,2500,0,0,0],"monthly_mf_25":[0,0,0,0,0,0,16000,0,0,0,0,0],"weekly_revenue":[3565,3367,3728,1733],"crossing_date":"2026-10-20","required_additional_budget":19157.174603592,"mf_from_current_month":10000},"etam":{"am":"Eloïse","budget_type":"capped","is_capped":true,"monthly_signed":[null,null,null,null,null,null,null,null,null,null,null,null],"is_new_client":false,"signed_26":null,"open_budget":null,"remaining_budget":null,"actual_26":109317,"proj_26":0,"actual_25":342793,"actual_25_ytd":211466,"monthly_26":[26349,16362,22988,26422,17196,0,0,0,0,0,0,0],"current_month_forecast":0,"monthly_25":[27717,23189,19763,19019,24027,37638,32780,20533,20680,19785,51311,46351],"media_fees_ytd":10000,"media_fees_ly":5000,"media_fees_q":0,"monthly_mf_26":[0,0,5000,5000,0,0,0,0,0,0,0,0],"monthly_mf_25":[0,5000,0,0,0,0,0,0,0,0,2500,0],"weekly_revenue":null,"crossing_date":null,"required_additional_budget":null,"mf_from_current_month":null},"feed":{"am":"Eva","budget_type":"open","is_capped":false,"monthly_signed":[null,null,null,null,null,null,null,null,null,null,null,null],"is_new_client":false,"signed_26":null,"open_budget":null,"remaining_budget":null,"actual_26":1369,"proj_26":1684,"actual_25":3520,"actual_25_ytd":2640,"monthly_26":[80,150,260,120,110,150,184,202,113,622,368,294],"current_month_forecast":401,"monthly_25":[360,340,520,270,180,340,220,300,350,330,190,120],"media_fees_ytd":0,"media_fees_ly":0,"media_fees_q":0,"monthly_mf_26":[0,0,0,0,0,0,0,0,0,0,0,0],"monthly_mf_25":[0,0,0,0,0,0,0,0,0,0,0,0],"weekly_revenue":[20,60,60,60],"crossing_date":null,"required_additional_budget":null,"mf_from_current_month":null},"flunch":{"am":"Romain","budget_type":"capped","is_capped":true,"monthly_signed":[null,null,null,null,null,null,null,null,null,null,null,null],"is_new_client":false,"signed_26":null,"open_budget":null,"remaining_budget":null,"actual_26":5380,"proj_26":0,"actual_25":40062,"actual_25_ytd":17832,"monthly_26":[5380,0,0,0,0,0,0,0,0,0,0,0],"current_month_forecast":0,"monthly_25":[17832,0,0,0,0,0,0,0,0,0,3406,18824],"media_fees_ytd":0,"media_fees_ly":0,"media_fees_q":0,"monthly_mf_26":[0,0,0,0,0,0,0,0,0,0,0,0],"monthly_mf_25":[0,0,0,0,0,0,0,0,0,0,0,5000],"weekly_revenue":null,"crossing_date":null,"required_additional_budget":null,"mf_from_current_month":null},"gambettes-box":{"am":"Eva","budget_type":"open","is_capped":false,"monthly_signed":[null,null,null,null,null,null,null,null,null,null,null,null],"is_new_client":false,"signed_26":null,"open_budget":null,"remaining_budget":null,"actual_26":4290,"proj_26":50060,"actual_25":8896,"actual_25_ytd":1983,"monthly_26":[1132,481,314,258,144,127,98,422,1314,14521,15327,14391],"current_month_forecast":5821,"monthly_25":[763,0,311,439,101,36,15,78,1609,2374,1794,1376],"media_fees_ytd":0,"media_fees_ly":0,"media_fees_q":0,"monthly_mf_26":[0,0,0,0,0,0,0,0,0,0,0,0],"monthly_mf_25":[0,0,0,0,0,0,0,0,0,0,0,0],"weekly_revenue":[12,28,311,136],"crossing_date":null,"required_additional_budget":null,"mf_from_current_month":null},"gaumont-pathe":{"am":"Théo","budget_type":"capped","is_capped":true,"monthly_signed":[null,null,null,null,null,null,null,null,null,null,null,null],"is_new_client":false,"signed_26":null,"open_budget":null,"remaining_budget":null,"actual_26":7851,"proj_26":0,"actual_25":47408,"actual_25_ytd":23912,"monthly_26":[7851,0,0,0,0,0,0,0,0,0,0,0],"current_month_forecast":0,"monthly_25":[0,0,0,7153,8730,4787,3242,0,0,4810,1017,17669],"media_fees_ytd":0,"media_fees_ly":0,"media_fees_q":0,"monthly_mf_26":[0,0,0,0,0,0,0,0,0,0,0,0],"monthly_mf_25":[0,0,0,0,0,0,0,0,0,0,0,0],"weekly_revenue":null,"crossing_date":null,"required_additional_budget":null,"mf_from_current_month":null},"heetch":{"am":"Eva","budget_type":"open","is_capped":false,"monthly_signed":[null,null,null,null,null,null,null,null,null,null,null,null],"is_new_client":false,"signed_26":null,"open_budget":null,"remaining_budget":null,"actual_26":18753,"proj_26":0,"actual_25":47945,"actual_25_ytd":28930,"monthly_26":[3958,2930,2690,2910,3430,2835,0,0,0,0,0,0],"current_month_forecast":0,"monthly_25":[3010,3440,3340,3380,3640,3765,3495,3795,3505,3635,3650,9290],"media_fees_ytd":0,"media_fees_ly":0,"media_fees_q":0,"monthly_mf_26":[0,0,0,0,0,0,0,0,0,0,0,0],"monthly_mf_25":[0,0,0,0,0,0,0,0,0,0,0,5000],"weekly_revenue":[10],"crossing_date":null,"required_additional_budget":null,"mf_from_current_month":null},"hellofresh":{"am":"Eva","budget_type":"open","is_capped":false,"monthly_signed":[null,null,null,null,null,null,null,null,null,null,null,null],"is_new_client":false,"signed_26":null,"open_budget":null,"remaining_budget":null,"actual_26":271287,"proj_26":126125,"actual_25":358496,"actual_25_ytd":245014,"monthly_26":[65359,47256,35162,21042,19350,19098,22946,24962,16112,34373,35958,32352],"current_month_forecast":23442,"monthly_25":[43606,36954,38020,20970,21904,23088,18158,21260,52661,36362,22700,22813],"media_fees_ytd":35000,"media_fees_ly":14000,"media_fees_q":10000,"monthly_mf_26":[10000,10000,5000,0,0,0,5000,0,5000,0,0,0],"monthly_mf_25":[0,0,0,0,2000,2000,2000,2000,6000,4000,0,6000],"weekly_revenue":[3510,4770,8532,9360],"crossing_date":null,"required_additional_budget":null,"mf_from_current_month":null},"hema":{"am":"Eloïse","budget_type":"capped","is_capped":true,"monthly_signed":[null,null,null,null,null,null,10322,10496,11530,11830,15195,21913],"is_new_client":false,"signed_26":120000,"open_budget":120000,"remaining_budget":70241,"actual_26":49759,"proj_26":39222,"actual_25":120270,"actual_25_ytd":67700,"monthly_26":[5105,5236,4758,4343,4439,7824,7596,8199,2259,8614,9465,15257],"current_month_forecast":5887,"monthly_25":[2944,3095,8887,10528,3364,10539,10341,10580,11289,16734,7179,24790],"media_fees_ytd":0,"media_fees_ly":30000,"media_fees_q":0,"monthly_mf_26":[0,0,0,0,0,0,0,0,0,0,0,0],"monthly_mf_25":[0,0,5000,5000,0,5000,5000,5000,5000,10000,0,10000],"weekly_revenue":[1615,1692,1796,1727],"crossing_date":null,"required_additional_budget":-64373.276535989,"mf_from_current_month":5000},"horace":{"am":"Romain","budget_type":"open","is_capped":false,"monthly_signed":[null,null,null,null,null,null,null,null,null,null,null,null],"is_new_client":false,"signed_26":null,"open_budget":null,"remaining_budget":null,"actual_26":20628,"proj_26":11039,"actual_25":38830,"actual_25_ytd":20550,"monthly_26":[2880,3180,2870,2190,2370,2170,2151,2138,679,2161,2664,4570],"current_month_forecast":1645,"monthly_25":[2010,2210,2040,7150,1980,1600,1640,1300,1750,2170,5070,9910],"media_fees_ytd":0,"media_fees_ly":4000,"media_fees_q":0,"monthly_mf_26":[0,0,0,0,0,0,0,0,0,0,0,0],"monthly_mf_25":[0,0,0,4000,0,0,0,0,0,0,0,0],"weekly_revenue":[440,380,480,480],"crossing_date":null,"required_additional_budget":null,"mf_from_current_month":null},"instant-gaming":{"am":"Eva","budget_type":"open","is_capped":false,"monthly_signed":[null,null,null,null,null,null,null,null,null,null,null,null],"is_new_client":false,"signed_26":null,"open_budget":null,"remaining_budget":null,"actual_26":5540,"proj_26":0,"actual_25":28049,"actual_25_ytd":17909,"monthly_26":[2458,2109,973,0,0,0,0,0,0,0,0,0],"current_month_forecast":0,"monthly_25":[2259,2243,2173,1858,2027,2002,2346,2368,2327,2459,3093,2894],"media_fees_ytd":0,"media_fees_ly":0,"media_fees_q":0,"monthly_mf_26":[0,0,0,0,0,0,0,0,0,0,0,0],"monthly_mf_25":[0,0,0,0,0,0,0,0,0,0,0,0],"weekly_revenue":null,"crossing_date":null,"required_additional_budget":null,"mf_from_current_month":null},"jules":{"am":"Eloïse","budget_type":"capped","is_capped":true,"monthly_signed":[null,null,null,null,null,null,5862,4010,4128,5812,6146,13043],"is_new_client":false,"signed_26":62000,"open_budget":24000,"remaining_budget":0,"actual_26":65121,"proj_26":0,"actual_25":95135,"actual_25_ytd":66701,"monthly_26":[10402,6178,5717,6668,7638,14634,7990,5894,0,0,0,0],"current_month_forecast":0,"monthly_25":[9492,6096,10454,6014,7851,15261,8595,1062,4551,6187,8390,11182],"media_fees_ytd":3000,"media_fees_ly":6000,"media_fees_q":0,"monthly_mf_26":[0,0,0,0,0,3000,0,0,0,0,0,0],"monthly_mf_25":[0,0,3000,0,0,3000,0,0,0,0,0,0],"weekly_revenue":[1085,1102,1245,432],"crossing_date":null,"required_additional_budget":-17341.578584,"mf_from_current_month":3000},"kiabi":{"am":"Eloïse","budget_type":"capped","is_capped":true,"monthly_signed":[null,null,null,null,null,null,49389,52266,47290,43179,36981,34105],"is_new_client":false,"signed_26":537269,"open_budget":20000,"remaining_budget":5392,"actual_26":531877,"proj_26":0,"actual_25":622395,"actual_25_ytd":447548,"monthly_26":[30883,38550,37778,50197,86526,76360,65593,145990,0,0,0,0],"current_month_forecast":0,"monthly_25":[32909,24966,44161,52222,60258,70534,40956,83244,73385,39514,39928,60318],"media_fees_ytd":31000,"media_fees_ly":39000,"media_fees_q":20000,"monthly_mf_26":[0,5000,0,0,6000,0,0,20000,0,0,0,0],"monthly_mf_25":[5000,0,0,0,5000,10000,0,10000,9000,0,5000,10000],"weekly_revenue":[13440,38778,40756,23535],"crossing_date":"2026-08-31","required_additional_budget":263523.751128974,"mf_from_current_month":30000},"kiko":{"am":"Romain","budget_type":"capped","is_capped":true,"monthly_signed":[null,null,null,null,null,null,null,null,null,null,null,null],"is_new_client":false,"signed_26":null,"open_budget":null,"remaining_budget":null,"actual_26":6361,"proj_26":0,"actual_25":158204,"actual_25_ytd":124559,"monthly_26":[6361,0,0,0,0,0,0,0,0,0,0,0],"current_month_forecast":0,"monthly_25":[10982,15614,11276,25510,13492,12916,14343,15276,10672,3887,5379,18857],"media_fees_ytd":0,"media_fees_ly":13000,"media_fees_q":0,"monthly_mf_26":[0,0,0,0,0,0,0,0,0,0,0,0],"monthly_mf_25":[0,5000,0,8000,0,0,0,0,0,0,0,0],"weekly_revenue":null,"crossing_date":null,"required_additional_budget":null,"mf_from_current_month":null},"lalalab":{"am":"Théo","budget_type":"open","is_capped":false,"monthly_signed":[null,null,null,null,null,null,null,null,null,null,null,null],"is_new_client":false,"signed_26":null,"open_budget":null,"remaining_budget":null,"actual_26":15770,"proj_26":14167,"actual_25":30908,"actual_25_ytd":15756,"monthly_26":[1628,1764,960,956,1368,1144,1208,2849,3893,2369,3474,6043],"current_month_forecast":2281,"monthly_25":[1540,2730,1016,1088,1308,2050,1316,3560,2412,1508,4522,7858],"media_fees_ytd":3000,"media_fees_ly":4000,"media_fees_q":3000,"monthly_mf_26":[0,0,0,0,0,0,0,0,3000,0,0,0],"monthly_mf_25":[0,1000,0,0,0,1000,0,2000,0,0,2000,3000],"weekly_revenue":[480,519,973,547],"crossing_date":null,"required_additional_budget":null,"mf_from_current_month":null},"le-closet":{"am":"Eva","budget_type":"open","is_capped":false,"monthly_signed":[null,null,null,null,null,null,null,null,null,null,null,null],"is_new_client":false,"signed_26":null,"open_budget":null,"remaining_budget":null,"actual_26":4347,"proj_26":2339,"actual_25":9381,"actual_25_ytd":5955,"monthly_26":[630,666,582,492,546,470,416,403,142,634,690,623],"current_month_forecast":392,"monthly_25":[960,660,825,615,615,585,585,690,1155,990,885,816],"media_fees_ytd":0,"media_fees_ly":0,"media_fees_q":0,"monthly_mf_26":[0,0,0,0,0,0,0,0,0,0,0,0],"monthly_mf_25":[0,0,0,0,0,0,0,0,0,0,0,0],"weekly_revenue":[71,100,116,109],"crossing_date":null,"required_additional_budget":null,"mf_from_current_month":null},"leroy-merlin":{"am":"Eloïse","budget_type":"capped","is_capped":true,"monthly_signed":[null,null,null,null,null,null,125655,64246,63477,112548,90718,44346],"is_new_client":false,"signed_26":1000000,"open_budget":1000000,"remaining_budget":334202,"actual_26":665798,"proj_26":247393,"actual_25":797480,"actual_25_ytd":670416,"monthly_26":[33893,75312,69678,122283,107725,66875,102154,69195,18683,74790,69621,53617],"current_month_forecast":49365,"monthly_25":[58692,82720,69755,143321,125842,67165,84001,35011,16044,39363,51400,24166],"media_fees_ytd":13000,"media_fees_ly":15000,"media_fees_q":8000,"monthly_mf_26":[0,5000,0,0,0,0,5000,0,3000,5000,5000,0],"monthly_mf_25":[0,0,0,5000,5000,0,5000,0,0,5000,0,0],"weekly_revenue":[14137,13502,13709,11289],"crossing_date":null,"required_additional_budget":-96263.600423109,"mf_from_current_month":13000},"les-raffineurs":{"am":"Eva","budget_type":"open","is_capped":false,"monthly_signed":[null,null,null,null,null,null,null,null,null,null,null,null],"is_new_client":false,"signed_26":null,"open_budget":null,"remaining_budget":null,"actual_26":4147,"proj_26":7677,"actual_25":11632,"actual_25_ytd":3499,"monthly_26":[570,562,401,436,550,877,330,321,100,553,1329,5512],"current_month_forecast":284,"monthly_25":[376,372,372,293,475,635,451,376,447,435,2104,5296],"media_fees_ytd":0,"media_fees_ly":0,"media_fees_q":0,"monthly_mf_26":[0,0,0,0,0,0,0,0,0,0,0,0],"monthly_mf_25":[0,0,0,0,0,0,0,0,0,0,0,0],"weekly_revenue":[43,101,88,55],"crossing_date":null,"required_additional_budget":null,"mf_from_current_month":null},"maisons-du-monde":{"am":"Eloïse","budget_type":"capped","is_capped":true,"monthly_signed":[null,null,null,null,null,null,19087,10626,11656,12416,27346,30887],"is_new_client":false,"signed_26":182017,"open_budget":112017,"remaining_budget":83228,"actual_26":98789,"proj_26":62852,"actual_25":172075,"actual_25_ytd":81701,"monthly_26":[32488,16988,17763,8459,0,0,4309,15193,3589,12538,17177,22664],"current_month_forecast":10473,"monthly_25":[0,0,0,9099,18828,12595,19190,13300,18482,16648,35613,28320],"media_fees_ytd":7500,"media_fees_ly":8450,"media_fees_q":2500,"monthly_mf_26":[5000,0,0,0,0,0,0,2500,0,0,0,0],"monthly_mf_25":[0,0,0,1725,4225,0,0,0,2500,0,3000,5000],"weekly_revenue":[2319,3057,3074,2867],"crossing_date":null,"required_additional_budget":-27317.355660346,"mf_from_current_month":15000},"natura-force":{"am":"—","budget_type":"open","is_capped":false,"monthly_signed":[null,null,null,null,null,null,null,null,null,null,null,null],"is_new_client":false,"signed_26":null,"open_budget":null,"remaining_budget":null,"actual_26":101,"proj_26":0,"actual_25":63,"actual_25_ytd":26,"monthly_26":[6,13,16,18,12,35,1,0,0,0,0,0],"current_month_forecast":0,"monthly_25":[0,0,1,0,0,12,13,0,0,0,31,6],"media_fees_ytd":0,"media_fees_ly":0,"media_fees_q":0,"monthly_mf_26":[0,0,0,0,0,0,0,0,0,0,0,0],"monthly_mf_25":[0,0,0,0,0,0,0,0,0,0,0,0],"weekly_revenue":null,"crossing_date":null,"required_additional_budget":null,"mf_from_current_month":null},"nespresso":{"am":"Eva","budget_type":"capped","is_capped":true,"monthly_signed":[null,null,null,null,null,null,null,null,null,null,null,null],"is_new_client":false,"signed_26":55000,"open_budget":27000,"remaining_budget":0,"actual_26":61872,"proj_26":0,"actual_25":88695,"actual_25_ytd":53849,"monthly_26":[5910,8908,7266,5994,7895,6864,6031,7678,5326,0,0,0],"current_month_forecast":0,"monthly_25":[0,0,6421,10432,9117,12414,5196,3930,10443,5165,15325,10252],"media_fees_ytd":5000,"media_fees_ly":15000,"media_fees_q":2500,"monthly_mf_26":[0,2500,0,0,0,0,0,0,2500,0,0,0],"monthly_mf_25":[0,0,0,5000,0,5000,0,0,5000,0,5000,0],"weekly_revenue":[1507,1303,1802,2646],"crossing_date":"2026-11-06","required_additional_budget":16448.292441231,"mf_from_current_month":2500},"nocibe":{"am":"Romain","budget_type":"capped","is_capped":true,"monthly_signed":[null,null,null,null,null,null,35993,35006,35549,null,null,null],"is_new_client":false,"signed_26":289429,"open_budget":168024,"remaining_budget":24096,"actual_26":265333,"proj_26":24096,"actual_25":238150,"actual_25_ytd":51179,"monthly_26":[19290,29456,14314,25066,56710,40442,39103,32561,8391,6374,0,0],"current_month_forecast":17722,"monthly_25":[0,0,0,0,12737,17801,17097,3544,0,15164,77137,94670],"media_fees_ytd":20000,"media_fees_ly":10000,"media_fees_q":10000,"monthly_mf_26":[0,5000,0,0,5000,0,5000,5000,0,0,0,0],"monthly_mf_25":[0,0,0,0,3000,4000,3000,0,0,0,5000,10000],"weekly_revenue":[4502,4860,7619,5294],"crossing_date":"2026-10-07","required_additional_budget":235549.115219705,"mf_from_current_month":null},"pokawa":{"am":"Romain","budget_type":"capped","is_capped":true,"monthly_signed":[null,null,null,null,null,null,6292,6287,5051,null,null,null],"is_new_client":false,"signed_26":65203,"open_budget":29000,"remaining_budget":1514,"actual_26":63689,"proj_26":1514,"actual_25":68854,"actual_25_ytd":51500,"monthly_26":[4716,5202,11926,7310,7965,8380,13254,3941,995,780,0,0],"current_month_forecast":734,"monthly_25":[0,8585,4339,4903,5701,9630,5428,5488,10769,4603,4645,4763],"media_fees_ytd":10000,"media_fees_ly":13000,"media_fees_q":5000,"monthly_mf_26":[0,0,5000,0,0,0,5000,0,0,0,0,0],"monthly_mf_25":[0,5000,0,0,0,3000,0,0,5000,0,0,0],"weekly_revenue":[913,776,747,722],"crossing_date":"2026-10-27","required_additional_budget":6562.132360522,"mf_from_current_month":3000},"printemps":{"am":"Eloïse","budget_type":"capped","is_capped":true,"monthly_signed":[null,null,null,null,null,null,10742,7125,7267,9316,14318,21561],"is_new_client":false,"signed_26":165000,"open_budget":20000,"remaining_budget":70056,"actual_26":94944,"proj_26":59518,"actual_25":159847,"actual_25_ytd":77526,"monthly_26":[13760,8144,8530,9130,11061,16314,15816,9508,2681,11634,14189,26653],"current_month_forecast":7042,"monthly_25":[8761,11448,5855,5862,6577,13725,10503,7291,13075,16736,23797,36217],"media_fees_ytd":5000,"media_fees_ly":15000,"media_fees_q":0,"monthly_mf_26":[0,0,0,0,0,5000,0,0,0,0,0,0],"monthly_mf_25":[0,5000,0,0,0,5000,0,0,5000,5000,5000,5000],"weekly_revenue":[1645,1835,2301,2057],"crossing_date":null,"required_additional_budget":-62578.163302832,"mf_from_current_month":10000},"prismashop":{"am":"—","budget_type":"open","is_capped":false,"monthly_signed":[null,null,null,null,null,null,null,null,null,null,null,null],"is_new_client":false,"signed_26":null,"open_budget":null,"remaining_budget":null,"actual_26":5551,"proj_26":0,"actual_25":8856,"actual_25_ytd":6216,"monthly_26":[872,512,704,616,712,824,825,486,0,0,0,0],"current_month_forecast":0,"monthly_25":[728,680,1656,680,480,624,592,552,608,552,720,984],"media_fees_ytd":0,"media_fees_ly":0,"media_fees_q":0,"monthly_mf_26":[0,0,0,0,0,0,0,0,0,0,0,0],"monthly_mf_25":[0,0,0,0,0,0,0,0,0,0,0,0],"weekly_revenue":[224,184,16,8],"crossing_date":null,"required_additional_budget":null,"mf_from_current_month":null},"privatesportshop":{"am":"Eva","budget_type":"open","is_capped":false,"monthly_signed":[null,null,null,null,null,null,null,null,null,null,null,null],"is_new_client":false,"signed_26":null,"open_budget":null,"remaining_budget":null,"actual_26":10464,"proj_26":7539,"actual_25":15470,"actual_25_ytd":10076,"monthly_26":[1319,1116,1312,1065,1132,1137,1185,1679,519,1617,2601,2264],"current_month_forecast":1056,"monthly_25":[1295,1059,1207,1168,1377,1078,1206,1229,1368,1268,1663,1552],"media_fees_ytd":0,"media_fees_ly":0,"media_fees_q":0,"monthly_mf_26":[0,0,0,0,0,0,0,0,0,0,0,0],"monthly_mf_25":[0,0,0,0,0,0,0,0,0,0,0,0],"weekly_revenue":[338,343,359,481],"crossing_date":null,"required_additional_budget":null,"mf_from_current_month":null},"promod":{"am":"Eloïse","budget_type":"capped","is_capped":true,"monthly_signed":[null,null,null,null,null,null,null,null,null,null,null,null],"is_new_client":false,"signed_26":null,"open_budget":null,"remaining_budget":null,"actual_26":1153,"proj_26":0,"actual_25":60282,"actual_25_ytd":39758,"monthly_26":[1153,0,0,0,0,0,0,0,0,0,0,0],"current_month_forecast":0,"monthly_25":[3443,4057,4920,4867,5933,6442,5830,2874,4219,4164,6028,7505],"media_fees_ytd":0,"media_fees_ly":0,"media_fees_q":0,"monthly_mf_26":[0,0,0,0,0,0,0,0,0,0,0,0],"monthly_mf_25":[0,0,0,0,0,0,0,0,0,0,0,0],"weekly_revenue":null,"crossing_date":null,"required_additional_budget":-5765.03,"mf_from_current_month":5000},"quitoque":{"am":"Eva","budget_type":"open","is_capped":false,"monthly_signed":[null,null,null,null,null,null,null,null,null,null,null,null],"is_new_client":false,"signed_26":null,"open_budget":null,"remaining_budget":null,"actual_26":10096,"proj_26":10019,"actual_25":16865,"actual_25_ytd":12555,"monthly_26":[2246,1853,1035,490,977,843,430,1395,827,2781,2952,2284],"current_month_forecast":2002,"monthly_25":[2290,3234,1134,940,796,588,383,946,3307,1467,870,910],"media_fees_ytd":0,"media_fees_ly":1500,"media_fees_q":0,"monthly_mf_26":[0,0,0,0,0,0,0,0,0,0,0,0],"monthly_mf_25":[0,0,0,0,0,0,0,0,1500,0,0,0],"weekly_revenue":[131,375,584,621],"crossing_date":null,"required_additional_budget":null,"mf_from_current_month":null},"rougegorge":{"am":"Théo","budget_type":"open","is_capped":false,"monthly_signed":[null,null,null,null,null,null,null,null,null,null,null,null],"is_new_client":false,"signed_26":null,"open_budget":null,"remaining_budget":null,"actual_26":44260,"proj_26":9989,"actual_25":73841,"actual_25_ytd":58088,"monthly_26":[8369,4987,2416,2736,2943,8674,8902,4369,864,1796,2486,4072],"current_month_forecast":1635,"monthly_25":[3593,3068,551,6605,10692,13461,12785,6209,2976,2568,4176,7157],"media_fees_ytd":2000,"media_fees_ly":4000,"media_fees_q":0,"monthly_mf_26":[0,0,0,0,0,2000,0,0,0,0,0,0],"monthly_mf_25":[0,0,0,0,2000,2000,0,0,0,0,0,0],"weekly_revenue":[846,825,1116,944],"crossing_date":null,"required_additional_budget":null,"mf_from_current_month":null},"sephora":{"am":"Romain","budget_type":"open","is_capped":false,"monthly_signed":[null,null,null,null,null,null,null,null,null,null,null,null],"is_new_client":false,"signed_26":null,"open_budget":null,"remaining_budget":null,"actual_26":301153,"proj_26":247160,"actual_25":252776,"actual_25_ytd":112250,"monthly_26":[29862,25067,26340,21198,50349,51047,44690,36839,15761,47242,67685,103216],"current_month_forecast":29016,"monthly_25":[151,5113,111,7116,10310,26623,33812,20827,31886,24377,55108,37342],"media_fees_ytd":15000,"media_fees_ly":25000,"media_fees_q":5000,"monthly_mf_26":[5000,0,0,0,5000,0,0,0,5000,0,0,0],"monthly_mf_25":[0,5000,0,7000,10000,0,0,0,3000,0,10000,0],"weekly_revenue":[7131,7099,8377,8095],"crossing_date":null,"required_additional_budget":null,"mf_from_current_month":null},"showroomprive":{"am":"Eloïse","budget_type":"capped","is_capped":true,"monthly_signed":[null,null,null,null,null,null,17606,6262,6906,11805,13275,15425],"is_new_client":false,"signed_26":null,"open_budget":null,"remaining_budget":null,"actual_26":167994,"proj_26":31640,"actual_25":267341,"actual_25_ytd":147263,"monthly_26":[17847,15260,16241,23314,23609,36839,18429,9161,7294,14193,9289,0],"current_month_forecast":8158,"monthly_25":[12045,17259,14567,14198,22040,29717,17727,15330,15766,21409,47457,39826],"media_fees_ytd":20000,"media_fees_ly":12000,"media_fees_q":5000,"monthly_mf_26":[0,0,0,5000,0,10000,0,0,5000,0,0,0],"monthly_mf_25":[0,5000,0,0,0,7000,0,0,0,0,5000,5000],"weekly_revenue":[1996,2328,1504,988],"crossing_date":"2026-11-16","required_additional_budget":25534.004990254,"mf_from_current_month":5000},"stych":{"am":"Eva","budget_type":"open","is_capped":false,"monthly_signed":[null,null,null,null,null,null,null,null,null,null,null,null],"is_new_client":false,"signed_26":null,"open_budget":null,"remaining_budget":null,"actual_26":12344,"proj_26":12080,"actual_25":14460,"actual_25_ytd":9060,"monthly_26":[1680,1160,1640,760,1440,1360,2171,1416,717,3354,3602,2843],"current_month_forecast":2281,"monthly_25":[1340,840,1280,1080,760,920,1280,1320,1080,1360,2200,1000],"media_fees_ytd":0,"media_fees_ly":0,"media_fees_q":0,"monthly_mf_26":[0,0,0,0,0,0,0,0,0,0,0,0],"monthly_mf_25":[0,0,0,0,0,0,0,0,0,0,0,0],"weekly_revenue":[200,320,360,560],"crossing_date":null,"required_additional_budget":null,"mf_from_current_month":null},"subway":{"am":"Romain","budget_type":"capped","is_capped":true,"monthly_signed":[null,null,null,null,null,null,11686,12731,13464,12727,11612,12887],"is_new_client":false,"signed_26":150000,"open_budget":150000,"remaining_budget":68202,"actual_26":81798,"proj_26":36195,"actual_25":82092,"actual_25_ytd":36621,"monthly_26":[2670,7874,12236,9339,9766,10494,12896,9182,7341,8705,7660,9390],"current_month_forecast":10440,"monthly_25":[0,4597,10372,0,0,15457,285,0,15214,10494,9770,15903],"media_fees_ytd":11000,"media_fees_ly":6000,"media_fees_q":8000,"monthly_mf_26":[0,0,3000,0,0,0,3000,0,5000,0,0,0],"monthly_mf_25":[0,0,0,0,0,3000,0,0,3000,0,0,3000],"weekly_revenue":[2031,1848,1798,1813],"crossing_date":null,"required_additional_budget":-30091.017588529,"mf_from_current_month":10000},"the-bradery":{"am":"Clément","budget_type":"open","is_capped":false,"monthly_signed":[null,null,null,null,null,null,null,null,null,null,null,null],"is_new_client":false,"signed_26":null,"open_budget":null,"remaining_budget":null,"actual_26":102724,"proj_26":98069,"actual_25":123556,"actual_25_ytd":71171,"monthly_26":[9407,11762,15617,13450,14446,12549,10176,10123,5194,30741,24648,31676],"current_month_forecast":11003,"monthly_25":[5914,5247,17256,8377,8939,10479,6576,5897,9199,11996,15900,17776],"media_fees_ytd":0,"media_fees_ly":5000,"media_fees_q":0,"monthly_mf_26":[0,0,0,0,0,0,0,0,0,0,0,0],"monthly_mf_25":[0,0,5000,0,0,0,0,0,0,0,0,0],"weekly_revenue":[1829,2461,2362,4269],"crossing_date":null,"required_additional_budget":null,"mf_from_current_month":null},"uber":{"am":"Eva","budget_type":"capped","is_capped":true,"monthly_signed":[null,null,null,null,null,null,72422,67578,60000,null,null,null],"is_new_client":false,"signed_26":401666.67,"open_budget":60000,"remaining_budget":0,"actual_26":546121,"proj_26":0,"actual_25":1066566,"actual_25_ytd":788902,"monthly_26":[112765,94573,46188,26431,56754,29795,77310,79139,23166,0,0,0],"current_month_forecast":0,"monthly_25":[58247,82655,88358,80410,88692,102076,111194,138972,38299,86123,83056,108484],"media_fees_ytd":0,"media_fees_ly":10000,"media_fees_q":0,"monthly_mf_26":[0,0,0,0,0,0,0,0,0,0,0,0],"monthly_mf_25":[0,0,5000,0,0,0,0,0,5000,0,0,0],"weekly_revenue":[20718,18619,4316,14455],"crossing_date":"2026-09-15","required_additional_budget":428065.160753061,"mf_from_current_month":null},"uber-eats":{"am":"Eva","budget_type":"capped","is_capped":true,"monthly_signed":[null,null,null,null,null,null,22000,0,55000,null,null,null],"is_new_client":false,"signed_26":239354,"open_budget":75000,"remaining_budget":0,"actual_26":401247,"proj_26":0,"actual_25":584526,"actual_25_ytd":381051,"monthly_26":[61970,55354,55235,53110,60468,67633,24096,7193,16188,0,0,0],"current_month_forecast":0,"monthly_25":[75931,43716,41701,35176,35501,37259,44197,51193,51480,52398,55966,60008],"media_fees_ytd":5000,"media_fees_ly":5000,"media_fees_q":0,"monthly_mf_26":[0,0,0,0,0,5000,0,0,0,0,0,0],"monthly_mf_25":[5000,0,0,0,0,0,0,0,0,0,0,0],"weekly_revenue":[1992,1735,363,7773],"crossing_date":"2026-09-14","required_additional_budget":223723.443519131,"mf_from_current_month":5000},"ultra-premium-direct":{"am":"Eloïse","budget_type":"open","is_capped":false,"monthly_signed":[null,null,null,null,null,null,null,null,null,null,null,null],"is_new_client":false,"signed_26":null,"open_budget":null,"remaining_budget":null,"actual_26":35834,"proj_26":0,"actual_25":70777,"actual_25_ytd":25270,"monthly_26":[20322,13979,1533,0,0,0,0,0,0,0,0,0],"current_month_forecast":0,"monthly_25":[0,0,0,0,0,0,4428,10679,15164,11243,14803,14460],"media_fees_ytd":16000,"media_fees_ly":11500,"media_fees_q":0,"monthly_mf_26":[10000,6000,0,0,0,0,0,0,0,0,0,0],"monthly_mf_25":[0,0,0,0,0,0,0,4000,7500,4000,5000,4000],"weekly_revenue":null,"crossing_date":null,"required_additional_budget":null,"mf_from_current_month":null},"ulysse":{"am":"Eva","budget_type":"open","is_capped":false,"monthly_signed":[null,null,null,null,null,null,null,null,null,null,null,null],"is_new_client":false,"signed_26":null,"open_budget":null,"remaining_budget":null,"actual_26":6559,"proj_26":6455,"actual_25":6360,"actual_25_ytd":4600,"monthly_26":[540,780,860,760,840,720,794,1037,228,1535,2135,2102],"current_month_forecast":683,"monthly_25":[520,460,560,460,640,440,740,620,480,480,420,540],"media_fees_ytd":0,"media_fees_ly":0,"media_fees_q":0,"monthly_mf_26":[0,0,0,0,0,0,0,0,0,0,0,0],"monthly_mf_25":[0,0,0,0,0,0,0,0,0,0,0,0],"weekly_revenue":[280,260,200,140],"crossing_date":null,"required_additional_budget":null,"mf_from_current_month":null},"vente-privee":{"am":"Eloïse","budget_type":"capped","is_capped":true,"monthly_signed":[null,null,null,null,null,null,29551,10449,null,null,null,null],"is_new_client":false,"signed_26":240000,"open_budget":40000,"remaining_budget":353,"actual_26":239647,"proj_26":0,"actual_25":339425,"actual_25_ytd":183731,"monthly_26":[28472,25430,33850,27641,30954,32028,24422,32614,4236,0,0,0],"current_month_forecast":0,"monthly_25":[19262,19059,23962,18013,19960,24777,22883,26753,26748,38482,62318,37208],"media_fees_ytd":0,"media_fees_ly":0,"media_fees_q":0,"monthly_mf_26":[0,0,0,0,0,0,0,0,0,0,0,0],"monthly_mf_25":[0,0,0,0,0,0,0,0,0,0,0,0],"weekly_revenue":[6340,5839,7685,6993],"crossing_date":"2026-09-04","required_additional_budget":159516.601090109,"mf_from_current_month":10000},"vertbaudet":{"am":"Eloïse","budget_type":"capped","is_capped":true,"monthly_signed":[null,null,null,null,null,null,10586,2590,4496,null,null,null],"is_new_client":false,"signed_26":110894,"open_budget":29222,"remaining_budget":30172,"actual_26":80722,"proj_26":26336,"actual_25":138092,"actual_25_ytd":79218,"monthly_26":[22026,8494,10418,6344,3161,9915,8472,6452,5440,7122,11793,3584],"current_month_forecast":3837,"monthly_25":[12592,4964,14205,9292,7511,7888,10642,8752,10298,9968,31175,10805],"media_fees_ytd":13000,"media_fees_ly":5000,"media_fees_q":4000,"monthly_mf_26":[4000,0,0,0,0,5000,0,0,4000,0,0,0],"monthly_mf_25":[0,0,5000,0,0,0,0,0,0,0,4000,0],"weekly_revenue":[856,1204,2510,1106],"crossing_date":null,"required_additional_budget":-5610.390903709,"mf_from_current_month":8000},"zadig-et-voltaire":{"am":"Théo","budget_type":"open","is_capped":false,"monthly_signed":[null,null,null,null,null,null,null,null,null,null,null,null],"is_new_client":false,"signed_26":null,"open_budget":null,"remaining_budget":null,"actual_26":17779,"proj_26":7733,"actual_25":29881,"actual_25_ytd":13009,"monthly_26":[2655,1294,1432,1172,1368,1545,2434,2288,3591,32,2186,4116],"current_month_forecast":1399,"monthly_25":[0,0,0,149,1662,1642,2332,3547,4350,4282,4781,7136],"media_fees_ytd":3000,"media_fees_ly":4000,"media_fees_q":3000,"monthly_mf_26":[0,0,0,0,0,0,0,0,3000,0,0,0],"monthly_mf_25":[0,0,0,0,0,0,0,1000,3000,2000,2000,1500],"weekly_revenue":[386,509,423,493],"crossing_date":null,"required_additional_budget":null,"mf_from_current_month":null},"zoomalia":{"am":"Eloïse","budget_type":"open","is_capped":false,"monthly_signed":[null,null,null,null,null,null,null,null,null,null,null,null],"is_new_client":false,"signed_26":null,"open_budget":null,"remaining_budget":null,"actual_26":42488,"proj_26":23927,"actual_25":91311,"actual_25_ytd":62688,"monthly_26":[4431,4089,4937,5142,5301,5488,5778,5663,1659,6151,6486,7215],"current_month_forecast":4076,"monthly_25":[6310,10855,7456,8463,7453,6293,7016,6520,6714,8047,7774,8410],"media_fees_ytd":0,"media_fees_ly":3000,"media_fees_q":0,"monthly_mf_26":[0,0,0,0,0,0,0,0,0,0,0,0],"monthly_mf_25":[0,3000,0,0,0,0,0,0,0,0,0,0],"weekly_revenue":[1022,997,1159,1241],"crossing_date":null,"required_additional_budget":null,"mf_from_current_month":null},"beauty-success":{"am":"Romain","budget_type":"capped","is_capped":true,"monthly_signed":[null,null,null,null,null,null,null,5144,6721,1716,2331,6634],"is_new_client":false,"signed_26":35000,"open_budget":35000,"remaining_budget":10222,"actual_26":24778,"proj_26":10189,"actual_25":0,"actual_25_ytd":0,"monthly_26":[0,0,0,1673,5110,5759,5795,5967,474,2237,2674,3782],"current_month_forecast":1496,"monthly_25":[0,0,0,0,0,0,0,0,0,0,0,0],"media_fees_ytd":11999,"media_fees_ly":0,"media_fees_q":6666,"monthly_mf_26":[0,0,0,0,2000,3333,3333,3333,0,0,0,0],"monthly_mf_25":[0,0,0,0,0,0,0,0,0,0,0,0],"weekly_revenue":[598,607,479,257],"crossing_date":"2026-12-18","required_additional_budget":2786.900159474,"mf_from_current_month":null},"blablacar":{"am":"Clément","budget_type":"capped","is_capped":true,"monthly_signed":[null,null,null,null,null,null,12611,12427,14337,null,null,null],"is_new_client":true,"signed_26":86000,"open_budget":null,"remaining_budget":0,"actual_26":122747,"proj_26":0,"actual_25":0,"actual_25_ytd":0,"monthly_26":[0,11370,14393,21394,23075,16783,21226,14506,0,0,0,0],"current_month_forecast":0,"monthly_25":[0,0,0,0,0,0,0,0,0,0,0,0],"media_fees_ytd":5000,"media_fees_ly":0,"media_fees_q":0,"monthly_mf_26":[0,0,0,0,5000,0,0,0,0,0,0,0],"monthly_mf_25":[0,0,0,0,0,0,0,0,0,0,0,0],"weekly_revenue":[4420,3733,3337,2126],"crossing_date":"2026-08-24","required_additional_budget":52361.211725091,"mf_from_current_month":2500},"castorama":{"am":"Eloïse","budget_type":"capped","is_capped":true,"monthly_signed":[null,null,null,null,null,null,36251,37698,28929,29695,25178,24979],"is_new_client":false,"signed_26":370000,"open_budget":370000,"remaining_budget":139301,"actual_26":230699,"proj_26":87310,"actual_25":345287,"actual_25_ytd":341374,"monthly_26":[0,29819,48907,31651,29841,21798,33411,29400,5872,25518,23005,23300],"current_month_forecast":15487,"monthly_25":[65861,39184,35940,75709,18040,22435,48996,29060,10062,0,0,0],"media_fees_ytd":10000,"media_fees_ly":15000,"media_fees_q":0,"monthly_mf_26":[0,0,5000,5000,0,0,0,0,0,0,0,0],"monthly_mf_25":[5000,0,0,5000,0,0,5000,0,0,0,0,0],"weekly_revenue":[5600,6324,5862,4751],"crossing_date":null,"required_additional_budget":-53559.296321916,"mf_from_current_month":2500},"galeries-lafayette":{"am":"Eloïse","budget_type":"capped","is_capped":true,"monthly_signed":[null,null,null,null,null,null,13170,10110,10890,12870,16560,30765],"is_new_client":false,"signed_26":null,"open_budget":null,"remaining_budget":null,"actual_26":8000,"proj_26":0,"actual_25":15000,"actual_25_ytd":5000,"monthly_26":[0,0,0,0,0,0,0,0,8000,0,0,0],"current_month_forecast":0,"monthly_25":[0,0,0,0,0,0,0,0,5000,0,5000,5000],"media_fees_ytd":8000,"media_fees_ly":5000,"media_fees_q":8000,"monthly_mf_26":[0,0,0,0,0,0,0,0,8000,0,0,0],"monthly_mf_25":[0,0,0,0,0,0,0,0,5000,0,5000,5000],"weekly_revenue":[2040,2565,2430,1935],"crossing_date":null,"required_additional_budget":-85780,"mf_from_current_month":8000},"kfc":{"am":"Romain","budget_type":"capped","is_capped":true,"monthly_signed":[null,null,null,null,null,null,26706,22681,18174,17787,20078,25156],"is_new_client":false,"signed_26":263447,"open_budget":138000,"remaining_budget":76787,"actual_26":186660,"proj_26":76787,"actual_25":97566,"actual_25_ytd":22693,"monthly_26":[0,28877,27632,28852,10994,31325,25858,25314,7808,16028,24761,28450],"current_month_forecast":7548,"monthly_25":[0,0,0,0,0,0,981,16551,16971,34278,28785,0],"media_fees_ytd":20000,"media_fees_ly":0,"media_fees_q":5000,"monthly_mf_26":[0,0,5000,5000,0,5000,0,0,5000,0,0,0],"monthly_mf_25":[0,0,0,0,0,0,0,0,0,5000,5000,0],"weekly_revenue":[6612,6261,2362,1984],"crossing_date":"2026-12-31","required_additional_budget":84.452153577,"mf_from_current_month":5000},"monoprix":{"am":"Eva","budget_type":"capped","is_capped":true,"monthly_signed":[null,null,null,null,null,null,null,19470,46542,39050,39168,42832],"is_new_client":false,"signed_26":298892,"open_budget":98892,"remaining_budget":174573,"actual_26":124319,"proj_26":105246,"actual_25":53161,"actual_25_ytd":16873,"monthly_26":[0,13487,19940,18841,23092,27414,0,9878,11667,25563,25221,33949],"current_month_forecast":20513,"monthly_25":[0,0,0,0,0,0,0,7302,19105,16335,10419,0],"media_fees_ytd":15000,"media_fees_ly":5000,"media_fees_q":5000,"monthly_mf_26":[0,5000,0,0,0,5000,0,0,5000,0,0,5000],"monthly_mf_25":[0,0,0,0,0,0,0,0,5000,0,0,0],"weekly_revenue":[8,3557,4526,4405],"crossing_date":null,"required_additional_budget":-72785.826026801,"mf_from_current_month":10000},"chaussea":{"am":"Clément","budget_type":"capped","is_capped":true,"monthly_signed":[null,null,null,null,null,null,null,20000,null,null,null,null],"is_new_client":false,"signed_26":120000,"open_budget":null,"remaining_budget":0,"actual_26":127685,"proj_26":0,"actual_25":62127,"actual_25_ytd":0,"monthly_26":[0,0,44622,5798,0,47641,8544,21080,0,0,0,0],"current_month_forecast":0,"monthly_25":[0,0,0,0,0,0,0,0,0,0,46675,15452],"media_fees_ytd":15000,"media_fees_ly":0,"media_fees_q":5000,"monthly_mf_26":[0,0,5000,0,0,5000,0,5000,0,0,0,0],"monthly_mf_25":[0,0,0,0,0,0,0,0,0,0,0,5000],"weekly_revenue":[7871,15489,2274,13],"crossing_date":"2026-08-19","required_additional_budget":10983.602282,"mf_from_current_month":null},"dominos-pizza":{"am":"Romain","budget_type":"capped","is_capped":true,"monthly_signed":[null,null,null,null,null,null,null,6159,5379,3462,null,null],"is_new_client":true,"signed_26":51000,"open_budget":15000,"remaining_budget":4124,"actual_26":46876,"proj_26":4124,"actual_25":0,"actual_25_ytd":0,"monthly_26":[0,0,12103,13212,13471,0,0,6620,1470,1300,0,0],"current_month_forecast":2824,"monthly_25":[0,0,0,0,0,0,0,0,0,0,0,0],"media_fees_ytd":0,"media_fees_ly":0,"media_fees_q":0,"monthly_mf_26":[0,0,0,0,0,0,0,0,0,0,0,0],"monthly_mf_25":[0,0,0,0,0,0,0,0,0,0,0,0],"weekly_revenue":[1483,1431,1241,904],"crossing_date":"2026-10-11","required_additional_budget":15813.779838388,"mf_from_current_month":null},"gemo":{"am":"Eloïse","budget_type":"capped","is_capped":true,"monthly_signed":[null,null,null,null,null,null,null,null,null,null,null,null],"is_new_client":false,"signed_26":null,"open_budget":null,"remaining_budget":null,"actual_26":0,"proj_26":0,"actual_25":59926,"actual_25_ytd":0,"monthly_26":[0,0,0,0,0,0,0,0,0,0,0,0],"current_month_forecast":0,"monthly_25":[0,0,0,0,0,0,0,0,0,0,20987,38939],"media_fees_ytd":0,"media_fees_ly":0,"media_fees_q":0,"monthly_mf_26":[0,0,0,0,0,0,0,0,0,0,0,0],"monthly_mf_25":[0,0,0,0,0,0,0,0,0,0,0,5000],"weekly_revenue":null,"crossing_date":null,"required_additional_budget":null,"mf_from_current_month":null},"krys":{"am":"Clément","budget_type":"capped","is_capped":true,"monthly_signed":[null,null,null,null,null,null,7751,5682,5851,6781,6377,8565],"is_new_client":true,"signed_26":95000,"open_budget":60000,"remaining_budget":22556,"actual_26":72444,"proj_26":22552,"actual_25":0,"actual_25_ytd":0,"monthly_26":[0,0,2350,7010,17222,10576,27206,6220,1860,7732,6569,2495],"current_month_forecast":5756,"monthly_25":[0,0,0,0,0,0,0,0,0,0,0,0],"media_fees_ytd":10000,"media_fees_ly":0,"media_fees_q":5000,"monthly_mf_26":[0,0,0,0,5000,0,5000,0,0,0,0,0],"monthly_mf_25":[0,0,0,0,0,0,0,0,0,0,0,0],"weekly_revenue":[961,1236,2002,1666],"crossing_date":"2026-12-11","required_additional_budget":4650.026689196,"mf_from_current_month":5000},"leon":{"am":"—","budget_type":"open","is_capped":false,"monthly_signed":[null,null,null,null,null,null,null,null,null,null,null,null],"is_new_client":true,"signed_26":null,"open_budget":null,"remaining_budget":null,"actual_26":40493,"proj_26":0,"actual_25":0,"actual_25_ytd":0,"monthly_26":[0,0,14883,15033,10577,0,0,0,0,0,0,0],"current_month_forecast":0,"monthly_25":[0,0,0,0,0,0,0,0,0,0,0,0],"media_fees_ytd":0,"media_fees_ly":0,"media_fees_q":0,"monthly_mf_26":[0,0,0,0,0,0,0,0,0,0,0,0],"monthly_mf_25":[0,0,0,0,0,0,0,0,0,0,0,0],"weekly_revenue":null,"crossing_date":null,"required_additional_budget":null,"mf_from_current_month":null},"aroma-zone":{"am":"Romain","budget_type":"capped","is_capped":true,"monthly_signed":[null,null,null,null,null,null,12415,8000,null,null,null,null],"is_new_client":true,"signed_26":40000,"open_budget":40000,"remaining_budget":4032,"actual_26":35968,"proj_26":3971,"actual_25":0,"actual_25_ytd":0,"monthly_26":[0,0,0,5255,6728,6792,6620,9024,1549,0,0,0],"current_month_forecast":3971,"monthly_25":[0,0,0,0,0,0,0,0,0,0,0,0],"media_fees_ytd":0,"media_fees_ly":0,"media_fees_q":0,"monthly_mf_26":[0,0,0,0,0,0,0,0,0,0,0,0],"monthly_mf_25":[0,0,0,0,0,0,0,0,0,0,0,0],"weekly_revenue":[2373,2059,1497,1169],"crossing_date":"2026-10-01","required_additional_budget":24740.18351546,"mf_from_current_month":null},"hippopotamus":{"am":"Romain","budget_type":"capped","is_capped":true,"monthly_signed":[null,null,null,null,null,null,null,null,null,null,null,null],"is_new_client":true,"signed_26":50000,"open_budget":null,"remaining_budget":0,"actual_26":54690,"proj_26":0,"actual_25":0,"actual_25_ytd":0,"monthly_26":[0,0,0,17203,19453,18034,0,0,0,0,0,0],"current_month_forecast":0,"monthly_25":[0,0,0,0,0,0,0,0,0,0,0,0],"media_fees_ytd":0,"media_fees_ly":0,"media_fees_q":0,"monthly_mf_26":[0,0,0,0,0,0,0,0,0,0,0,0],"monthly_mf_25":[0,0,0,0,0,0,0,0,0,0,0,0],"weekly_revenue":null,"crossing_date":null,"required_additional_budget":null,"mf_from_current_month":null},"histoire-d-or":{"am":"Clément","budget_type":"capped","is_capped":true,"monthly_signed":[null,null,null,null,null,null,null,null,null,null,null,null],"is_new_client":true,"signed_26":15000,"open_budget":null,"remaining_budget":0,"actual_26":15145,"proj_26":0,"actual_25":0,"actual_25_ytd":0,"monthly_26":[0,0,0,0,13228,1917,0,0,0,0,0,0],"current_month_forecast":0,"monthly_25":[0,0,0,0,0,0,0,0,0,0,0,0],"media_fees_ytd":0,"media_fees_ly":0,"media_fees_q":0,"monthly_mf_26":[0,0,0,0,0,0,0,0,0,0,0,0],"monthly_mf_25":[0,0,0,0,0,0,0,0,0,0,0,0],"weekly_revenue":null,"crossing_date":null,"required_additional_budget":null,"mf_from_current_month":null},"citadium":{"am":"Eloïse","budget_type":"capped","is_capped":true,"monthly_signed":[null,null,null,null,null,null,2850,4575,4485,3270,4104,9045],"is_new_client":false,"signed_26":50000,"open_budget":50000,"remaining_budget":36616,"actual_26":13384,"proj_26":18152,"actual_25":37235,"actual_25_ytd":3585,"monthly_26":[0,0,0,0,0,330,4259,4577,4218,2999,4428,8352],"current_month_forecast":2374,"monthly_25":[0,0,0,0,0,0,0,1830,4815,6750,8985,14855],"media_fees_ytd":3000,"media_fees_ly":0,"media_fees_q":3000,"monthly_mf_26":[0,0,0,0,0,0,0,0,3000,0,0,0],"monthly_mf_25":[0,0,0,0,0,0,0,0,0,0,0,3000],"weekly_revenue":[840,780,1080,1035],"crossing_date":null,"required_additional_budget":-19081.303381241,"mf_from_current_month":3000},"nicolas":{"am":"Romain","budget_type":"capped","is_capped":true,"monthly_signed":[null,null,null,null,null,null,6000,5000,5000,null,null,null],"is_new_client":true,"signed_26":22000,"open_budget":22000,"remaining_budget":6088,"actual_26":15912,"proj_26":5919,"actual_25":0,"actual_25_ytd":0,"monthly_26":[0,0,0,0,0,1181,9244,4380,1107,2775,0,0],"current_month_forecast":3144,"monthly_25":[0,0,0,0,0,0,0,0,0,0,0,0],"media_fees_ytd":5000,"media_fees_ly":0,"media_fees_q":5000,"monthly_mf_26":[0,0,0,0,0,0,5000,0,0,0,0,0],"monthly_mf_25":[0,0,0,0,0,0,0,0,0,0,0,0],"weekly_revenue":[897,757,1036,804],"crossing_date":"2026-10-19","required_additional_budget":25639.739879233,"mf_from_current_month":null},"adoptparfums":{"am":"—","budget_type":"open","is_capped":false,"monthly_signed":[null,null,null,null,null,null,null,null,null,null,null,null],"is_new_client":false,"signed_26":null,"open_budget":null,"remaining_budget":null,"actual_26":6,"proj_26":0,"actual_25":0,"actual_25_ytd":0,"monthly_26":[0,0,0,0,0,0,6,0,0,0,0,0],"current_month_forecast":0,"monthly_25":[0,0,0,0,0,0,0,0,0,0,0,0],"media_fees_ytd":0,"media_fees_ly":0,"media_fees_q":0,"monthly_mf_26":[0,0,0,0,0,0,0,0,0,0,0,0],"monthly_mf_25":[0,0,0,0,0,0,0,0,0,0,0,0],"weekly_revenue":null,"crossing_date":null,"required_additional_budget":null,"mf_from_current_month":null},"carrefour-onetime-7":{"am":"—","budget_type":"open","is_capped":false,"monthly_signed":[null,null,null,null,null,null,null,null,null,null,null,null],"is_new_client":false,"signed_26":null,"open_budget":null,"remaining_budget":null,"actual_26":10,"proj_26":0,"actual_25":0,"actual_25_ytd":0,"monthly_26":[0,0,0,0,0,0,0,10,0,0,0,0],"current_month_forecast":0,"monthly_25":[0,0,0,0,0,0,0,0,0,0,0,0],"media_fees_ytd":0,"media_fees_ly":0,"media_fees_q":0,"monthly_mf_26":[0,0,0,0,0,0,0,0,0,0,0,0],"monthly_mf_25":[0,0,0,0,0,0,0,0,0,0,0,0],"weekly_revenue":[10],"crossing_date":null,"required_additional_budget":null,"mf_from_current_month":null},"nocibé":{"am":"—","budget_type":"open","is_capped":false,"monthly_signed":[null,null,null,null,null,null,null,null,null,null,null,null],"is_new_client":false,"signed_26":null,"open_budget":null,"remaining_budget":null,"actual_26":13,"proj_26":0,"actual_25":0,"actual_25_ytd":0,"monthly_26":[0,0,0,0,0,0,0,13,0,0,0,0],"current_month_forecast":0,"monthly_25":[0,0,0,0,0,0,0,0,0,0,0,0],"media_fees_ytd":0,"media_fees_ly":0,"media_fees_q":0,"monthly_mf_26":[0,0,0,0,0,0,0,0,0,0,0,0],"monthly_mf_25":[0,0,0,0,0,0,0,0,0,0,0,0],"weekly_revenue":[13],"crossing_date":null,"required_additional_budget":null,"mf_from_current_month":null},"photoweb":{"am":"—","budget_type":"open","is_capped":false,"monthly_signed":[null,null,null,null,null,null,null,null,null,null,null,null],"is_new_client":true,"signed_26":null,"open_budget":null,"remaining_budget":null,"actual_26":3558,"proj_26":20490,"actual_25":0,"actual_25_ytd":0,"monthly_26":[0,0,0,0,0,0,0,2536,1022,3735,5626,8844],"current_month_forecast":2285,"monthly_25":[0,0,0,0,0,0,0,0,0,0,0,0],"media_fees_ytd":0,"media_fees_ly":0,"media_fees_q":0,"monthly_mf_26":[0,0,0,0,0,0,0,0,0,0,0,0],"monthly_mf_25":[0,0,0,0,0,0,0,0,0,0,0,0],"weekly_revenue":[774,703,735,774],"crossing_date":null,"required_additional_budget":null,"mf_from_current_month":null}}};
 
 fetch('./data.json').then(r=>r.json()).then(renderAll).catch(()=>renderAll(INLINE_DATA));
 </script>
