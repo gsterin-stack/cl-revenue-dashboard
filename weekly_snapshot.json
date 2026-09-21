@@ -1,0 +1,53 @@
+{
+  "generated_at": "2026-09-21T08:00:00+02:00",
+  "week": 39,
+  "wins": [
+    {
+      "merchant": "Kiabi",
+      "amount": 50000,
+      "am": "Eloïse",
+      "note": "upsell, EOY acquisition",
+      "date": "2026-09-17",
+      "confirmed": true,
+      "source_note": "HubSpot Closed Won (was €253K pipelined, closed at €50K)"
+    },
+    {
+      "merchant": "Decathlon",
+      "amount": 28500,
+      "am": "Eloïse",
+      "note": "Q4",
+      "date": "2026-09-18",
+      "confirmed": false,
+      "source_note": "HubSpot deal (€27.4K) still shows \"Negotiation ongoing\", not Closed Won yet"
+    }
+  ],
+  "opportunities": {
+    "am": {
+      "total": 1122187,
+      "lines": [
+        { "deal": "Uber – Renewal Q4 2026", "am": "Eva", "amount": 400000, "note": "moved up from Proposal sent" },
+        { "deal": "Boulanger – Renewal – Q4 2026", "am": "Eloïse", "amount": 265000 },
+        { "deal": "Uber Eats – Renewal Q4 2026", "am": "Eva", "amount": 200000 },
+        { "deal": "Nocibé – Q4 2026-Q3 2027", "am": "Romain", "amount": 118750, "note": "€475K ÷ 4 quarters" },
+        { "deal": "Blablacar – Renew – Q4 2026", "am": "Clément", "amount": 85000 }
+      ],
+      "more_count": 3,
+      "more_amount": 53437,
+      "more_note": "Decathlon Q4 2026, Celio Réactivation Q4 2026, Vertbaudet Optin S2 2026 — last one prorated",
+      "excluded_note": "BUT S2 Relaunch €181K, Etam €28.5K, Celio Acquisition €43K, Showroomprivé €27K, Veepee €23K, Vertbaudet Renewal €34K",
+      "won_note": "Kiabi €50K (see Wins above)"
+    },
+    "sales": {
+      "total": 585000,
+      "lines": [
+        { "deal": "Intermarché – Sales", "am": "Cyprien", "amount": 250000 },
+        { "deal": "Auchan Retail – Sales", "am": "Cyprien", "amount": 175000 },
+        { "deal": "Conforama – Sales", "am": "Benjamin A.", "amount": 60000 },
+        { "deal": "E.Leclerc – Sales", "am": "Cyprien", "amount": 50000 },
+        { "deal": "Deliveroo – Sales", "am": "Cyprien", "amount": 50000 }
+      ],
+      "more_note": "amount not yet set (Au Bureau, Burger King, Picard)"
+    }
+  },
+  "opportunities_note": "AM opportunities: HubSpot CL AM Opportunity Pipeline, Negotiation ongoing stage only, prorated by quarters-spanned when the deal title covers more than one quarter. Sales: CL Sales Pipeline, all open stages, full amount (titles carry no period)."
+}
