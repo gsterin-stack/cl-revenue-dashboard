@@ -393,17 +393,10 @@
       <div class="card">
         <div class="card-title-row">
           <span class="card-title" style="margin-bottom:0"><span class="em">📈 WoW variation — EOQ projected landing</span></span>
-        </div>
-        <div class="wow-card" id="weekly-wow-wrap"></div>
-        <div class="annot" id="weekly-wow-note"></div>
-      </div>
-
-      <div class="card">
-        <div class="card-title-row">
-          <span class="card-title" style="margin-bottom:0"><span class="em">🔍 What moved, month by month</span></span>
           <span class="card-note">closed-month anomaly check: each merchant's month vs its own neighboring months</span>
         </div>
-        <div class="win-list" id="weekly-anomaly-wrap"></div>
+        <div class="wow-card" id="weekly-wow-wrap"></div>
+        <div class="win-list" id="weekly-anomaly-wrap" style="margin-top:14px"></div>
         <div class="annot">For a <i>closed</i> month, a merchant's actual shouldn't move much once the month is over — so any that's far from its own neighboring-month average, or well above its own signed budget for that month, gets flagged. Self-contained (only needs this week's data, no history) — doesn't apply to the current open month, where growth is expected.</div>
       </div>
     </div>
@@ -2600,10 +2593,8 @@ function renderWeeklyWins(snapshot) {
 
 function renderWeeklyWoW(cur, prev) {
   const wrap = document.getElementById('weekly-wow-wrap');
-  const note = document.getElementById('weekly-wow-note');
   if (!cur || !prev) {
     wrap.innerHTML = `<div style="color:var(--muted)">Not enough history yet — need at least 2 weekly snapshots to show a WoW variation.</div>`;
-    note.textContent = '';
     return;
   }
   const delta = cur.total - prev.total;
@@ -2614,12 +2605,7 @@ function renderWeeklyWoW(cur, prev) {
       <div class="wow-value ${cls}">${sign}${fmtK1(Math.abs(delta))}</div>
       <div class="wow-label">vs last Monday</div>
       <div class="wow-from-to">${fmtK1(prev.total)} → ${fmtK1(cur.total)}</div>
-    </div>
-    <div class="wow-source">
-      Not the signed book — this is the movement of the <b>end-of-quarter projected landing</b> itself, read straight from the weekly snapshot history below (W${prev.week} total ${fmtK1(prev.total)} → W${cur.week} total ${fmtK1(cur.total)}). <a href="#quarter-table-wrap" style="color:var(--green);text-decoration:none;font-weight:600">↓ see the full weekly history</a>
     </div>`;
-  const winsTotal = ((WEEKLY_SNAPSHOT && WEEKLY_SNAPSHOT.wins) || []).reduce((s,w)=>s+(w.amount||0),0);
-  note.innerHTML = `Known wins this week total ≈${fmtK1(winsTotal)}. ${Math.abs(winsTotal - delta) > 15000 ? 'That doesn\'t fully explain the WoW move — see "What moved, month by month" below for the closest live signal.' : 'That roughly explains this week\'s move.'}`;
 }
 
 // For a CLOSED month, a merchant's actual shouldn't move much — flag whoever is far from
