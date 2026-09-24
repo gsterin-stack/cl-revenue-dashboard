@@ -1678,17 +1678,22 @@ function renderMonthlyTable(ca, ytdMonths, am) {
         </tr>`);
 
   // ── Expected + HubSpot Pipeline (weighted) — même bloc que le tableau Quarterly ──
+  // Mois clos + mois en cours masqués (on s'appuie sur Actual+Proj) ; le Total = atterrissage
+  // annuel = A+P jusqu'au mois en cours + Expected+Pipeline sur les mois à venir.
   const pipeM      = pipelineMonthly(am).monthly;
-  const expM       = (ca.EXPECTED || new Array(12).fill(0)).map((v,i) => (v || 0) + (pipeM[i] || 0));
+  const expM       = (ca.EXPECTED || new Array(12).fill(0)).map((v,i) => i < ytdMonths ? null : (v || 0) + (pipeM[i] || 0));
   const pipeTotal  = pipeM.reduce((a,b)=>a+b,0);
-  const expPipeRow = [...expM, expM.reduce((a,b)=>a+b,0)];
+  const landing    = expM.reduce((a,v,i) => a + (v == null ? totRow[i] : v), 0);
+  const expPipeRow = [...expM, landing];
   rows.push(`
         <tr style="border-top:1px solid var(--border)">
           <td class="row-label" style="color:#BA8CF5;font-weight:700" title="Expected (Signed+Open) + HubSpot pipeline weighted">Expected + Pipeline</td>
           ${expPipeRow.map((v,i) => {
             const sep = i===12 ? 'border-left:1px solid var(--border);' : '';
+            if (v == null) return `<td style="text-align:right;${sep}color:var(--muted)" title="Closed / current month — see Total A+P">—</td>`;
             const pipe = i<12 ? (pipeM[i] || 0) : pipeTotal;
-            const tip = pipe>0 ? ` title="Expected ${fmt(v-pipe)} + Pipeline ${fmt(pipe)}"` : '';
+            const tip = i===12 ? ` title="Landing: A+P through ${MONTHS[ytdMonths-1]} + Expected+Pipeline after (incl. ${fmt(pipe)} pipeline)"`
+                      : pipe>0 ? ` title="Expected ${fmt(v-pipe)} + Pipeline ${fmt(pipe)}"` : '';
             return `<td${tip} style="text-align:right;${sep}color:${v>0?'#BA8CF5':'var(--muted)'};font-weight:700">${v>0?fmt(v):'—'}</td>`;
           }).join('')}
         </tr>`);
@@ -1871,15 +1876,23 @@ function renderQSection(q, ca, am) {
         </tr>`);
 
   // ── Expected + HubSpot Pipeline (weighted) — même lecture que Total A+P, cf. brique violet clair du chart ──
-  const expPipeQ   = quarters.map((k,i) => qExpected[i] + qPipe[i]);
-  const expPipeRow = [...expPipeQ, expPipeQ.reduce((a,b)=>a+b,0)];
+  // Trimestres entièrement clos/en cours masqués ; un trimestre à cheval = A+P jusqu'au mois en
+  // cours + Expected+Pipeline après. Total = atterrissage annuel sur la même règle.
+  const ytdM       = (GDATA && GDATA.summary.ytd_months) || 0;
+  const blended    = new Array(12).fill(0).map((_,i) => i < ytdM
+    ? (ca.R26A[i]||0) + (ca.R26P[i]||0)
+    : (expectedArr[i]||0) + (pipeM[i]||0));
+  const expPipeQ   = quarters.map(k => Q_MONTH_IDX[k].every(i => i < ytdM) ? null : sumIdx(blended, Q_MONTH_IDX[k]));
+  const expPipeRow = [...expPipeQ, blended.reduce((a,b)=>a+b,0)];
   rows.push(`
         <tr style="border-top:1px solid var(--border)">
           <td class="row-label" style="color:#BA8CF5;font-weight:700" title="Expected (Signed+Open) + HubSpot pipeline weighted">Expected + Pipeline</td>
           ${expPipeRow.map((v,i) => {
             const sep = i===4?'border-left:1px solid var(--border);':'';
+            if (v == null) return `<td style="text-align:right;${sep}color:var(--muted)" title="Closed / current quarter — see Total A+P">—</td>`;
             const pipe = i<4 ? qPipe[i] : qPipe.reduce((a,b)=>a+b,0);
-            const tip = pipe>0 ? ` title="Expected ${fmt(v-pipe)} + Pipeline ${fmt(pipe)}"` : '';
+            const tip = i===4 ? ` title="Landing: A+P through ${MONTHS[ytdM-1]} + Expected+Pipeline after (incl. ${fmt(pipe)} pipeline)"`
+                      : pipe>0 ? ` title="Expected + A+P mix incl. Pipeline ${fmt(pipe)}"` : '';
             return `<td${tip} style="text-align:right;${sep}color:${v>0?'#BA8CF5':'var(--muted)'};font-weight:700">${v>0?fmt(v):'—'}</td>`;
           }).join('')}
         </tr>`);
