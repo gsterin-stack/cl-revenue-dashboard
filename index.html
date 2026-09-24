@@ -3031,16 +3031,18 @@ function renderWeeklyTab() {
     <div class="table-wrap" style="margin-top:14px">${wkQuarterTable(vCur, vPrevCur)}</div>`;
 
   // Wins of the week — celebrated on their own card
-  const wins = (WEEKLY_SNAPSHOT && WEEKLY_SNAPSHOT.week === cur.week) ? (WEEKLY_SNAPSHOT.wins || []) : [];
+  // Wins: deals that entered Closed won (HubSpot, CL roster) during the week before this Monday — stored in the
+  // snapshot by n8n. Older snapshots without it fall back to the manual weekly_snapshot.json.
+  const wins = Array.isArray(cur.wins) ? cur.wins : (WEEKLY_SNAPSHOT && WEEKLY_SNAPSHOT.week === cur.week) ? (WEEKLY_SNAPSHOT.wins || []) : [];
   const winTotal = wins.reduce((s, w) => s + (w.amount || 0), 0);
   el('wk-wins').innerHTML = `
-    <div class="wk-row-head"><span class="wk-label">🏆 Wins signed this week</span>${wins.length ? `<span class="wk-pill pos">+${fmtMK(winTotal)}</span>` : ''}</div>
+    <div class="wk-row-head"><span class="wk-label">🏆 Wins of the week${cur.wins_window ? ` · closed won ${new Date(cur.wins_window[0]).toLocaleDateString('en-GB', { day:'2-digit', month:'short' })} – ${new Date(new Date(cur.wins_window[1]).getTime() - 864e5).toLocaleDateString('en-GB', { day:'2-digit', month:'short' })}` : ''}</span>${wins.length ? `<span class="wk-pill pos">+${fmtMK(winTotal)}</span>` : ''}</div>
     ${wins.length ? wins.map(w => `
       <div class="wk-win">
         <div class="wk-win-amt">+${fmtMK(w.amount)}</div>
-        <div style="flex:1;min-width:0"><div style="font-weight:600">${w.merchant}${w.note ? ` <span style="color:var(--text2);font-weight:400">— ${w.note}</span>` : ''}</div>
-          <div class="wk-mini">${w.am || ''}${w.date ? ` · signed ${w.date}` : ''}${w.confirmed ? '' : ' · <span style="color:var(--orange)">to confirm in HubSpot</span>'}</div></div>
-      </div>`).join('') : `<div class="wk-mini" style="padding:6px 0">No CL-team win logged in #b2b-wins this week.</div>`}`;
+        <div style="flex:1;min-width:0"><div style="font-weight:600">${w.id ? `<a href="${HUBSPOT_DEAL_URL}${w.id}" target="_blank" rel="noopener" style="color:var(--text);text-decoration:none">${w.merchant}</a>` : w.merchant}${w.deal || w.note ? ` <span style="color:var(--text2);font-weight:400">— ${w.deal || w.note}</span>` : ''}</div>
+          <div class="wk-mini">${w.am || ''}${w.pipeline ? ` · ${w.pipeline}` : ''}${w.date ? ` · won ${new Date(w.date).toLocaleDateString('en-GB', { day:'2-digit', month:'short' })}` : ''}${w.confirmed ? '' : ' · <span style="color:var(--orange)">to confirm in HubSpot</span>'}</div></div>
+      </div>`).join('') : `<div class="wk-mini" style="padding:6px 0">No CL deal moved to Closed won in HubSpot last week.</div>`}`;
 
   // WoW — one line for the current quarter, one for the next quarter
   const line = (label, delta, detail, onclick) => `
