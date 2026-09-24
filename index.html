@@ -288,13 +288,14 @@
     <div class="card chart-full">
       <div class="section-header">
         <span class="section-title">Monthly Card-Linked Revenue</span>
-        <span class="section-sub">2025 · 2026 actual + projection vs OKR — click Actual/Proj for pace vs plan, Expected for Win/Loss vs LY</span>
+        <span class="section-sub">2025 · 2026 actual + projection vs OKR — click Actual/Proj for pace vs plan, Expected for Win/Loss vs LY, Pipeline for HubSpot deals</span>
       </div>
       <div class="chart-legend">
         <div class="legend-item"><div class="legend-dot" style="background:rgba(180,180,180,.6)"></div>2025</div>
         <div class="legend-item"><div class="legend-dot" style="background:rgba(100,231,106,.92)"></div>2026 Actual</div>
         <div class="legend-item"><div class="legend-dot" style="background:rgba(100,231,106,.22);border:1px solid rgba(100,231,106,.4)"></div>2026 Proj.</div>
         <div class="legend-item"><div class="legend-dot" style="background:rgba(146,84,227,.55);border:1px solid rgba(146,84,227,.9)"></div>Expected (Signed+Open)</div>
+        <div class="legend-item"><div class="legend-dot" style="background:rgba(146,84,227,.18);border:1px dashed rgba(186,140,245,.8)"></div>HubSpot Pipeline (weighted)</div>
         <div class="legend-item" id="okr-legend-item"><div class="legend-line"></div>Monthly OKR</div>
       </div>
       <canvas id="main-chart"></canvas>
@@ -306,7 +307,7 @@
     </div>
 
     <div class="card">
-      <div class="card-title">Quarterly Performance <span style="text-transform:none;font-weight:400;letter-spacing:0;color:var(--muted);font-size:10px">— click Actual/Proj for pace vs plan, Expected for Win/Loss vs LY</span></div>
+      <div class="card-title">Quarterly Performance <span style="text-transform:none;font-weight:400;letter-spacing:0;color:var(--muted);font-size:10px">— click Actual/Proj for pace vs plan, Expected for Win/Loss vs LY, Pipeline (light violet) for HubSpot deals</span></div>
       <div class="q-chart-wrap"><canvas id="q-chart"></canvas></div>
       <div class="section-sep"></div>
       <div class="table-wrap" id="q-table-wrap"></div>
@@ -418,6 +419,7 @@
           <div class="legend-item"><div class="legend-dot" style="background:rgba(100,231,106,.92)"></div>2026 Actual</div>
           <div class="legend-item"><div class="legend-dot" style="background:rgba(30,90,40,.9);border:1px solid rgba(100,231,106,.5)"></div>2026 Proj.</div>
           <div class="legend-item"><div class="legend-dot" style="background:rgba(146,84,227,.85)"></div>Expected (Signed+Open)</div>
+          <div class="legend-item"><div class="legend-dot" style="background:rgba(146,84,227,.18);border:1px dashed rgba(186,140,245,.8)"></div>HubSpot Pipeline (weighted)</div>
           <div class="legend-item"><div class="legend-line"></div>Monthly OKR</div>
         </div>
         <div class="chart-wrap"><canvas id="weekly-month-chart"></canvas></div>
@@ -566,6 +568,20 @@
   </div>
 </div>
 
+<!-- ═══ HUBSPOT PIPELINE (WEIGHTED) MODAL — Monthly chart, stacked above Expected ═══ -->
+<div class="modal-overlay" id="pipe-modal-overlay" onclick="if(event.target===this)closePipelineModal()">
+  <div class="modal" style="width:min(1080px,96vw)">
+    <div class="modal-header">
+      <div>
+        <div class="modal-title" id="pipe-modal-title">—</div>
+        <div class="modal-sub" id="pipe-modal-sub"></div>
+      </div>
+      <button class="modal-close" onclick="closePipelineModal()">✕</button>
+    </div>
+    <div id="pipe-modal-body"></div>
+  </div>
+</div>
+
 <!-- ═══ NEW CLIENTS MODAL ═══ -->
 <div class="modal-overlay" id="nc-modal-overlay" onclick="if(event.target===this)closeNewClientsModal()">
   <div class="modal" style="width:min(640px,96vw)">
@@ -603,6 +619,7 @@ let activeMerchantsAM = 'all';
 let activeGlobalAM = 'all';
 let modalChart = null;
 let mainChart  = null;
+let PIPELINE   = null;   // hubspot_pipeline.json (raw open deals), cf. pipelineMonthly()
 let qChart     = null;
 let tierChart  = null;
 let sortCol  = 'signed';
@@ -1049,7 +1066,8 @@ function scalesXY(stacked=false) {
 function stackAtEvent(evt, chart) {
   const pts = chart.getElementsAtEventForMode(evt, 'nearest', {intersect:true}, true);
   if (!pts.length) return null;
-  return { index: pts[0].index, stack: chart.data.datasets[pts[0].datasetIndex].stack || null };
+  const ds = chart.data.datasets[pts[0].datasetIndex];
+  return { index: pts[0].index, stack: ds.stack || null, id: ds.id || null };
 }
 
 /* ── Tab switching ── */
@@ -1068,7 +1086,14 @@ function renderAll(data) {
   renderGlobalSections(data, activeGlobalAM);
   try { renderMerchantTable('merchants-table-wrap', data.merchants, 'all'); } catch(e) { console.error('renderMerchantTable',e); }
   try { renderAMView(data.merchants, data.summary); } catch(e) { console.error('renderAMView',e); }
-  fetch('./quarter_history.json')
+  fetch('./hubspot_pipeline.json')
+    .then(r => r.ok ? r.json() : null)
+    .catch(() => null)
+    .then(pipe => {
+      PIPELINE = pipe;
+      if (pipe) renderGlobalSections(GDATA, activeGlobalAM);
+    })
+    .then(() => fetch('./quarter_history.json'))
     .then(r => r.ok ? r.json() : [])
     .catch(() => [])
     .then(history => {
@@ -1248,6 +1273,7 @@ function renderKPIs(s) {
 /* ── Main chart ── */
 function renderMainChart(ca, am) {
   if (mainChart) { mainChart.destroy(); mainChart = null; }
+  const pipe = pipelineMonthly(am);
   // L'OKR n'a de sens qu'au niveau du book complet (aucune cible mensuelle par AM) —
   // masqué dès qu'un AM précis est sélectionné.
   const showOkr = am === 'all';
@@ -1262,6 +1288,8 @@ function renderMainChart(ca, am) {
         borderColor:'rgba(100,231,106,.35)',borderWidth:1},
       {label:'Expected (Signed+Open)', data:ca.EXPECTED, backgroundColor:'rgba(146,84,227,.55)',
         stack:'sExp', borderRadius:2, borderColor:'rgba(146,84,227,.9)', borderWidth:1},
+      {id:'pipe', label:'Pipeline (weighted)', data:pipe.monthly, backgroundColor:'rgba(146,84,227,.18)',
+        stack:'sExp', borderRadius:2, borderColor:'rgba(186,140,245,.8)', borderWidth:1, borderDash:[3,3]},
       ...(showOkr ? [{label:'OKR', data:ca.OKR, type:'line', borderColor:'#E4FA62', borderDash:[5,4],
         pointRadius:0, borderWidth:1.5, tension:0, fill:false, order:-1}] : []),
     ]},
@@ -1271,7 +1299,8 @@ function renderMainChart(ca, am) {
       onClick:(evt, elements, chart) => {
         const hit = stackAtEvent(evt, chart);
         if (!hit) return;
-        if (hit.stack === 'sExp') openMonthExpectedModal(hit.index);
+        if (hit.id === 'pipe') openPipelineModal([hit.index]);
+        else if (hit.stack === 'sExp') openMonthExpectedModal(hit.index);
         else if (hit.stack === 's26') openMonthDrilldownModal(hit.index);
         // 2025 (stack 's25') and the OKR line aren't clickable — no vignette for those.
       },
@@ -1285,6 +1314,152 @@ function renderMainChart(ca, am) {
           callback:v=>Math.abs(v)>=1e3?'€'+Math.round(v/1e3)+'K':'€'+Math.round(v)} }
       }}
   });
+}
+
+/* ── HubSpot pipeline (weighted) — brique violet clair au-dessus d'Expected, mois à venir uniquement.
+   Source : hubspot_pipeline.json (deals bruts). Règles :
+   - pondération par stade (PIPE_RULES) ;
+   - montant réparti à parts égales sur les mois couverts par la période du titre
+     (Q4 2026 → /3, S2 2026 → /6, "Q4 2026-Q3 2027" → /12, "S127" = S1 2027) ;
+   - sans période lisible dans le titre → trimestre du mois prochain (PIPE_DEFAULT_NOTE) ;
+   - seuls les mois > mois en cours de l'année affichée reçoivent une part ;
+   - exclus (listés en bas de la modale) : période déjà entamée (démarre avant le trimestre du
+     mois prochain, ex. "S2 2026" vu en septembre), marchand en budget Open dans data.json
+     (déjà dans Expected → double comptage ; à passer en capped d'abord, ex. Sephora), période
+     hors horizon 2026 (ex. "S127") ;
+   - deals des 6 owners CL uniquement ; filtre AM du Global tab appliqué sur l'owner. ── */
+const PIPE_RULES = {
+  sales: { label:'Sales', stages:{ 'Commit':0.75, 'Negotiation':0.5 } },
+  am:    { label:'AM',    stages:{ 'Negotiation ongoing':0.5 } },
+};
+const PIPE_CL_OWNERS = ['472947881','76992305','1227580661','96209869','91941033','95067911'];
+const PIPE_YEAR = 2026;
+const PIPE_DEFAULT_NOTE = 'no period in deal name — spread over the next quarter';
+const HUBSPOT_DEAL_URL = 'https://app.hubspot.com/contacts/4965379/record/0-3/';
+
+function parseDealPeriod(name, fallbackStartIdx) {
+  // tokens Q1-4 / S1-2 / H1-2, année optionnelle ("Q4 2026", "Q4 26", "S127", "S2") — année absente = PIPE_YEAR
+  const re = /\b([QSH])([1-4])\s?(?:'|20)?(\d{2})?(?![\d])/gi;
+  const spans = [];
+  let t;
+  while ((t = re.exec(name))) {
+    const kind = t[1].toUpperCase(), n = +t[2];
+    if (kind !== 'Q' && n > 2) continue;
+    const year = t[3] ? 2000 + +t[3] : PIPE_YEAR;
+    const len = kind === 'Q' ? 3 : 6;
+    const start = year*12 + (n-1)*len;
+    spans.push([start, start + len - 1]);
+  }
+  if (!spans.length) {
+    const qStart = Math.floor(fallbackStartIdx/3)*3;
+    const start = PIPE_YEAR*12 + qStart;
+    return { start, end: start + 2, months: 3, fromTitle: false };
+  }
+  const start = Math.min(...spans.map(s => s[0])), end = Math.max(...spans.map(s => s[1]));
+  return { start, end, months: end - start + 1, fromTitle: true };
+}
+function periodLabel(p) {
+  const lbl = abs => MONTHS[abs % 12] + ' ' + String(Math.floor(abs/12)).slice(2);
+  return `${lbl(p.start)} → ${lbl(p.end)}`;
+}
+
+function merchantSlug(client) {
+  return client.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim().replace(/\s+/g,'-');
+}
+function pipelineMonthly(am) {
+  const monthly = new Array(12).fill(0);
+  const deals = [], excluded = [];
+  if (!PIPELINE || !Array.isArray(PIPELINE.deals) || !GDATA) return { monthly, deals, excluded };
+  const firstFutureIdx = GDATA.summary.ytd_months || 0;   // mois en cours = ytd_months-1 → on démarre au suivant
+  const horizonQStart = PIPE_YEAR*12 + Math.floor(firstFutureIdx/3)*3;   // 1er mois du trimestre du mois prochain
+  for (const d of PIPELINE.deals) {
+    const rule = PIPE_RULES[d.pipeline];
+    const weight = rule && rule.stages[d.stage];
+    if (!weight || !PIPE_CL_OWNERS.includes(String(d.owner_id))) continue;
+    if (am !== 'all' && d.owner !== am) continue;
+    const client = d.name.split(' - ')[0].trim();
+    const period = parseDealPeriod(d.name, Math.min(firstFutureIdx, 11));
+    const weighted = (d.amount || 0) * weight;
+    const base = { ...d, source: rule.label, weight, weighted, period, client };
+    const merchant = GDATA.merchants[merchantSlug(client)];
+    if (merchant && merchant.is_capped === false) { excluded.push({ ...base, reason:'Open budget — already in Expected, switch to capped first' }); continue; }
+    if (period.start < horizonQStart) { excluded.push({ ...base, reason:'period already started' }); continue; }
+    const perMonth = weighted / period.months;
+    const byMonth = new Array(12).fill(0);
+    for (let abs = period.start; abs <= period.end; abs++) {
+      const y = Math.floor(abs/12), i = abs % 12;
+      if (y === PIPE_YEAR && i >= firstFutureIdx) { byMonth[i] = perMonth; monthly[i] += perMonth; }
+    }
+    if (!byMonth.some(v => v > 0)) { excluded.push({ ...base, reason:`outside ${PIPE_YEAR}` }); continue; }
+    deals.push({ ...base, perMonth, byMonth });
+  }
+  return { monthly, deals, excluded };
+}
+const sumIdx = (arr, idxs) => idxs.reduce((a,i) => a + (arr[i]||0), 0);
+
+/* idxs = mois (0-11) couverts par la barre cliquée : [i] pour le Monthly, 3 mois pour Quarterly/Weekly.
+   expectedFor = Expected du même périmètre (pour la tuile Expected + Pipeline). */
+function openPipelineModal(idxs, periodName, expectedFor) {
+  if (!Array.isArray(idxs)) idxs = [idxs];
+  const am = periodName && periodName.am !== undefined ? periodName.am : activeGlobalAM;
+  const label = (periodName && periodName.label) || (idxs.length === 1 ? MONTHS[idxs[0]] : `${MONTHS[idxs[0]]}–${MONTHS[idxs[idxs.length-1]]}`);
+  const { monthly, deals, excluded } = pipelineMonthly(am);
+  const cnt = d => sumIdx(d.byMonth, idxs);
+  const inMonth = deals.filter(d => cnt(d) > 0).sort((a,b) => cnt(b) - cnt(a));
+  const amSuffix = am === 'all' ? '' : ` — ${am}`;
+  const sum = (list, f) => list.reduce((a,d) => a + f(d), 0);
+  const bySrc = src => inMonth.filter(d => d.source === src);
+  const expected = expectedFor != null ? expectedFor : (GDATA ? sumIdx(deriveChartArraysForAM(filterMerchantsByAM(GDATA.merchants, am), am, GDATA.summary.ytd_months, GDATA.chart_arrays).EXPECTED, idxs) : 0);
+  const total = sumIdx(monthly, idxs);
+    const rules = Object.values(PIPE_RULES).map(r => `${r.label}: ${Object.entries(r.stages).map(([k,v]) => `${k} ${Math.round(v*100)}%`).join(' / ')}`).join(' · ');
+
+  document.getElementById('pipe-modal-title').textContent = `${label} ${PIPE_YEAR} — HubSpot Pipeline (weighted)${amSuffix}`;
+  document.getElementById('pipe-modal-sub').textContent =
+    `${inMonth.length} open deals · ${rules} · amount split evenly over the months of the period in the deal name`
+    + (PIPELINE && PIPELINE.generated_at ? ` · HubSpot pull ${PIPELINE.generated_at.slice(0,10)}` : '');
+
+  const tile = (label, val, sub, color) => `
+    <div style="background:#111;border:1px solid var(--border);border-radius:8px;padding:10px 12px">
+      <div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:var(--text2)">${label}</div>
+      <div style="font-size:20px;font-weight:700;margin-top:4px;color:${color||'var(--text)'}">${val}</div>
+      <div style="font-size:11px;color:var(--muted);margin-top:2px">${sub}</div>
+    </div>`;
+  const th = (l, align='right') => `<th style="text-align:${align};padding:6px 8px;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.4px;color:var(--text2);border-bottom:1px solid var(--border)">${l}</th>`;
+  const table = (list, title) => list.length ? `
+    <div style="margin-bottom:18px">
+      <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:#BA8CF5;margin-bottom:6px">${title} — ${fmtK1(sum(list, cnt))} counted in ${label}</div>
+      <table style="width:100%;border-collapse:collapse;font-size:12px">
+        <thead><tr>${th('Client','left')}${th('Stage','left')}${th('Period','left')}${th('Total amount')}${th('Weight')}${th('Weighted total')}${th('Counted in '+label)}</tr></thead>
+        <tbody>${list.map(d => `
+          <tr style="border-bottom:1px solid #161616">
+            <td style="padding:8px"><a href="${HUBSPOT_DEAL_URL}${d.id}" target="_blank" rel="noopener" style="color:var(--text);text-decoration:none;font-weight:500">${d.client}</a> <span class="am-pill" style="margin-left:6px">${d.owner||'—'}</span>
+              <div style="font-size:10px;color:var(--muted);margin-top:2px">${d.name}</div></td>
+            <td style="padding:8px;color:var(--text2)">${d.stage}</td>
+            <td style="padding:8px;color:var(--text2)">${periodLabel(d.period)} <span style="color:var(--muted)">(÷${d.period.months})</span>${d.period.fromTitle ? '' : `<div style="font-size:10px;color:var(--yellow);margin-top:2px" title="${PIPE_DEFAULT_NOTE}">⚠ default period</div>`}</td>
+            <td style="text-align:right;padding:8px;font-variant-numeric:tabular-nums">${fmtBudget(d.amount)}</td>
+            <td style="text-align:right;padding:8px;color:var(--text2)">${Math.round(d.weight*100)}%</td>
+            <td style="text-align:right;padding:8px;font-variant-numeric:tabular-nums;color:var(--text2)">${fmtK1(d.weighted)}</td>
+            <td style="text-align:right;padding:8px;font-variant-numeric:tabular-nums;font-weight:700;color:#BA8CF5">${fmtK1(cnt(d))}</td>
+          </tr>`).join('')}</tbody>
+      </table>
+    </div>` : '';
+
+  document.getElementById('pipe-modal-body').innerHTML = `
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px;margin-bottom:20px">
+      ${tile('Pipeline weighted', fmtK1(total), `${inMonth.length} deals in ${label}`, '#BA8CF5')}
+      ${tile('AM Opportunities', fmtK1(sum(bySrc('AM'), cnt)), `${bySrc('AM').length} deals`)}
+      ${tile('Sales', fmtK1(sum(bySrc('Sales'), cnt)), `${bySrc('Sales').length} deals`)}
+      ${tile('Expected + Pipeline', fmtK1(expected + total), `Expected ${fmtK1(expected)}`)}
+    </div>
+    ${inMonth.length ? '' : `<div style="color:var(--muted);font-size:12px;padding:12px 0">No weighted pipeline for ${label} — only upcoming months carry pipeline.</div>`}
+    ${table(bySrc('AM'), 'CL AM Opportunities')}
+    ${table(bySrc('Sales'), 'CL Sales')}
+    ${excluded.length ? `<div style="font-size:11px;color:var(--muted);border-top:1px solid var(--border);padding-top:10px">Not counted: ${excluded.map(d => `<a href="${HUBSPOT_DEAL_URL}${d.id}" target="_blank" rel="noopener" style="color:var(--text2)">${d.name}</a> (${fmtBudget(d.amount)}, ${periodLabel(d.period)} — ${d.reason})`).join(' · ')}</div>` : ''}`;
+
+  document.getElementById('pipe-modal-overlay').classList.add('open');
+}
+function closePipelineModal() {
+  document.getElementById('pipe-modal-overlay').classList.remove('open');
 }
 
 /* ── Month drilldown modal — pace vs plan par merchant pour le mois cliqué ── */
@@ -1463,17 +1638,6 @@ function renderMonthlyTable(ca, ytdMonths, am) {
             return `<td style="text-align:right;${sep}color:${v>0?'var(--green)':'var(--muted)'}">${v>0?fmt(v):'—'}</td>`;
           }).join('')}
         </tr>`);
-  if (showOkr) rows.push(`
-        <tr>
-          <td class="row-label" style="color:var(--text2)">vs OKR</td>
-          ${aRow.map((actual,i) => {
-            const sep = i===12 ? 'border-left:1px solid var(--border);' : '';
-            if (!oRow[i] || !actual) return `<td style="text-align:right;${sep}color:var(--muted)">—</td>`;
-            const v = Math.round(actual/oRow[i]*100);
-            const c = v>=90?'var(--green)':v>=70?'var(--yellow)':'var(--red)';
-            return `<td style="text-align:right;${sep}color:${c};font-weight:700">${v}%</td>`;
-          }).join('')}
-        </tr>`);
   rows.push(`
         <tr style="border-top:1px solid var(--border)">
           <td class="row-label" style="color:rgba(100,231,106,.55)">Projection</td>
@@ -1513,6 +1677,44 @@ function renderMonthlyTable(ca, ytdMonths, am) {
           }).join('')}
         </tr>`);
 
+  // ── Expected + HubSpot Pipeline (weighted) — même bloc que le tableau Quarterly ──
+  const pipeM      = pipelineMonthly(am).monthly;
+  const expM       = (ca.EXPECTED || new Array(12).fill(0)).map((v,i) => (v || 0) + (pipeM[i] || 0));
+  const pipeTotal  = pipeM.reduce((a,b)=>a+b,0);
+  const expPipeRow = [...expM, expM.reduce((a,b)=>a+b,0)];
+  rows.push(`
+        <tr style="border-top:1px solid var(--border)">
+          <td class="row-label" style="color:#BA8CF5;font-weight:700" title="Expected (Signed+Open) + HubSpot pipeline weighted">Expected + Pipeline</td>
+          ${expPipeRow.map((v,i) => {
+            const sep = i===12 ? 'border-left:1px solid var(--border);' : '';
+            const pipe = i<12 ? (pipeM[i] || 0) : pipeTotal;
+            const tip = pipe>0 ? ` title="Expected ${fmt(v-pipe)} + Pipeline ${fmt(pipe)}"` : '';
+            return `<td${tip} style="text-align:right;${sep}color:${v>0?'#BA8CF5':'var(--muted)'};font-weight:700">${v>0?fmt(v):'—'}</td>`;
+          }).join('')}
+        </tr>`);
+  if (showOkr) rows.push(`
+        <tr>
+          <td class="row-label" style="color:var(--text2)">vs OKR (Exp+Pipe)</td>
+          ${expPipeRow.map((total,i) => {
+            const sep = i===12 ? 'border-left:1px solid var(--border);' : '';
+            if (!oRow[i] || !total) return `<td style="text-align:right;${sep}color:var(--muted)">—</td>`;
+            const v = Math.round(total/oRow[i]*100);
+            const c = v>=90?'var(--green)':v>=70?'var(--yellow)':'var(--red)';
+            return `<td style="text-align:right;${sep}color:${c};font-weight:700">${v}%</td>`;
+          }).join('')}
+        </tr>`);
+  rows.push(`
+        <tr>
+          <td class="row-label" style="color:var(--text2)">vs 2025 (Exp+Pipe)</td>
+          ${expPipeRow.map((total,i) => {
+            const sep = i===12 ? 'border-left:1px solid var(--border);' : '';
+            if (!r25Row[i] || !total) return `<td style="text-align:right;${sep}color:var(--muted)">—</td>`;
+            const v = Math.round((total/r25Row[i]-1)*100);
+            const c = v>=0?'var(--green)':'var(--red)';
+            return `<td style="text-align:right;${sep}color:${c};font-weight:600">${v>=0?'+':''}${v}%</td>`;
+          }).join('')}
+        </tr>`);
+
   document.getElementById('monthly-table-wrap').innerHTML = `
     <table class="perf-table">
       <thead><tr>
@@ -1543,6 +1745,8 @@ function renderQSection(q, ca, am) {
     expectedArr.slice(6,9).reduce((a,b)=>a+b,0),
     expectedArr.slice(9,12).reduce((a,b)=>a+b,0),
   ];
+  const pipeM = pipelineMonthly(am).monthly;
+  const qPipe = quarters.map(k => sumIdx(pipeM, Q_MONTH_IDX[k]));
 
   // ── Chart ──
   if (qChart) { qChart.destroy(); qChart = null; }
@@ -1553,13 +1757,15 @@ function renderQSection(q, ca, am) {
       {label:'Actual', data:quarters.map(k=>q[k].actual),  backgroundColor:'rgba(100,231,106,.85)', stack:'s26', borderRadius:3},
       {label:'Proj.',  data:quarters.map(k=>q[k].proj),    backgroundColor:'rgba(100,231,106,.28)', stack:'s26', borderRadius:3, borderColor:'rgba(100,231,106,.45)',borderWidth:1},
       {label:'Expected (Signed+Open)', data:qExpected,     backgroundColor:'rgba(146,84,227,.55)',  stack:'sExp', borderRadius:3, borderColor:'rgba(146,84,227,.9)', borderWidth:1},
+      {id:'pipe', label:'Pipeline (weighted)', data:qPipe, backgroundColor:'rgba(146,84,227,.18)', stack:'sExp', borderRadius:3, borderColor:'rgba(186,140,245,.8)', borderWidth:1, borderDash:[3,3]},
       ...(showOkr ? [{label:'OKR', data:quarters.map(k=>q[k].okr), type:'line', borderColor:'#E4FA62', borderDash:[4,3], pointRadius:3, pointBackgroundColor:'#E4FA62', borderWidth:1.5, tension:0, fill:false, order:-1}] : []),
     ]},
     options:{ responsive:true, maintainAspectRatio:false,
       onClick:(evt, elements, chart) => {
         const hit = stackAtEvent(evt, chart);
         if (!hit) return;
-        if (hit.stack === 'sExp') openQuarterModal(quarters[hit.index]);
+        if (hit.id === 'pipe') openPipelineModal(Q_MONTH_IDX[quarters[hit.index]], {label:quarters[hit.index]}, qExpected[hit.index]);
+        else if (hit.stack === 'sExp') openQuarterModal(quarters[hit.index]);
         else if (hit.stack === 's26') openQuarterPaceModal(quarters[hit.index]);
         // 2025 (stack 's25') and the OKR line aren't clickable — no vignette for those.
       },
@@ -1656,6 +1862,42 @@ function renderQSection(q, ca, am) {
         <tr>
           <td class="row-label" style="color:var(--text2)">vs 2025 (A+P)</td>
           ${totRow.map((total,i) => {
+            const sep = i===4?'border-left:1px solid var(--border);':'';
+            if (!a25Row[i] || !total) return `<td style="text-align:right;${sep}color:var(--muted)">—</td>`;
+            const v = Math.round((total/a25Row[i]-1)*100);
+            const c = v>=0?'var(--green)':'var(--red)';
+            return `<td style="text-align:right;${sep}color:${c};font-weight:600">${v>=0?'+':''}${v}%</td>`;
+          }).join('')}
+        </tr>`);
+
+  // ── Expected + HubSpot Pipeline (weighted) — même lecture que Total A+P, cf. brique violet clair du chart ──
+  const expPipeQ   = quarters.map((k,i) => qExpected[i] + qPipe[i]);
+  const expPipeRow = [...expPipeQ, expPipeQ.reduce((a,b)=>a+b,0)];
+  rows.push(`
+        <tr style="border-top:1px solid var(--border)">
+          <td class="row-label" style="color:#BA8CF5;font-weight:700" title="Expected (Signed+Open) + HubSpot pipeline weighted">Expected + Pipeline</td>
+          ${expPipeRow.map((v,i) => {
+            const sep = i===4?'border-left:1px solid var(--border);':'';
+            const pipe = i<4 ? qPipe[i] : qPipe.reduce((a,b)=>a+b,0);
+            const tip = pipe>0 ? ` title="Expected ${fmt(v-pipe)} + Pipeline ${fmt(pipe)}"` : '';
+            return `<td${tip} style="text-align:right;${sep}color:${v>0?'#BA8CF5':'var(--muted)'};font-weight:700">${v>0?fmt(v):'—'}</td>`;
+          }).join('')}
+        </tr>`);
+  if (showOkr) rows.push(`
+        <tr>
+          <td class="row-label" style="color:var(--text2)">vs OKR (Exp+Pipe)</td>
+          ${expPipeRow.map((total,i) => {
+            const sep = i===4?'border-left:1px solid var(--border);':'';
+            if (!oRow[i] || !total) return `<td style="text-align:right;${sep}color:var(--muted)">—</td>`;
+            const v = Math.round(total/oRow[i]*100);
+            const c = v>=90?'var(--green)':v>=70?'var(--yellow)':'var(--red)';
+            return `<td style="text-align:right;${sep}color:${c};font-weight:700">${v}%</td>`;
+          }).join('')}
+        </tr>`);
+  rows.push(`
+        <tr>
+          <td class="row-label" style="color:var(--text2)">vs 2025 (Exp+Pipe)</td>
+          ${expPipeRow.map((total,i) => {
             const sep = i===4?'border-left:1px solid var(--border);':'';
             if (!a25Row[i] || !total) return `<td style="text-align:right;${sep}color:var(--muted)">—</td>`;
             const v = Math.round((total/a25Row[i]-1)*100);
@@ -2672,6 +2914,7 @@ function renderWeeklyMonthTable(data, q, year, cur, prev) {
   const ca = data.chart_arrays;
   const pick = (arr) => idxs.map(i => arr[i] || 0);
   const LY = pick(ca.R25), TGT = pick(ca.OKR), ACT = pick(ca.R26A), EXP = pick(ca.EXPECTED), PROJ = pick(ca.R26P);
+  const PIPE = pick(pipelineMonthly('all').monthly);
   const TOTAL = ACT.map((a,i) => a + PROJ[i]);
   const sum = (a) => a.reduce((s,v)=>s+v,0);
   // WoW delta per month, from the quarter_history snapshots (same source as the Week section's WoW tile)
@@ -2691,10 +2934,13 @@ function renderWeeklyMonthTable(data, q, year, cur, prev) {
         { label:'2026 Actual', data:ACT.map(v=>Math.round(v/1000)), backgroundColor:'rgba(100,231,106,.92)', stack:'2026' },
         { label:'2026 Proj.', data:PROJ.map(v=>Math.round(v/1000)), backgroundColor:'rgba(30,90,40,.9)', borderColor:'rgba(100,231,106,.5)', borderWidth:1, stack:'2026' },
         { label:'Expected (Signed+Open)', data:EXP.map(v=>Math.round(v/1000)), backgroundColor:'rgba(146,84,227,.85)', stack:'expected' },
+        { id:'pipe', label:'Pipeline (weighted)', data:PIPE.map(v=>Math.round(v/1000)), backgroundColor:'rgba(146,84,227,.18)', borderColor:'rgba(186,140,245,.8)', borderWidth:1, borderDash:[3,3], stack:'expected' },
         { label:'Monthly OKR', data:TGT.map(v=>Math.round(v/1000)), type:'line', borderColor:'#E4FA62', borderWidth:2, borderDash:[5,4], pointRadius:0, fill:false }
       ]},
       options: { responsive:true, maintainAspectRatio:false, interaction:{mode:'index',intersect:false},
         plugins:{ legend:{display:false}, tooltip:{callbacks:{label:c=>c.dataset.label+': €'+c.parsed.y+'K'}} },
+        onClick:(evt, elements, chart) => { const hit = stackAtEvent(evt, chart); if (hit && hit.id === 'pipe') openPipelineModal([idxs[hit.index]], {am:'all'}, EXP[hit.index]); },
+        onHover:(evt, elements, chart) => { const hit = stackAtEvent(evt, chart); evt.native.target.style.cursor = (hit && hit.id === 'pipe') ? 'pointer' : 'default'; },
         scales:{ x:{grid:{display:false},ticks:{color:'#888'}}, y:{grid:{color:'#222'},ticks:{color:'#888',callback:v=>'€'+v+'K'}} } }
     });
   }
@@ -2713,6 +2959,7 @@ function renderWeeklyMonthTable(data, q, year, cur, prev) {
       ${row('Target (OKR)', TGT.map(v=>fmt(v)), fmt(sum(TGT)), {muted:true})}
       ${row('Actual', ACT.map(v=>fmt(v)), fmt(sum(ACT)))}
       ${row('Expected (Signed+Open)', EXP.map(v=>`<span style="color:var(--purple)">${fmt(v)}</span>`), `<span style="color:var(--purple)">${fmt(sum(EXP))}</span>`)}
+      ${sum(PIPE)>0 ? row('HubSpot Pipeline (weighted)', PIPE.map(v=>v>0?`<span style="color:#BA8CF5">${fmt(v)}</span>`:'—'), `<span style="color:#BA8CF5">${fmt(sum(PIPE))}</span>`) : ''}
       ${row('Projected (rest of month)', PROJ.map(v=>v>0?fmt(v):'—'), sum(PROJ)>0?fmt(sum(PROJ)):'—')}
       <tr class="bold"><td>Total (landing)</td>${TOTAL.map((v,i)=>`<td class="pos"><div>${fmt(v)}</div>${wowPill(totalDeltas[i])}</td>`).join('')}<td class="total-col pos"><div>${fmt(sum(TOTAL))}</div>${wowPill(totalDeltaSum)}</td></tr>
       <tr><td>% of target (landing)</td>${TOTAL.map((v,i)=>{const p=pctOf(v,TGT[i]);return `<td ${pctStyle(p)}>${p}%</td>`;}).join('')}<td class="total-col" ${pctStyle(pctOf(sum(TOTAL),sum(TGT)))}>${pctOf(sum(TOTAL),sum(TGT))}%</td></tr>
@@ -2741,6 +2988,7 @@ function renderWeeklyQuarterOutlook(data, q, year, snapshot) {
   if (!qd) { horizon.style.display = 'none'; return; }
   const expected = qd.actual + qd.proj;
   const gap = qd.okr - expected;
+  const nextPipe = sumIdx(pipelineMonthly('all').monthly, Q_MONTH_IDX[qKeyNext] || []);
   const securedPct = expected>0 ? Math.round(100*qd.actual/expected) : 0;
 
   document.getElementById('weekly-nextq-title').textContent = `📊 ${qKeyNext} ${year} — ramping`;
@@ -2748,6 +2996,7 @@ function renderWeeklyQuarterOutlook(data, q, year, snapshot) {
     <div>
       <div class="weekly-kpi-label">Expected (Signed+Open)</div>
       <div class="weekly-kpi-value">${fmtK1(expected)}</div>
+      ${nextPipe > 0 ? `<div class="weekly-kpi-sub" style="cursor:pointer" onclick="openPipelineModal(Q_MONTH_IDX['${qKeyNext}'], {label:'${qKeyNext}', am:'all'})">+ <span style="color:#BA8CF5;font-weight:600">${fmtK1(nextPipe)}</span> HubSpot pipeline (weighted) ↗</div>` : ''}
     </div>
     <div>
       <div class="weekly-kpi-label">${qKeyNext} OKR</div>
