@@ -1,33 +1,24 @@
 {
- "generated_at": "2026-09-24T14:00:00Z",
- "source": "HubSpot — CL AM Opportunity Pipeline (890800820: Proposal sent, Negotiation ongoing) + CL Sales Pipeline (842062383: Negotiation, Commit). Raw amounts; weighting & monthly split are applied in index.html (PIPE_RULES).",
+ "generated_at": "2026-09-24T14:18:24.393Z",
+ "source": "HubSpot — CL AM Opportunity Pipeline (890800820: Negotiation ongoing) + CL Sales Pipeline (842062383: Negotiation, Commit). Raw amounts; weighting & monthly split applied in index.html (PIPE_RULES). Refreshed by n8n CL Dashboard - HubSpot Pipeline Sync.",
  "deals": [
   {
-   "id": "65204373685",
-   "pipeline": "am",
-   "name": "Carrefour - New offers 0226",
-   "amount": 160000,
-   "stage": "Negotiation ongoing",
-   "owner_id": "76992305",
-   "owner": "Eva"
+   "id": "1792086880",
+   "pipeline": "sales",
+   "name": "Auchan Retail - Sales",
+   "amount": 50000,
+   "stage": "Negotiation",
+   "owner_id": "472947881",
+   "owner": "Cyprien"
   },
   {
-   "id": "65211201896",
+   "id": "63083854108",
    "pipeline": "am",
-   "name": "Nocibé - Q4 2026",
-   "amount": 180000,
+   "name": "Blablacar - Renew - Q4 2026",
+   "amount": 85000,
    "stage": "Negotiation ongoing",
-   "owner_id": "76992305",
-   "owner": "Eva"
-  },
-  {
-   "id": "65211143019",
-   "pipeline": "am",
-   "name": "Sephora - New offers additional budget",
-   "amount": 90000,
-   "stage": "Negotiation ongoing",
-   "owner_id": "76992305",
-   "owner": "Eva"
+   "owner_id": "95067911",
+   "owner": "Clément"
   },
   {
    "id": "65027776285",
@@ -39,19 +30,10 @@
    "owner": "Eloïse"
   },
   {
-   "id": "64985980054",
+   "id": "65204373685",
    "pipeline": "am",
-   "name": "Uber Eats - Renewal Q4 2026",
-   "amount": 200000,
-   "stage": "Negotiation ongoing",
-   "owner_id": "76992305",
-   "owner": "Eva"
-  },
-  {
-   "id": "64576967593",
-   "pipeline": "am",
-   "name": "Uber - Renewal Q4 2026",
-   "amount": 400000,
+   "name": "Carrefour - New offers 0226 - Q4 2026",
+   "amount": 160000,
    "stage": "Negotiation ongoing",
    "owner_id": "76992305",
    "owner": "Eva"
@@ -75,33 +57,6 @@
    "owner": "Clément"
   },
   {
-   "id": "63083859304",
-   "pipeline": "am",
-   "name": "Nocibé - Q4 2026-Q3 2027",
-   "amount": 475000,
-   "stage": "Negotiation ongoing",
-   "owner_id": "91941033",
-   "owner": "Romain"
-  },
-  {
-   "id": "63079428427",
-   "pipeline": "am",
-   "name": "Krys - Renew - S127",
-   "amount": 100000,
-   "stage": "Negotiation ongoing",
-   "owner_id": "95067911",
-   "owner": "Clément"
-  },
-  {
-   "id": "63083854108",
-   "pipeline": "am",
-   "name": "Blablacar - Renew - Q4 2026",
-   "amount": 85000,
-   "stage": "Negotiation ongoing",
-   "owner_id": "95067911",
-   "owner": "Clément"
-  },
-  {
    "id": "62485400442",
    "pipeline": "am",
    "name": "Decathlon - Q4 2026",
@@ -111,36 +66,9 @@
    "owner": "Eloïse"
   },
   {
-   "id": "60893103234",
-   "pipeline": "am",
-   "name": "Vertbaudet - Optin - S2 2026",
-   "amount": 12000,
-   "stage": "Negotiation ongoing",
-   "owner_id": "1227580661",
-   "owner": "Eloïse"
-  },
-  {
-   "id": "60893100915",
-   "pipeline": "am",
-   "name": "BUT - S2 Relaunch",
-   "amount": 362500,
-   "stage": "Proposal sent",
-   "owner_id": "1227580661",
-   "owner": "Eloïse"
-  },
-  {
-   "id": "60890492765",
-   "pipeline": "am",
-   "name": "Etam - Relaunch S2",
-   "amount": 57095,
-   "stage": "Proposal sent",
-   "owner_id": "1227580661",
-   "owner": "Eloïse"
-  },
-  {
-   "id": "1792086880",
+   "id": "378333436",
    "pipeline": "sales",
-   "name": "Auchan Retail - Sales",
+   "name": "Deliveroo - Sales",
    "amount": 50000,
    "stage": "Negotiation",
    "owner_id": "472947881",
@@ -156,13 +84,67 @@
    "owner": "Cyprien"
   },
   {
-   "id": "378333436",
-   "pipeline": "sales",
-   "name": "Deliveroo - Sales",
-   "amount": 50000,
-   "stage": "Negotiation",
-   "owner_id": "472947881",
-   "owner": "Cyprien"
+   "id": "63079428427",
+   "pipeline": "am",
+   "name": "Krys - Renew - S127",
+   "amount": 100000,
+   "stage": "Negotiation ongoing",
+   "owner_id": "95067911",
+   "owner": "Clément"
+  },
+  {
+   "id": "65211201896",
+   "pipeline": "am",
+   "name": "Nocibé - Q4 2026",
+   "amount": 180000,
+   "stage": "Negotiation ongoing",
+   "owner_id": "76992305",
+   "owner": "Eva"
+  },
+  {
+   "id": "63083859304",
+   "pipeline": "am",
+   "name": "Nocibé - Q4 2026-Q3 2027",
+   "amount": 475000,
+   "stage": "Negotiation ongoing",
+   "owner_id": "91941033",
+   "owner": "Romain"
+  },
+  {
+   "id": "65211143019",
+   "pipeline": "am",
+   "name": "Sephora - New offers additional budget - Q4 2026",
+   "amount": 90000,
+   "stage": "Negotiation ongoing",
+   "owner_id": "76992305",
+   "owner": "Eva"
+  },
+  {
+   "id": "64576967593",
+   "pipeline": "am",
+   "name": "Uber - Renewal Q4 2026",
+   "amount": 400000,
+   "stage": "Negotiation ongoing",
+   "owner_id": "76992305",
+   "owner": "Eva"
+  },
+  {
+   "id": "64985980054",
+   "pipeline": "am",
+   "name": "Uber Eats - Renewal Q4 2026",
+   "amount": 300000,
+   "stage": "Negotiation ongoing",
+   "owner_id": "76992305",
+   "owner": "Eva"
+  },
+  {
+   "id": "60893103234",
+   "pipeline": "am",
+   "name": "Vertbaudet - Optin - S2 2026",
+   "amount": 12000,
+   "stage": "Negotiation ongoing",
+   "owner_id": "1227580661",
+   "owner": "Eloïse"
   }
  ]
 }
