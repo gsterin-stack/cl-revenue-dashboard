@@ -2886,7 +2886,7 @@ const WK = { cur: null, prev: null, history: [], views: null };
 function pad2(n) { return String(n).padStart(2, '0'); }
 function mondayOf(d) { const x = new Date(d.getFullYear(), d.getMonth(), d.getDate()); x.setDate(x.getDate() - ((x.getDay() + 6) % 7)); return x; }
 function snapKey(d) { const th = new Date(d); th.setDate(th.getDate() + 3); return `${th.getFullYear()}-W${pad2(isoWeek(d))}`; }
-function fetchSnap(d) { return fetch(`./snapshots/${snapKey(d)}.json`).then(r => r.ok ? r.json() : null).catch(() => null); }
+function fetchSnap(d) { return fetch(`./snapshots/${snapKey(d)}.json`, { cache: 'no-cache' }).then(r => r.ok ? r.json() : null).catch(() => null); }
 function fmtMK(n) {
   if (n == null || isNaN(n)) return '—';
   const a = Math.abs(n), s = n < 0 ? '−' : '';
