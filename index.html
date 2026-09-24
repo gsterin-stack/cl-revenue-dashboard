@@ -1078,19 +1078,22 @@ function switchTab(id, btn) {
   btn.classList.add('active');
 }
 
-/* ── Barre Expected recalculée côté client avec expectedMonthValue (passé/en cours = A+P, à venir =
-   signé/forecast) : n8n met le signé des capped sur les mois passés et seulement le MTD des open
-   sur le mois en cours. ── */
-function expectedArrayFor(merchants) {
-  const out = new Array(12).fill(0);
-  for (const m of Object.values(merchants)) for (let i=0; i<12; i++) out[i] += expectedMonthValue(m, i);
-  return out;
+/* ── Expected, mois en cours : n8n ne met que le MTD des marchands open dans chart_arrays.EXPECTED
+   (→ quasi nul en début de mois). On y ajoute la projection du reste du mois (currentMonthRemainder,
+   même base que R26P), pour que la barre Expected = total de la vignette Expected vs LY. ── */
+function openCurrentMonthRemainder(merchants) {
+  return Object.values(merchants).reduce((s,m) => s + (m.is_capped ? 0 : currentMonthRemainder(m)), 0);
 }
 
 /* ── Main render ── */
 function renderAll(data) {
   GDATA = data;
-  if (data.chart_arrays) data.chart_arrays.EXPECTED = expectedArrayFor(data.merchants);
+  const curIdx = (data.summary.ytd_months||1) - 1;
+  if (data.chart_arrays && Array.isArray(data.chart_arrays.EXPECTED) && !data.chart_arrays._expCurPatched) {
+    data.chart_arrays.EXPECTED = [...data.chart_arrays.EXPECTED];
+    data.chart_arrays.EXPECTED[curIdx] += openCurrentMonthRemainder(data.merchants);
+    data.chart_arrays._expCurPatched = true;
+  }
   document.getElementById('updated-at').textContent = 'Updated: '+data.updated_at;
   renderAMButtons(data.summary.ams || buildAMsFromMerchants(data.merchants));
   renderGlobalSections(data, activeGlobalAM);
@@ -1147,7 +1150,9 @@ function deriveChartArraysForAM(merchants, am, ytdMonths, baseChartArrays) {
       R25[i] += (m.monthly_25 && m.monthly_25[i]) || 0;
       const v26 = (m.monthly_26 && m.monthly_26[i]) || 0;
       if (i < ytdMonths) R26A[i] += v26; else R26P[i] += v26;
-      EXPECTED[i] += expectedMonthValue(m, i);
+      EXPECTED[i] += m.is_capped
+        ? ((m.monthly_signed && m.monthly_signed[i] != null) ? m.monthly_signed[i] : v26)
+        : v26;
     }
     /* Le mois en cours ne contient dans monthly_26 que le réalisé MTD — le reste du mois
        projeté vient du forecast Snowflake jour par jour (cf. update_data.py), pas de la
@@ -1155,6 +1160,7 @@ function deriveChartArraysForAM(merchants, am, ytdMonths, baseChartArrays) {
     if (curMoIdx >= 0 && curMoIdx < 12 && m.current_month_forecast != null) {
       R26P[curMoIdx] += Math.max(0, m.current_month_forecast);
     }
+    if (curMoIdx >= 0 && curMoIdx < 12 && !m.is_capped) EXPECTED[curMoIdx] += currentMonthRemainder(m);
   }
   return { ...baseChartArrays, R26A, R26P, R25, EXPECTED };
 }
@@ -1477,6 +1483,49 @@ function closePipelineModal() {
   document.getElementById('pipe-modal-overlay').classList.remove('open');
 }
 
+/* ── Delivery vs Plan : totaux de revenus (Actual + Projection = barre verte) en tête de vignette,
+   par type de compte (Capped / Open / Total) puis par tier (T1 / T2 / T3 / Total). Périmètre = tous
+   les marchands du filtre AM, donc Total = la barre cliquée. ── */
+function deliveryRevenueOf(m, idxs) {
+  const curMoIdx = (GDATA.summary.ytd_months||1) - 1;
+  let act = 0, proj = 0;
+  for (const i of idxs) {
+    const v26 = (m.monthly_26 && m.monthly_26[i]) || 0;
+    if (i < curMoIdx) act += v26;
+    else if (i === curMoIdx) { act += v26; proj += Math.max(0, m.current_month_forecast || 0); }
+    else proj += v26;
+  }
+  return { act, proj, total: act + proj };
+}
+function renderDeliveryRevenueTiles(idxs, periodLabel) {
+  const merchants = filterMerchantsByAM(GDATA.merchants, activeGlobalAM);
+  const zero = () => ({ act:0, proj:0, total:0, count:0 });
+  const g = { capped:zero(), open:zero(), all:zero(), T1:zero(), T2:zero(), T3:zero(), NC:zero() };
+  for (const [id, m] of Object.entries(merchants)) {
+    const r = deliveryRevenueOf(m, idxs);
+    if (r.total <= 0) continue;
+    for (const k of [m.is_capped ? 'capped' : 'open', 'all', TIER_MAP[id] || 'NC']) {
+      g[k].act += r.act; g[k].proj += r.proj; g[k].total += r.total; g[k].count++;
+    }
+  }
+  const tile = (label, v, color) => `
+    <div style="flex:1;min-width:140px;background:#111;border:1px solid var(--border);border-radius:8px;padding:10px 14px">
+      <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:${color||'var(--text2)'}">${label}</div>
+      <div style="font-size:19px;font-weight:700;color:var(--text);margin-top:2px">${fmt(v.total)}</div>
+      <div style="font-size:11px;color:var(--text2)">${v.proj > 0 && v.act > 0 ? `${fmt(v.act)} act. + ${fmt(v.proj)} proj. · ` : (v.act > 0 ? 'actual · ' : 'projection · ')}${v.count} merchant${v.count===1?'':'s'}</div>
+    </div>`;
+  const row = tiles => `<div style="display:flex;flex-wrap:wrap;gap:10px;margin-bottom:10px">${tiles.join('')}</div>`;
+  const tierTiles = [tile('T1', g.T1, 'var(--green)'), tile('T2', g.T2, '#64B4FF'), tile('T3', g.T3, 'var(--yellow)')];
+  if (g.NC.count) tierTiles.push(tile('Non classé', g.NC));
+  tierTiles.push(tile('Total', g.all, 'var(--text)'));
+  return `
+    <div style="margin-bottom:22px">
+      <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--text2);margin-bottom:8px">Revenue ${periodLabel} — actual + projection</div>
+      ${row([tile('Capped', g.capped, 'var(--purple)'), tile('Open', g.open), tile('Total', g.all, 'var(--text)')])}
+      ${row(tierTiles)}
+    </div>`;
+}
+
 /* ── Month drilldown modal — pace vs plan par merchant pour le mois cliqué ── */
 function openMonthDrilldownModal(moIdx) {
   if (!GDATA) return;
@@ -1494,6 +1543,7 @@ function openMonthDrilldownModal(moIdx) {
     `${capped.length} capped (vs signed this month) · ${open.length} open (vs ${monthLabel} 2025)${paceGraceNote(moIdx===curMoIdx)} · click a column to sort`;
 
   document.getElementById('month-modal-body').innerHTML = `
+    ${renderDeliveryRevenueTiles([moIdx], monthLabel)}
     <div style="margin-bottom:18px">
       <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--purple);margin-bottom:6px">Capped — vs signed this month</div>
       ${renderPaceTotals(capped, 'signed')}
@@ -1969,20 +2019,30 @@ function isPastPeriod(idxs) {
   return idxs.every(i => i < curMoIdx);
 }
 
-/* Expected d'un marchand sur des mois donnés — même règle que la barre Expected (expectedMonthValue) :
-   mois passés et mois en cours → Actual + Projection (= barre verte : monthly_26 + forecast Snowflake du
-   reste du mois) ; mois à venir → capped : budget signé (repli monthly_26), open : forecast monthly_26.
-   Règle fixée par Geoffroy le 2026-09-24 ; la barre et la vignette Expected vs LY sont donc égales. */
-function expectedMonthValue(m, i) {
-  const curMoIdx = (GDATA.summary.ytd_months||1) - 1;
-  const v26 = (m.monthly_26 && m.monthly_26[i]) || 0;
-  if (i < curMoIdx) return v26;
-  if (i === curMoIdx) return v26 + Math.max(0, m.current_month_forecast || 0);
-  const signed = m.is_capped && m.monthly_signed ? m.monthly_signed[i] : null;
-  return signed != null ? signed : v26;
-}
 function expectedValueForPeriod(m, idxs) {
-  return idxs.reduce((s,i) => s + expectedMonthValue(m, i), 0);
+  const curMoIdx = (GDATA.summary.ytd_months||1) - 1;
+  if (m.is_capped) {
+    if (isPastPeriod(idxs)) {
+      // Already closed — the signed target was only ever indicative; what actually got
+      // delivered is the real number now that it's known.
+      return idxs.reduce((s,i) => s + ((m.monthly_26 && m.monthly_26[i]) || 0), 0);
+    }
+    // Current/future period — same basis as the Expected bar (chart_arrays.EXPECTED): signed
+    // budget of the month, falling back to monthly_26 when no signed figure exists. Totals of the
+    // Expected vs LY modal thus equal the bar clicked (decided 2026-09-24; delivery pace vs signed
+    // stays covered by the Delivery vs Plan modal).
+    return idxs.reduce((s,i) => {
+      const signed = m.monthly_signed && m.monthly_signed[i];
+      return s + (signed != null ? signed : ((m.monthly_26 && m.monthly_26[i]) || 0));
+    }, 0);
+  }
+  // Open: closed month → actual, in-progress month → MTD + remainder projection (same basis as
+  // the Expected bar, cf. openCurrentMonthRemainder), future month → already-forecast monthly_26.
+  return idxs.reduce((s,i) => {
+    const now = (m.monthly_26 && m.monthly_26[i]) || 0;
+    if (i === curMoIdx) return s + now + currentMonthRemainder(m);
+    return s + now;
+  }, 0);
 }
 
 function renderWinLossBlock(blockLabel, refNote, allItems, periodLabel, colorVar, isPast) {
@@ -1998,7 +2058,7 @@ function renderWinLossBlock(blockLabel, refNote, allItems, periodLabel, colorVar
   const totalChurn = churned.reduce((s,r) => s + r.delta, 0);
   // Already-closed period → both blocks show what actually happened, not a forward-looking
   // basis (signed target for capped, pace projection for open) — label it honestly either way.
-  // Same basis as the Expected bar (cf. expectedMonthValue).
+  // Current/future period: same basis as the Expected bar (capped → signed budget, open → forecast).
   const valueLabel = isPast ? 'Actual' : 'Expected';
 
   function makeCol(rows) {
@@ -2131,7 +2191,7 @@ function openExpectedModal(label, idxs) {
     .map(([id, m]) => {
       const ly = idxs.reduce((s,i) => s + ((m.monthly_25||[])[i]||0), 0);
       const churn = isChurnedMerchant(m);
-      const expected = expectedValueForPeriod(m, idxs);
+      const expected = churn ? 0 : expectedValueForPeriod(m, idxs);
       // Skip only when there's nothing meaningful on EITHER side — a merchant with ~€0 LY but
       // real activity this period (e.g. signed mid-2025, so LY is 0 for an earlier quarter) is
       // exactly the kind of clear win this vignette should surface, not hide.
@@ -2151,12 +2211,8 @@ function openExpectedModal(label, idxs) {
   document.getElementById('quarter-modal-sub').textContent =
     `${cappedList.length} capped · ${openList.length} open${activeGlobalAM === 'all' ? '' : ` · ${activeGlobalAM}`} · win / loss / churn vs LY${past ? ' · already closed — actual delivered' : ''} · click a merchant for details`;
 
-  // Basis per month (cf. expectedMonthValue): closed → actual, current → actual + projection, future → signed (capped) / forecast (open)
-  const curMo = (GDATA.summary.ytd_months||1) - 1;
-  const hasCur = idxs.includes(curMo), hasFut = idxs.some(i => i > curMo);
-  const basis = fut => past ? 'actual' : [hasCur || idxs.some(i => i < curMo) ? 'actual + projection' : null, hasFut ? fut : null].filter(Boolean).join(' / ');
-  const cappedBlock = renderWinLossBlock('Capped', `${basis('signed budget')} ${label} vs LY`, cappedList, label, 'var(--purple)', past);
-  const openBlock   = renderWinLossBlock('Open',   `${basis('forecast')} ${label} vs LY`, openList, label, 'var(--text2)', past);
+  const cappedBlock = renderWinLossBlock('Capped', past ? `actual ${label} vs LY` : `signed budget ${label} vs LY`, cappedList, label, 'var(--purple)', past);
+  const openBlock   = renderWinLossBlock('Open',   past ? `actual ${label} vs LY` : `pace projection ${label} vs LY`, openList, label, 'var(--text2)', past);
 
   document.getElementById('quarter-modal-body').innerHTML =
     renderExpectedTotalsTable(cappedBlock, openBlock) + cappedBlock.html + openBlock.html;
@@ -2194,6 +2250,7 @@ function openQuarterPaceModal(qKey) {
     `${capped.length} capped (vs signed this quarter) · ${open.length} open (vs ${qKey} 2025) · click a column to sort`;
 
   document.getElementById('month-modal-body').innerHTML = `
+    ${renderDeliveryRevenueTiles(idxs, qKey)}
     <div style="margin-bottom:18px">
       <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--purple);margin-bottom:6px">Capped — vs signed this quarter</div>
       ${renderPaceTotals(capped, 'signed')}
