@@ -261,6 +261,35 @@
     .opp-line { display:flex; justify-content:space-between; align-items:baseline; padding:6px 2px; font-size:12px; gap:10px; }
     .opp-line-am { color:var(--text2); font-size:10.5px; margin-left:6px; white-space:nowrap; }
     .opp-line-amt { font-weight:600; font-variant-numeric:tabular-nums; white-space:nowrap; }
+    .wk-col { max-width:780px; margin:0 auto; display:flex; flex-direction:column; gap:14px; }
+    .wk-head { display:flex; justify-content:space-between; align-items:flex-end; gap:12px; }
+    .wk-sub { font-size:12px; color:var(--text2); margin-top:4px; }
+    .wk-btn { background:var(--s2); border:1px solid var(--border); color:var(--text); border-radius:7px; padding:7px 12px; font-size:12px; cursor:pointer; white-space:nowrap; }
+    .wk-btn:hover { border-color:var(--text2); }
+    .wk-card { background:var(--s2); border:1px solid var(--border); border-radius:12px; padding:16px 18px; }
+    .wk-card.wk-prio { border-color:rgba(146,84,227,.6); }
+    .wk-label { font-size:10.5px; font-weight:600; text-transform:uppercase; letter-spacing:.5px; color:var(--text2); margin-bottom:6px; }
+    .wk-row-head { display:flex; justify-content:space-between; align-items:center; gap:8px; }
+    .wk-big { font-size:26px; font-weight:700; font-variant-numeric:tabular-nums; margin-top:2px; }
+    .wk-big span { font-size:13px; font-weight:400; color:var(--text2); }
+    .wk-bar { position:relative; height:9px; border-radius:5px; background:var(--s3); margin:12px 0 8px; }
+    .wk-okr { position:absolute; top:-4px; bottom:-4px; width:2px; background:var(--yellow); }
+    .wk-pill { font-size:11px; font-weight:700; padding:2px 8px; border-radius:5px; background:var(--s3); }
+    .wk-pill.pos, .wk-amt.pos { color:var(--green); }
+    .wk-pill.neg, .wk-amt.neg { color:var(--red); }
+    .wk-tag { font-size:11px; padding:2px 8px; border-radius:5px; background:rgba(146,84,227,.15); color:#BA8CF5; }
+    .wk-line { display:flex; justify-content:space-between; align-items:center; gap:14px; padding:10px 2px; border-top:1px solid var(--border); font-size:13px; }
+    .wk-line.click { cursor:pointer; }
+    .wk-line.click:hover { background:rgba(255,255,255,.02); }
+    .wk-mini { font-size:11px; color:var(--text2); margin-top:2px; }
+    .wk-amt { font-weight:700; font-variant-numeric:tabular-nums; white-space:nowrap; }
+    .wk-chev { color:var(--muted); font-weight:400; }
+    .wk-months { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:8px; margin-top:12px; }
+    .wk-months > div { background:var(--s3); border-radius:8px; padding:8px 10px; }
+    .wk-card.wk-wins { border-color:rgba(100,231,106,.35); background:rgba(100,231,106,.04); }
+    .wk-win { display:flex; align-items:center; gap:14px; padding:10px 2px; border-top:1px solid var(--border); font-size:13px; }
+    .wk-win-amt { font-size:20px; font-weight:700; color:var(--green); min-width:86px; font-variant-numeric:tabular-nums; }
+    .wk-mval { font-size:15px; font-weight:700; font-variant-numeric:tabular-nums; }
     @media (max-width:700px) {
       .weekly-kpi-row3 { grid-template-columns:1fr; }
       .weekly-kpi-row2 { grid-template-columns:1fr; }
@@ -370,105 +399,47 @@
 
   <!-- ═══ WEEKLY ═══ -->
   <div id="tab-weekly" class="tab-content">
-    <div class="week-head">
-      <div class="week-title" id="weekly-title">Weekly</div>
-      <div class="week-sub">Monday CL meeting prep — frozen every Monday 8am, unchanged for the rest of the week</div>
-    </div>
-
-    <!-- WEEK -->
-    <div class="horizon">
-      <div class="horizon-head">
-        <span class="horizon-badge">Week</span>
-        <span class="horizon-title">Since last Monday</span>
-        <span class="horizon-window" id="weekly-week-window"></span>
+    <div class="wk-col">
+      <div class="wk-head">
+        <div>
+          <div class="week-title" id="weekly-title">Weekly</div>
+          <div class="wk-sub" id="weekly-sub">Frozen every Monday morning</div>
+        </div>
+        <button class="wk-btn" id="wk-copy-btn" onclick="copyWeeklySlack()">Copy for Slack</button>
       </div>
 
-      <div class="card">
-        <div class="card-title-row">
-          <span class="card-title" style="margin-bottom:0"><span class="em">🏆 Sales wins</span></span>
-          <span class="card-note">#b2b-wins, filtered to the CL team</span>
-        </div>
-        <div class="win-list" id="weekly-wins-wrap"></div>
+      <div class="wk-card" id="wk-cur"></div>
+      <div class="wk-card wk-wins" id="wk-wins"></div>
+      <div class="wk-card" id="wk-wow"></div>
+      <div class="wk-card wk-prio" id="wk-next"></div>
+      <div class="wk-card" id="wk-pipe"></div>
+
+      <div class="wk-card" id="wk-month-card">
+        <div class="wk-label" id="wk-month-label">Monthly detail</div>
+        <div class="table-wrap" id="wk-month-table"></div>
       </div>
 
-      <div class="card">
-        <div class="card-title-row">
-          <span class="card-title" style="margin-bottom:0"><span class="em">📈 WoW variation — EOQ projected landing</span></span>
-          <span class="card-note">closed-month anomaly check: each merchant's month vs its own neighboring months</span>
-        </div>
-        <div class="wow-card" id="weekly-wow-wrap"></div>
-        <div class="win-list" id="weekly-anomaly-wrap" style="margin-top:14px"></div>
-        <div class="annot">For a <i>closed</i> month, a merchant's actual shouldn't move much once the month is over — so any that's far from its own neighboring-month average, or well above its own signed budget for that month, gets flagged. Self-contained (only needs this week's data, no history) — doesn't apply to the current open month, where growth is expected.</div>
-      </div>
-    </div>
-
-    <!-- MONTH -->
-    <div class="horizon">
-      <div class="horizon-head">
-        <span class="horizon-badge month">Month</span>
-        <span class="horizon-title" id="weekly-month-title">Current quarter, month by month</span>
-        <span class="horizon-window" id="weekly-month-window"></span>
-      </div>
-      <div class="card">
-        <div class="card-title-row">
-          <span class="card-title" style="margin-bottom:0"><span class="em">📅 Monthly Performance vs OKR</span></span>
-          <span class="card-note">same data as the Global tab's Monthly Performance table, + a Quarter Total column</span>
-        </div>
-        <div class="chart-legend">
-          <div class="legend-item"><div class="legend-dot" style="background:rgba(180,180,180,.6)"></div>2025</div>
-          <div class="legend-item"><div class="legend-dot" style="background:rgba(100,231,106,.92)"></div>2026 Actual</div>
-          <div class="legend-item"><div class="legend-dot" style="background:rgba(30,90,40,.9);border:1px solid rgba(100,231,106,.5)"></div>2026 Proj.</div>
-          <div class="legend-item"><div class="legend-dot" style="background:rgba(146,84,227,.85)"></div>Expected (Signed+Open)</div>
-          <div class="legend-item"><div class="legend-dot" style="background:rgba(146,84,227,.18);border:1px dashed rgba(186,140,245,.8)"></div>HubSpot Pipeline (weighted)</div>
-          <div class="legend-item"><div class="legend-line"></div>Monthly OKR</div>
-        </div>
-        <div class="chart-wrap"><canvas id="weekly-month-chart"></canvas></div>
-        <div class="section-sep"></div>
-        <div class="table-wrap" id="weekly-month-table-wrap"></div>
-      </div>
-    </div>
-
-    <!-- QUARTER (conditional) -->
-    <div class="horizon" id="weekly-quarter-horizon" style="display:none">
-      <div class="horizon-head">
-        <span class="horizon-badge quarter">Quarter</span>
-        <span class="horizon-title">Next quarter outlook</span>
-        <span class="horizon-window">shown: ≤ 6 weeks before quarter-end</span>
-      </div>
-      <div class="card">
-        <div class="card-title-row">
-          <span class="card-title" style="margin-bottom:0"><span class="em" id="weekly-nextq-title">Next quarter — ramping</span></span>
-        </div>
-        <div class="weekly-kpi-row3" id="weekly-nextq-kpis"></div>
-        <div class="weekly-kpi-row2" id="weekly-nextq-clients"></div>
-        <div class="annot">Outside this window (normal mid-quarter weeks), this whole "Quarter" section is hidden — the current quarter's own numbers already live in the Month table above via its Quarter Total column.</div>
-      </div>
-      <div class="card">
-        <div class="card-title-row">
-          <span class="card-title" style="margin-bottom:0"><span class="em">🎯 Opportunities to fill the gap</span></span>
-          <span class="card-note">HubSpot — CL AM Opportunity (Negotiation ongoing only) + CL Sales pipelines</span>
-        </div>
-        <div id="weekly-opp-wrap"></div>
-        <div class="annot" id="weekly-opp-note"></div>
-      </div>
-    </div>
-
-    <!-- QUARTER TRACKING (folded in from the old standalone Quarter tab) -->
-    <div class="horizon">
-      <div class="horizon-head">
-        <span class="horizon-badge" style="background:var(--text2);color:#000">History</span>
-        <span class="horizon-title">Quarter Tracking</span>
-        <span class="horizon-window">weekly snapshot, every Monday — this is the detail behind the WoW tile above</span>
-      </div>
-      <div class="card">
-        <div class="section-header">
-          <span class="section-title">Weekly snapshot of the end-of-quarter projection</span>
-        </div>
+      <div class="wk-card">
+        <div class="wk-label">Quarter tracking — snapshot every Monday</div>
         <div class="table-wrap" id="quarter-table-wrap"></div>
       </div>
     </div>
   </div>
 </main>
+
+<!-- ═══ WEEKLY WoW DETAIL MODAL ═══ -->
+<div class="modal-overlay" id="wk-modal-overlay" onclick="if(event.target===this)closeWkModal()">
+  <div class="modal" style="width:min(900px,96vw)">
+    <div class="modal-header">
+      <div>
+        <div class="modal-title" id="wk-modal-title">—</div>
+        <div class="modal-sub" id="wk-modal-sub"></div>
+      </div>
+      <button class="modal-close" onclick="closeWkModal()">✕</button>
+    </div>
+    <div id="wk-modal-body"></div>
+  </div>
+</div>
 
 <!-- ═══ MERCHANT MODAL ═══ -->
 <div class="modal-overlay" id="modal-overlay" onclick="closeModal(event)">
@@ -1114,7 +1085,8 @@ function renderAll(data) {
       fetch('./weekly_snapshot.json')
         .then(r => r.ok ? r.json() : null)
         .catch(() => null)
-        .then(snapshot => { try { renderWeeklyTab(data, snapshot, history); } catch(e) { console.error('renderWeeklyTab',e); } });
+        .then(snapshot => { WEEKLY_SNAPSHOT = snapshot; return loadWeekly(history); })
+        .catch(e => console.error('renderWeeklyTab', e));
     });
 }
 
@@ -1374,8 +1346,9 @@ function parseDealPeriod(name, fallbackStartIdx) {
   return { start, end, months: end - start + 1, fromTitle: true };
 }
 /* Sales : N mois à partir du mois qui suit la mise à jour du snapshot HubSpot (generated_at) */
-function salesPeriod(n) {
-  const upd = PIPELINE && PIPELINE.generated_at ? new Date(PIPELINE.generated_at) : new Date();
+function salesPeriod(n, pipe) {
+  pipe = pipe || PIPELINE;
+  const upd = pipe && pipe.generated_at ? new Date(pipe.generated_at) : new Date();
   const start = upd.getFullYear()*12 + upd.getMonth() + 1;
   return { start, end: start + n - 1, months: n, fromTitle: true, rule: `next ${n} months after update` };
 }
@@ -1387,35 +1360,41 @@ function periodLabel(p) {
 function merchantSlug(client) {
   return client.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim().replace(/\s+/g,'-');
 }
-function pipelineMonthly(am) {
-  const monthly = new Array(12).fill(0);
+/* Pipe pondéré (monthly) et brut (grossMonthly) mois par mois, pour un snapshot pipe + data donné
+   (par défaut : PIPELINE / GDATA du jour ; l'onglet Weekly passe la photo du lundi). */
+function pipelineCompute(pipe, data, am) {
+  const monthly = new Array(12).fill(0), grossMonthly = new Array(12).fill(0);
   const deals = [], excluded = [];
-  if (!PIPELINE || !Array.isArray(PIPELINE.deals) || !GDATA) return { monthly, deals, excluded };
-  const firstFutureIdx = GDATA.summary.ytd_months || 0;   // mois en cours = ytd_months-1 → on démarre au suivant
+  if (!pipe || !Array.isArray(pipe.deals) || !data) return { monthly, grossMonthly, deals, excluded };
+  const firstFutureIdx = data.summary.ytd_months || 0;   // mois en cours = ytd_months-1 → on démarre au suivant
   const horizonQStart = PIPE_YEAR*12 + Math.floor(firstFutureIdx/3)*3;   // 1er mois du trimestre du mois prochain
-  for (const d of PIPELINE.deals) {
+  for (const d of pipe.deals) {
     const rule = PIPE_RULES[d.pipeline];
     const weight = rule && rule.stages[d.stage];
     if (!weight || !PIPE_CL_OWNERS.includes(String(d.owner_id))) continue;
     if (am !== 'all' && d.owner !== am) continue;
     const client = d.name.split(' - ')[0].trim();
-    const period = rule.spreadMonthsAfterUpdate ? salesPeriod(rule.spreadMonthsAfterUpdate) : parseDealPeriod(d.name, Math.min(firstFutureIdx, 11));
+    const period = rule.spreadMonthsAfterUpdate ? salesPeriod(rule.spreadMonthsAfterUpdate, pipe) : parseDealPeriod(d.name, Math.min(firstFutureIdx, 11));
     const weighted = (d.amount || 0) * weight;
     const base = { ...d, source: rule.label, weight, weighted, period, client };
-    const merchant = GDATA.merchants[merchantSlug(client)];
+    const merchant = data.merchants[merchantSlug(client)];
     if (merchant && merchant.is_capped === false) { excluded.push({ ...base, reason:'Open budget — already in Expected, switch to capped first' }); continue; }
     if (period.start < horizonQStart) { excluded.push({ ...base, reason:'period already started' }); continue; }
-    const perMonth = weighted / period.months;
-    const byMonth = new Array(12).fill(0);
+    const perMonth = weighted / period.months, grossPerMonth = (d.amount || 0) / period.months;
+    const byMonth = new Array(12).fill(0), grossByMonth = new Array(12).fill(0);
     for (let abs = period.start; abs <= period.end; abs++) {
       const y = Math.floor(abs/12), i = abs % 12;
-      if (y === PIPE_YEAR && i >= firstFutureIdx) { byMonth[i] = perMonth; monthly[i] += perMonth; }
+      if (y === PIPE_YEAR && i >= firstFutureIdx) {
+        byMonth[i] = perMonth; monthly[i] += perMonth;
+        grossByMonth[i] = grossPerMonth; grossMonthly[i] += grossPerMonth;
+      }
     }
     if (!byMonth.some(v => v > 0)) { excluded.push({ ...base, reason:`outside ${PIPE_YEAR}` }); continue; }
-    deals.push({ ...base, perMonth, byMonth });
+    deals.push({ ...base, perMonth, byMonth, grossByMonth });
   }
-  return { monthly, deals, excluded };
+  return { monthly, grossMonthly, deals, excluded };
 }
+function pipelineMonthly(am) { return pipelineCompute(PIPELINE, GDATA, am); }
 const sumIdx = (arr, idxs) => idxs.reduce((a,i) => a + (arr[i]||0), 0);
 
 /* idxs = mois (0-11) couverts par la barre cliquée : [i] pour le Monthly, 3 mois pour Quarterly/Weekly.
@@ -1424,20 +1403,21 @@ function openPipelineModal(idxs, periodName, expectedFor) {
   if (!Array.isArray(idxs)) idxs = [idxs];
   const am = periodName && periodName.am !== undefined ? periodName.am : activeGlobalAM;
   const label = (periodName && periodName.label) || (idxs.length === 1 ? MONTHS[idxs[0]] : `${MONTHS[idxs[0]]}–${MONTHS[idxs[idxs.length-1]]}`);
-  const { monthly, deals, excluded } = pipelineMonthly(am);
+  const snap = periodName && periodName.snap;
+  const { monthly, deals, excluded } = snap ? pipelineCompute(snap.pipeline, snap.data, am) : pipelineMonthly(am);
   const cnt = d => sumIdx(d.byMonth, idxs);
   const inMonth = deals.filter(d => cnt(d) > 0).sort((a,b) => cnt(b) - cnt(a));
   const amSuffix = am === 'all' ? '' : ` — ${am}`;
   const sum = (list, f) => list.reduce((a,d) => a + f(d), 0);
   const bySrc = src => inMonth.filter(d => d.source === src);
-  const expected = expectedFor != null ? expectedFor : (GDATA ? sumIdx(deriveChartArraysForAM(filterMerchantsByAM(GDATA.merchants, am), am, GDATA.summary.ytd_months, GDATA.chart_arrays).EXPECTED, idxs) : 0);
+  const expected = expectedFor != null ? expectedFor : snap ? sumIdx(snap.data.chart_arrays.EXPECTED, idxs) : (GDATA ? sumIdx(deriveChartArraysForAM(filterMerchantsByAM(GDATA.merchants, am), am, GDATA.summary.ytd_months, GDATA.chart_arrays).EXPECTED, idxs) : 0);
   const total = sumIdx(monthly, idxs);
     const rules = Object.values(PIPE_RULES).map(r => `${r.label}: ${Object.entries(r.stages).map(([k,v]) => `${k} ${Math.round(v*100)}%`).join(' / ')}`).join(' · ');
 
   document.getElementById('pipe-modal-title').textContent = `${label} ${PIPE_YEAR} — HubSpot Pipeline (weighted)${amSuffix}`;
   document.getElementById('pipe-modal-sub').textContent =
     `${inMonth.length} open deals · ${rules} · amount split evenly over the months of the period in the deal name`
-    + (PIPELINE && PIPELINE.generated_at ? ` · HubSpot pull ${PIPELINE.generated_at.slice(0,10)}` : '');
+    + (snap ? ` · Monday snapshot W${pad2(snap.week)}` : PIPELINE && PIPELINE.generated_at ? ` · HubSpot pull ${PIPELINE.generated_at.slice(0,10)}` : '');
 
   const tile = (label, val, sub, color) => `
     <div style="background:#111;border:1px solid var(--border);border-radius:8px;padding:10px 12px">
@@ -1516,7 +1496,7 @@ function renderDeliveryRevenueTiles(idxs, periodLabel) {
     </div>`;
   const row = tiles => `<div style="display:flex;flex-wrap:wrap;gap:10px;margin-bottom:10px">${tiles.join('')}</div>`;
   const tierTiles = [tile('T1', g.T1, 'var(--green)'), tile('T2', g.T2, '#64B4FF'), tile('T3', g.T3, 'var(--yellow)')];
-  if (g.NC.count) tierTiles.push(tile('Non classé', g.NC));
+  if (g.NC.count) tierTiles.push(tile('Unclassified', g.NC));
   tierTiles.push(tile('Total', g.all, 'var(--text)'));
   return `
     <div style="margin-bottom:22px">
@@ -2892,279 +2872,363 @@ function renderQuarterTab(history, chartArrays) {
 }
 
 /* ═══════════════════════════════════════════════
-   WEEKLY TAB — frozen every Monday 8am by a scheduled job that writes
-   weekly_snapshot.json (Slack #b2b-wins scan + HubSpot opportunities pull).
-   Everything else here (WoW, month table, anomaly check, clients coverage)
-   is computed live from data.json + quarter_history.json — no extra source.
+   WEEKLY TAB — everything read from the Monday snapshot (snapshots/YYYY-Www.json, written every
+   Monday by the n8n "CL Dashboard - Monday Snapshot" workflow: data.json + hubspot_pipeline.json
+   as of Monday morning). WoW = this Monday's snapshot vs last Monday's, merchant by merchant.
+   Quarter view per month: closed/current months = Actual + Projection; future months:
+     Base    = Expected (signed + open) + weighted HubSpot pipe
+     Stretch = Expected + gross HubSpot pipe
+   "Signed" of a future quarter = its Actual + Projection (A+P); gap = OKR − signed.
    ═══════════════════════════════════════════════ */
-let WEEKLY_SNAPSHOT = null;
+let WEEKLY_SNAPSHOT = null;   // weekly_snapshot.json (Slack wins), optional
+const WK = { cur: null, prev: null, history: [], views: null };
 
-function renderWeeklyTab(data, snapshot, history) {
-  WEEKLY_SNAPSHOT = snapshot;
-  const q = currentQ();
-  const year = new Date().getFullYear();
-  const quarterId = `${qLabel(q)}-${year}`;
-  const rows = (history || []).filter(h => h.quarter === quarterId).sort((a,b) => b.week - a.week);
-  const cur = rows[0], prev = rows[1];
+function pad2(n) { return String(n).padStart(2, '0'); }
+function mondayOf(d) { const x = new Date(d.getFullYear(), d.getMonth(), d.getDate()); x.setDate(x.getDate() - ((x.getDay() + 6) % 7)); return x; }
+function snapKey(d) { const th = new Date(d); th.setDate(th.getDate() + 3); return `${th.getFullYear()}-W${pad2(isoWeek(d))}`; }
+function fetchSnap(d) { return fetch(`./snapshots/${snapKey(d)}.json`).then(r => r.ok ? r.json() : null).catch(() => null); }
+function fmtMK(n) {
+  if (n == null || isNaN(n)) return '—';
+  const a = Math.abs(n), s = n < 0 ? '−' : '';
+  return a >= 1e6 ? `${s}€${(a/1e6).toFixed(2)}M` : a >= 1e4 ? `${s}€${Math.round(a/1e3)}K` : `${s}€${(a/1e3).toFixed(1)}K`;
+}
+function fmtDelta(n) { return (n >= 0 ? '+' : '−') + fmtMK(Math.abs(n)); }
+function dCls(n) { return n > 0 ? 'pos' : n < 0 ? 'neg' : ''; }
+function pctOf(a, b) { return b ? Math.round(a / b * 100) : 0; }
 
-  document.getElementById('weekly-title').textContent = cur ? `Weekly — W${cur.week} ${year}` : 'Weekly';
-  document.getElementById('weekly-week-window').textContent = prev ? `since W${prev.week}` : '';
-  document.getElementById('weekly-month-title').textContent = `${qLabel(q)} ${year}, month by month`;
-  document.getElementById('weekly-month-window').textContent = qRange(q);
-
-  renderWeeklyWins(snapshot);
-  renderWeeklyWoW(cur, prev);
-  renderWeeklyAnomalies(data, q, cur, prev);
-  renderWeeklyMonthTable(data, q, year, cur, prev);
-  renderWeeklyQuarterOutlook(data, q, year, snapshot);
+async function loadWeekly(history) {
+  WK.history = history || [];
+  let monday = mondayOf(new Date());
+  let cur = await fetchSnap(monday);
+  if (!cur) { monday.setDate(monday.getDate() - 7); cur = await fetchSnap(monday); }
+  const prevMonday = new Date(monday); prevMonday.setDate(prevMonday.getDate() - 7);
+  const prev = cur ? await fetchSnap(prevMonday) : null;
+  WK.cur = cur; WK.prev = prev;
+  renderWeeklyTab();
 }
 
-function renderWeeklyWins(snapshot) {
-  const wrap = document.getElementById('weekly-wins-wrap');
-  const wins = (snapshot && snapshot.wins) || [];
-  if (!wins.length) { wrap.innerHTML = `<div style="padding:12px;color:var(--muted)">No CL-team wins found in #b2b-wins this week.</div>`; return; }
-  wrap.innerHTML = wins.map(w => `
-    <div class="win-row">
-      <div class="win-amt">+${fmtK1(w.amount)}</div>
-      <div class="win-body">
-        <div class="win-merchant">${w.merchant}${w.note ? ` <span style="color:var(--text2);font-weight:400"> — ${w.note}</span>` : ''}</div>
-        <div class="win-meta">${w.am || ''}${w.date ? ` · signed ${w.date}` : ''}</div>
-      </div>
-      <div class="win-src${w.confirmed ? '' : ' unconfirmed'}">${w.confirmed ? '✓' : '⚠'} ${w.source_note || ''}</div>
-    </div>`).join('');
+/* ── Per-merchant / per-month values of a snapshot ── */
+function snapCurIdx(sd) { return (sd.summary.ytd_months || 1) - 1; }
+function merchantAP(m, i, sd) {
+  const v = (m.monthly_26 && m.monthly_26[i]) || 0;
+  return i === snapCurIdx(sd) ? v + Math.max(0, m.current_month_forecast || 0) : v;
+}
+function snapQuarter(snap) { return Math.ceil((new Date(snap.monday).getMonth() + 1) / 3); }
+
+function quarterView(snap, q) {
+  const sd = snap.data, ca = sd.chart_arrays, cur = snapCurIdx(sd);
+  const pipe = pipelineCompute(snap.pipeline, sd, 'all');
+  const idxs = Q_MONTH_IDX[qLabel(q)];
+  const months = idxs.map(i => {
+    const ap = (ca.R26A[i] || 0) + (ca.R26P[i] || 0);
+    const future = i > cur;
+    const exp = ca.EXPECTED[i] || 0;
+    return { i, ap, act: ca.R26A[i] || 0, okr: ca.OKR[i] || 0, ly: ca.R25[i] || 0, exp, future,
+      wpipe: future ? pipe.monthly[i] : 0, gpipe: future ? pipe.grossMonthly[i] : 0,
+      base: future ? exp + pipe.monthly[i] : ap, stretch: future ? exp + pipe.grossMonthly[i] : ap };
+  });
+  const sum = k => months.reduce((a, m) => a + m[k], 0);
+  return { q, idxs, months, pipe, hasFuture: months.some(m => m.future),
+    ap: sum('ap'), act: sum('act'), okr: sum('okr'), ly: sum('ly'), exp: sum('exp'),
+    base: sum('base'), stretch: sum('stretch'), wpipe: sum('wpipe'), gpipe: sum('gpipe') };
 }
 
-function renderWeeklyWoW(cur, prev) {
-  const wrap = document.getElementById('weekly-wow-wrap');
-  if (!cur || !prev) {
-    wrap.innerHTML = `<div style="color:var(--muted)">Not enough history yet — need at least 2 weekly snapshots to show a WoW variation.</div>`;
+/* Merchant-level WoW between two snapshots over given month indexes */
+function merchantWoW(cur, prev, idxs) {
+  const a = cur.data.merchants, b = prev ? prev.data.merchants : {};
+  const ids = new Set([...Object.keys(a), ...Object.keys(b)]);
+  const rows = [];
+  for (const id of ids) {
+    const byMonth = idxs.map(i => (a[id] ? merchantAP(a[id], i, cur.data) : 0) - (b[id] ? merchantAP(b[id], i, prev.data) : 0));
+    const now = idxs.reduce((s, i) => s + (a[id] ? merchantAP(a[id], i, cur.data) : 0), 0);
+    const was = idxs.reduce((s, i) => s + (b[id] ? merchantAP(b[id], i, prev.data) : 0), 0);
+    const delta = now - was;
+    if (Math.abs(delta) < 1) continue;
+    rows.push({ id, am: (a[id] || b[id]).am, was, now, delta, byMonth, gone: !a[id], added: !b[id] });
+  }
+  return rows.sort((x, y) => Math.abs(y.delta) - Math.abs(x.delta));
+}
+function dealWoW(cur, prev, q) {
+  if (!prev || !prev.pipeline) return null;
+  const idxs = Q_MONTH_IDX[qLabel(q)];
+  const g = (snap) => {
+    const out = {};
+    for (const d of pipelineCompute(snap.pipeline, snap.data, 'all').deals) out[d.id] = { ...d, q: idxs.reduce((s, i) => s + d.grossByMonth[i], 0) };
+    return out;
+  };
+  const A = g(cur), B = g(prev), rows = [];
+  for (const id of new Set([...Object.keys(A), ...Object.keys(B)])) {
+    const x = A[id], y = B[id];
+    const delta = (x ? x.q : 0) - (y ? y.q : 0);
+    const what = !y ? 'new' : !x ? 'left pipe (won, lost or stage change)' : (x.stage !== y.stage ? `${y.stage} → ${x.stage}` : (Math.abs(delta) >= 1 ? 'amount changed' : null));
+    if (!what) continue;
+    rows.push({ id, name: (x || y).name, owner: (x || y).owner, source: (x || y).source, was: y ? y.q : 0, now: x ? x.q : 0, delta, what });
+  }
+  return rows.sort((p, r) => Math.abs(r.delta) - Math.abs(p.delta));
+}
+function topMovers(rows, n) {
+  return rows.slice(0, n).map(r => `${merchantLabel(r.id)} ${fmtDelta(r.delta)}`).join(' · ');
+}
+
+/* ── Render ── */
+const PIPE_VIOLET = '#BA8CF5';
+function okrColor(p) { return p >= 90 ? 'var(--green)' : p >= 70 ? 'var(--yellow)' : 'var(--red)'; }
+/* Merchant Expected for a future month — same rule as n8n chart_arrays.EXPECTED */
+function merchantExp(m, i) {
+  const v = (m.monthly_26 && m.monthly_26[i]) || 0;
+  const sg = m.is_capped && m.monthly_signed ? m.monthly_signed[i] : null;
+  return sg != null ? sg : v;
+}
+function merchantExpWoW(cur, prev, idxs) {
+  const a = cur.data.merchants, b = prev.data.merchants, rows = [];
+  for (const id of new Set([...Object.keys(a), ...Object.keys(b)])) {
+    const now = idxs.reduce((s, i) => s + (a[id] ? merchantExp(a[id], i) : 0), 0);
+    const was = idxs.reduce((s, i) => s + (b[id] ? merchantExp(b[id], i) : 0), 0);
+    if (Math.abs(now - was) >= 1) rows.push({ id, am: (a[id] || b[id]).am, was, now, delta: now - was });
+  }
+  return rows.sort((x, y) => Math.abs(y.delta) - Math.abs(x.delta));
+}
+/* Weighted-pipe change deal by deal over a quarter (both snapshots need a pipe) */
+function dealWeightedWoW(cur, prev, idxs) {
+  const g = snap => Object.fromEntries(pipelineCompute(snap.pipeline, snap.data, 'all').deals.map(d => [d.id, { ...d, q: idxs.reduce((s, i) => s + d.byMonth[i], 0) }]));
+  const A = g(cur), B = g(prev), rows = [];
+  for (const id of new Set([...Object.keys(A), ...Object.keys(B)])) {
+    const x = A[id], y = B[id], delta = (x ? x.q : 0) - (y ? y.q : 0);
+    const what = !y ? 'new' : !x ? 'left pipe (won, lost or stage change)' : x.stage !== y.stage ? `${y.stage} → ${x.stage}` : Math.abs(delta) >= 1 ? 'amount changed' : null;
+    if (what) rows.push({ id, name: (x || y).name, owner: (x || y).owner, source: (x || y).source, was: y ? y.q : 0, now: x ? x.q : 0, delta, what });
+  }
+  return rows.sort((p, r) => Math.abs(r.delta) - Math.abs(p.delta));
+}
+
+function renderWeeklyTab() {
+  const cur = WK.cur, prev = WK.prev;
+  const el = id => document.getElementById(id);
+  if (!cur) {
+    el('weekly-title').textContent = 'Weekly';
+    el('weekly-sub').textContent = 'No Monday snapshot available yet';
+    ['wk-cur','wk-wins','wk-wow','wk-next','wk-pipe','wk-month-table'].forEach(id => el(id).innerHTML = '');
     return;
   }
-  const delta = cur.total - prev.total;
-  const sign = delta > 0 ? '+' : (delta < 0 ? '−' : '');
-  const cls = delta > 0 ? 'pos' : (delta < 0 ? 'neg' : '');
-  wrap.innerHTML = `
-    <div class="wow-value-block">
-      <div class="wow-value ${cls}">${sign}${fmtK1(Math.abs(delta))}</div>
-      <div class="wow-label">vs last Monday</div>
-      <div class="wow-from-to">${fmtK1(prev.total)} → ${fmtK1(cur.total)}</div>
+  const q = snapQuarter(cur), nq = q < 4 ? q + 1 : null;
+  const vCur = quarterView(cur, q), vPrevCur = prev ? quarterView(prev, q) : null;
+  const vNext = nq ? quarterView(cur, nq) : null, vPrevNext = (nq && prev) ? quarterView(prev, nq) : null;
+  const vPrio = vNext || vCur;
+  const baseComparable = !!(prev && prev.pipeline && cur.pipeline);
+  WK.views = { q, nq, vCur, vPrevCur, vNext, vPrevNext, vPrio, baseComparable };
+  const d = new Date(cur.monday), pw = prev ? `W${pad2(prev.week)}` : null;
+  el('weekly-title').textContent = `Weekly — W${pad2(cur.week)} ${cur.year}`;
+  el('weekly-sub').textContent = `Frozen Monday ${d.toLocaleDateString('en-GB', { day:'2-digit', month:'short' })}` + (prev ? ` · WoW vs ${pw}` : ' · no previous snapshot for WoW');
+
+  // Current quarter + its month table
+  const qn = qLabel(q), dCur = vPrevCur ? vCur.ap - vPrevCur.ap : null;
+  const yoy = vCur.ly ? Math.round((vCur.ap / vCur.ly - 1) * 1000) / 10 : null;
+  const pc = pctOf(vCur.ap, vCur.okr);
+  el('wk-cur').innerHTML = `
+    <div class="wk-row-head"><span class="wk-label">${qn} ${cur.year} · current quarter</span>${dCur != null ? `<span class="wk-pill ${dCls(dCur)}">${fmtDelta(dCur)} vs ${pw}</span>` : ''}</div>
+    <div class="wk-big">${fmtMK(vCur.ap)} <span>landing · <b style="color:${okrColor(pc)}">${pc}%</b> of ${fmtMK(vCur.okr)} OKR</span></div>
+    ${wkBar([{ v: vCur.act, c: 'var(--green)' }, { v: vCur.ap - vCur.act, c: 'rgba(100,231,106,.35)' }], vCur.okr)}
+    <div class="wk-sub">${fmtMK(vCur.act)} actual${yoy != null ? ` · ${yoy >= 0 ? '+' : ''}${yoy}% vs LY` : ''}${vCur.hasFuture ? ` · Base ${fmtMK(vCur.base)} (${pctOf(vCur.base, vCur.okr)}% of OKR) · Stretch ${fmtMK(vCur.stretch)} (${pctOf(vCur.stretch, vCur.okr)}%)` : ''}</div>
+    <div class="table-wrap" style="margin-top:14px">${wkQuarterTable(vCur, vPrevCur)}</div>`;
+
+  // Wins of the week — celebrated on their own card
+  const wins = (WEEKLY_SNAPSHOT && WEEKLY_SNAPSHOT.week === cur.week) ? (WEEKLY_SNAPSHOT.wins || []) : [];
+  const winTotal = wins.reduce((s, w) => s + (w.amount || 0), 0);
+  el('wk-wins').innerHTML = `
+    <div class="wk-row-head"><span class="wk-label">🏆 Wins signed this week</span>${wins.length ? `<span class="wk-pill pos">+${fmtMK(winTotal)}</span>` : ''}</div>
+    ${wins.length ? wins.map(w => `
+      <div class="wk-win">
+        <div class="wk-win-amt">+${fmtMK(w.amount)}</div>
+        <div style="flex:1;min-width:0"><div style="font-weight:600">${w.merchant}${w.note ? ` <span style="color:var(--text2);font-weight:400">— ${w.note}</span>` : ''}</div>
+          <div class="wk-mini">${w.am || ''}${w.date ? ` · signed ${w.date}` : ''}${w.confirmed ? '' : ' · <span style="color:var(--orange)">to confirm in HubSpot</span>'}</div></div>
+      </div>`).join('') : `<div class="wk-mini" style="padding:6px 0">No CL-team win logged in #b2b-wins this week.</div>`}`;
+
+  // WoW — one line for the current quarter, one for the next quarter
+  const line = (label, delta, detail, onclick) => `
+    <div class="wk-line${onclick ? ' click' : ''}"${onclick ? ` onclick="${onclick}"` : ''}>
+      <div><div>${label}</div><div class="wk-mini">${detail || ''}</div></div>
+      <div class="wk-amt ${delta == null ? '' : dCls(delta)}">${delta == null ? '—' : fmtDelta(delta)}${onclick ? ' <span class="wk-chev">›</span>' : ''}</div>
     </div>`;
-}
-
-// For a CLOSED month, a merchant's actual shouldn't move much — flag whoever is far from
-// their own neighboring-months average and/or well above their own signed budget for that
-// month. Self-contained: only needs this week's data.json, no historical snapshot.
-function detectMonthAnomaly(merchants, mos, targetIdx) {
-  const others = mos.filter(m => m !== targetIdx);
-  let best = null;
-  Object.entries(merchants).forEach(([slug, m]) => {
-    const m26 = m.monthly_26 || [];
-    const signed = m.monthly_signed || [];
-    const val = m26[targetIdx] || 0;
-    if (val <= 0) return;
-    const neighborAvg = others.length ? others.reduce((s,i)=>s+(m26[i]||0),0) / others.length : 0;
-    const spike = val - neighborAvg;
-    if (!best || spike > best.spike) best = { slug, am: m.am, val, neighborAvg, spike, signed: signed[targetIdx] };
-  });
-  return best;
-}
-
-function renderWeeklyAnomalies(data, q, cur, prev) {
-  const wrap = document.getElementById('weekly-anomaly-wrap');
-  const mos = Q_MONTHS[q-1];
-  const monthLabels = mos.map(m => MONTHS[m-1]);
-  const rows = monthLabels.map((label, i) => {
-    const monIdx = mos[i]-1;
-    const isClosed = (data.chart_arrays.R26P[monIdx] || 0) === 0 && (data.chart_arrays.R26A[monIdx] || 0) > 0;
-    const delta = (cur && prev) ? (cur.months[label]||0) - (prev.months[label]||0) : null;
-    if (isClosed && delta != null && Math.abs(delta) >= 15000) {
-      const anomaly = detectMonthAnomaly(data.merchants, mos.map(m=>m-1), monIdx);
-      if (anomaly && anomaly.spike > Math.abs(delta) * 0.4) {
-        const label2 = MERCHANT_LABELS[anomaly.slug] || anomaly.slug;
-        return { label, delta, html: `
-          <div class="win-row" style="border-color:rgba(255,160,64,.35)">
-            <div class="win-amt" style="color:var(--orange)">${delta>0?'+':'−'}${fmtK1(Math.abs(delta))}</div>
-            <div class="win-body">
-              <div class="win-merchant">${label2} <span style="color:var(--text2);font-weight:400"> — closed month, shouldn't be moving</span></div>
-              <div class="win-meta">${label} actual is ${fmtK1(anomaly.val)}, vs an average of ${fmtK1(anomaly.neighborAvg)} for its other months this quarter${anomaly.signed ? ` (signed budget for ${label}: ${fmtK1(anomaly.signed)})` : ''}.</div>
-            </div>
-            <div class="win-src" style="color:var(--orange);border-color:rgba(255,160,64,.3);background:rgba(255,160,64,.06)">flagged — check before the meeting</div>
-          </div>` };
+  let wow = `<div class="wk-label">What moved since ${pw || '—'}</div>`;
+  if (!prev) wow += `<div class="wk-mini" style="padding:8px 0">WoW starts once two Monday snapshots exist.</div>`;
+  else {
+    wow += line(`${qn} landing`, dCur, topMovers(merchantWoW(cur, prev, vCur.idxs), 3), `openWkModal('cur')`);
+    if (vNext) {
+      if (baseComparable) {
+        const pipeRows = dealWeightedWoW(cur, prev, vNext.idxs), expRows = merchantExpWoW(cur, prev, vNext.idxs);
+        const top = [...expRows.map(r => ({ l: merchantLabel(r.id), d: r.delta })), ...pipeRows.map(r => ({ l: r.name.split(' - ')[0] + ' (pipe)', d: r.delta }))]
+          .sort((a, b) => Math.abs(b.d) - Math.abs(a.d)).slice(0, 3).map(x => `${x.l} ${fmtDelta(x.d)}`).join(' · ');
+        wow += line(`${qLabel(nq)} Base (expected + weighted pipe)`, vNext.base - vPrevNext.base, top, `openWkModal('base')`);
+      } else {
+        wow += line(`${qLabel(nq)} signed (actual + projection)`, vNext.ap - vPrevNext.ap,
+          `${topMovers(merchantWoW(cur, prev, vNext.idxs), 3)} · Base WoW starts next week (first pipe snapshot)`, `openWkModal('next')`);
       }
-      return { label, delta, html: `
-          <div class="win-row">
-            <div class="win-amt" style="color:var(--orange)">${delta>0?'+':'−'}${fmtK1(Math.abs(delta))}</div>
-            <div class="win-body"><div class="win-merchant">${label} <span style="color:var(--text2);font-weight:400"> — closed month moved, no single merchant explains it</span></div></div>
-            <div class="win-src">spread across several accounts</div>
-          </div>` };
     }
-    return { label, delta, html: `
-        <div class="win-row">
-          <div class="win-amt">${delta==null?'—':(delta>0?'+':(delta<0?'−':''))+fmtK1(Math.abs(delta))}</div>
-          <div class="win-body"><div class="win-merchant">${label} <span style="color:var(--text2);font-weight:400"> — ${isClosed?'closed, no material move':'still open'}</span></div></div>
-          <div class="win-src">${isClosed?'no flag':'growth expected, not checked'}</div>
-        </div>` };
-  });
-  wrap.innerHTML = rows.map(r=>r.html).join('');
-}
-
-function renderWeeklyMonthTable(data, q, year, cur, prev) {
-  const mos = Q_MONTHS[q-1];
-  const labels = mos.map(m => MONTHS[m-1]);
-  const idxs = mos.map(m => m-1);
-  const ca = data.chart_arrays;
-  const pick = (arr) => idxs.map(i => arr[i] || 0);
-  const LY = pick(ca.R25), TGT = pick(ca.OKR), ACT = pick(ca.R26A), EXP = pick(ca.EXPECTED), PROJ = pick(ca.R26P);
-  const PIPE = pick(pipelineMonthly('all').monthly);
-  const TOTAL = ACT.map((a,i) => a + PROJ[i]);
-  const sum = (a) => a.reduce((s,v)=>s+v,0);
-  // WoW delta per month, from the quarter_history snapshots (same source as the Week section's WoW tile)
-  const wowDelta = (label) => (cur && prev && cur.months && prev.months) ? (cur.months[label]||0) - (prev.months[label]||0) : null;
-  const wowPill = (delta) => delta==null ? '' : `<div class="delta-pill ${delta>=0?'pos':'neg'}" style="margin-top:4px">${delta>=0?'+':'−'}${fmtK1(Math.abs(delta))} WoW</div>`;
-  const pctOf = (num, den) => den>0 ? Math.round(100*num/den) : 0;
-  const pctStyle = (p) => p>=90?'class="pos"':(p>=70?'style="color:var(--yellow)"':'class="neg"');
-
-  // Chart
-  const ctx = document.getElementById('weekly-month-chart');
-  if (ctx && window.Chart) {
-    if (ctx._chart) ctx._chart.destroy();
-    ctx._chart = new Chart(ctx, {
-      type: 'bar',
-      data: { labels, datasets: [
-        { label:'2025', data:LY.map(v=>Math.round(v/1000)), backgroundColor:'rgba(180,180,180,.6)', stack:'ly' },
-        { label:'2026 Actual', data:ACT.map(v=>Math.round(v/1000)), backgroundColor:'rgba(100,231,106,.92)', stack:'2026' },
-        { label:'2026 Proj.', data:PROJ.map(v=>Math.round(v/1000)), backgroundColor:'rgba(30,90,40,.9)', borderColor:'rgba(100,231,106,.5)', borderWidth:1, stack:'2026' },
-        { label:'Expected (Signed+Open)', data:EXP.map(v=>Math.round(v/1000)), backgroundColor:'rgba(146,84,227,.85)', stack:'expected' },
-        { id:'pipe', label:'Pipeline (weighted)', data:PIPE.map(v=>Math.round(v/1000)), backgroundColor:'rgba(146,84,227,.18)', borderColor:'rgba(186,140,245,.8)', borderWidth:1, borderDash:[3,3], stack:'expected' },
-        { label:'Monthly OKR', data:TGT.map(v=>Math.round(v/1000)), type:'line', borderColor:'#E4FA62', borderWidth:2, borderDash:[5,4], pointRadius:0, fill:false }
-      ]},
-      options: { responsive:true, maintainAspectRatio:false, interaction:{mode:'index',intersect:false},
-        plugins:{ legend:{display:false}, tooltip:{callbacks:{label:c=>c.dataset.label+': €'+c.parsed.y+'K'}} },
-        onClick:(evt, elements, chart) => { const hit = stackAtEvent(evt, chart); if (hit && hit.id === 'pipe') openPipelineModal([idxs[hit.index]], {am:'all'}, EXP[hit.index]); },
-        onHover:(evt, elements, chart) => { const hit = stackAtEvent(evt, chart); evt.native.target.style.cursor = (hit && hit.id === 'pipe') ? 'pointer' : 'default'; },
-        scales:{ x:{grid:{display:false},ticks:{color:'#888'}}, y:{grid:{color:'#222'},ticks:{color:'#888',callback:v=>'€'+v+'K'}} } }
-    });
   }
+  el('wk-wow').innerHTML = wow;
 
-  const row = (label, vals, total, opts={}) => `<tr${opts.bold?' class="bold"':''}><td${opts.muted?' style="color:var(--muted)"':''}>${label}</td>${
-    vals.map(v => `<td${opts.muted?' style="color:var(--muted)"':(opts.cls?` class="${opts.cls}"`:'')}>${v}</td>`).join('')
-  }<td class="total-col${opts.cls?' '+opts.cls:''}"${opts.muted?' style="color:var(--muted)"':''}>${total}</td></tr>`;
+  // Priority quarter
+  if (vNext) {
+    const dSigned = vPrevNext ? vNext.ap - vPrevNext.ap : null, pb = pctOf(vNext.base, vNext.okr), ps = pctOf(vNext.stretch, vNext.okr);
+    el('wk-next').style.display = '';
+    el('wk-next').innerHTML = `
+      <div class="wk-row-head"><span class="wk-label">${qLabel(nq)} ${cur.year} · main priority</span><span class="wk-tag">OKR ${fmtMK(vNext.okr)}</span></div>
+      <div class="wk-big">${fmtMK(vNext.base)} <span>Base · <b style="color:${okrColor(pb)}">${pb}%</b> of ${fmtMK(vNext.okr)} OKR — Stretch ${fmtMK(vNext.stretch)} · ${ps}%</span></div>
+      ${wkBar([{ v: vNext.ap, c: 'var(--purple)' }, { v: vNext.base - vNext.ap, c: 'rgba(186,140,245,.55)' }, { v: vNext.stretch - vNext.base, c: 'rgba(186,140,245,.15)', dashed: true }], vNext.okr)}
+      <div class="wk-sub">Signed today ${fmtMK(vNext.ap)} (${pctOf(vNext.ap, vNext.okr)}% of OKR)${dSigned != null ? `, ${fmtDelta(dSigned)} vs ${pw}` : ''} · <span style="color:var(--purple)">■</span> signed <span style="color:${PIPE_VIOLET}">■</span> Base <span style="color:rgba(186,140,245,.5)">▭</span> Stretch <span style="color:var(--yellow)">|</span> OKR</div>
+      <div class="wk-months">${vNext.months.map(m => { const p = pctOf(m.base, m.okr); return `<div><div class="wk-label">${MONTHS[m.i]}</div><div class="wk-mval">${fmtMK(m.base)}</div><div class="wk-mini">Base · <span style="color:${okrColor(p)}">${p}% of OKR</span></div></div>`; }).join('')}</div>`;
+  } else { el('wk-next').style.display = 'none'; el('wk-next').innerHTML = ''; }
 
-  const totalDeltas = labels.map(wowDelta);
-  const totalDeltaSum = totalDeltas.every(d=>d!=null) ? totalDeltas.reduce((s,d)=>s+d,0) : null;
+  // Pipe vs gap — gauge (gap = 100%): weighted pipe (what Base assumes) and gross pipe
+  const idxs = vPrio.idxs, gap = Math.max(0, vPrio.okr - vPrio.ap);
+  const pd = vPrio.pipe.deals.map(x => ({ ...x, q: idxs.reduce((s, i) => s + x.grossByMonth[i], 0), w: idxs.reduce((s, i) => s + x.byMonth[i], 0) })).filter(x => x.q > 0).sort((a, b) => b.q - a.q);
+  const tot = pd.reduce((s, x) => s + x.q, 0), wtot = pd.reduce((s, x) => s + x.w, 0), commit = pd.filter(x => x.stage === 'Commit').reduce((s, x) => s + x.q, 0);
+  const cov = pctOf(tot, gap), wcov = pctOf(wtot, gap);
+  // Gross coverage of the gap: ≥100% enough, 70–99% almost there, <70% not enough
+  const status = cov >= 100 ? { t: 'Enough pipe', c: 'var(--green)' } : cov >= 70 ? { t: 'Almost there', c: 'var(--orange)' } : { t: 'Not enough pipe', c: 'var(--red)' };
+  const grp = src => { const l = pd.filter(x => x.source === src); return { l, t: l.reduce((s, x) => s + x.q, 0) }; };
+  const am = grp('AM'), sales = grp('Sales');
+  const names = l => l.slice(0, 4).map(x => `${x.client} ${fmtMK(x.q)}`).join(' · ') + (l.length > 4 ? ` · +${l.length - 4} more` : '');
+  const scale = Math.max(tot, gap) || 1;
+  const click = `openPipelineModal(Q_MONTH_IDX['${qLabel(vPrio.q)}'], {label:'${qLabel(vPrio.q)}', am:'all', snap:WK.cur})`;
+  el('wk-pipe').innerHTML = `
+    <div class="wk-row-head"><span class="wk-label">Pipe to fill the ${qLabel(vPrio.q)} gap · HubSpot</span><span class="wk-pill" style="color:${status.c}">${status.t}</span></div>
+    <div class="wk-big" style="font-size:22px">${fmtMK(tot)} <span>gross · covers <b style="color:${status.c}">${cov}%</b> of the ${fmtMK(gap)} gap (OKR − signed)</span></div>
+    <div class="wk-bar" style="height:12px">
+      <div style="position:absolute;top:0;bottom:0;left:0;width:${tot / scale * 100}%;background:rgba(186,140,245,.25);border-radius:5px"></div>
+      <div style="position:absolute;top:0;bottom:0;left:0;width:${wtot / scale * 100}%;background:${PIPE_VIOLET};border-radius:5px 0 0 5px"></div>
+      <div class="wk-okr" style="left:${gap / scale * 100}%" title="Gap"></div>
+    </div>
+    <div class="wk-sub"><span style="color:${PIPE_VIOLET}">■</span> weighted ${fmtMK(wtot)} (${wcov}% of gap) · <span style="color:rgba(186,140,245,.5)">■</span> gross ${fmtMK(tot)} · <span style="color:var(--yellow)">|</span> gap${commit ? ` · ${fmtMK(commit)} in Commit` : ''} · ${pd.length} deals${cur.pipeline_note ? ` · ${cur.pipeline_note}` : ''}</div>
+    <div class="wk-line click" onclick="${click}"><div><div>AM · ${fmtMK(am.t)}</div><div class="wk-mini">${names(am.l)}</div></div><div class="wk-chev">›</div></div>
+    <div class="wk-line click" onclick="${click}"><div><div>Sales · ${fmtMK(sales.t)}</div><div class="wk-mini">${names(sales.l)}</div></div><div class="wk-chev">›</div></div>`;
 
-  const html = `<table class="perf-table">
-    <thead><tr style="color:var(--text)"><th style="color:var(--text)">${qLabel(q)} ${year}</th>${labels.map(l=>`<th style="color:var(--text)">${l}</th>`).join('')}<th class="total-col" style="color:var(--text)">Total</th></tr></thead>
-    <tbody>
-      ${row('LY (2025)', LY.map(v=>fmt(v)), fmt(sum(LY)), {muted:true})}
-      ${row('Target (OKR)', TGT.map(v=>fmt(v)), fmt(sum(TGT)), {muted:true})}
-      ${row('Actual', ACT.map(v=>fmt(v)), fmt(sum(ACT)))}
-      ${row('Expected (Signed+Open)', EXP.map(v=>`<span style="color:var(--purple)">${fmt(v)}</span>`), `<span style="color:var(--purple)">${fmt(sum(EXP))}</span>`)}
-      ${sum(PIPE)>0 ? row('HubSpot Pipeline (weighted)', PIPE.map(v=>v>0?`<span style="color:#BA8CF5">${fmt(v)}</span>`:'—'), `<span style="color:#BA8CF5">${fmt(sum(PIPE))}</span>`) : ''}
-      ${row('Projected (rest of month)', PROJ.map(v=>v>0?fmt(v):'—'), sum(PROJ)>0?fmt(sum(PROJ)):'—')}
-      <tr class="bold"><td>Total (landing)</td>${TOTAL.map((v,i)=>`<td class="pos"><div>${fmt(v)}</div>${wowPill(totalDeltas[i])}</td>`).join('')}<td class="total-col pos"><div>${fmt(sum(TOTAL))}</div>${wowPill(totalDeltaSum)}</td></tr>
-      <tr><td>% of target (landing)</td>${TOTAL.map((v,i)=>{const p=pctOf(v,TGT[i]);return `<td ${pctStyle(p)}>${p}%</td>`;}).join('')}<td class="total-col" ${pctStyle(pctOf(sum(TOTAL),sum(TGT)))}>${pctOf(sum(TOTAL),sum(TGT))}%</td></tr>
-      <tr><td>YoY (on landing)</td>${TOTAL.map((v,i)=>{const p=LY[i]>0?Math.round(100*(v-LY[i])/LY[i]):0;return `<td class="${p>=0?'pos':'neg'}">${p>=0?'+':''}${p}%</td>`;}).join('')}<td class="total-col ${sum(LY)>0&&(sum(TOTAL)-sum(LY))/sum(LY)>=0?'pos':'neg'}">${sum(LY)>0?(Math.round(1000*(sum(TOTAL)-sum(LY))/sum(LY))/10):0}%</td></tr>
-    </tbody>
-  </table>`;
-  document.getElementById('weekly-month-table-wrap').innerHTML = html;
+  // Monthly detail of the priority quarter (the current quarter's table sits in its own card)
+  el('wk-month-label').textContent = `${qLabel(vPrio.q)} ${cur.year} · monthly detail`;
+  el('wk-month-table').innerHTML = vNext ? wkQuarterTable(vNext, vPrevNext) : '';
+  el('wk-month-card').style.display = vNext ? '' : 'none';
 }
 
-function isNearQuarterEnd(q, weeksThreshold) {
-  const mos = Q_MONTHS[q-1];
-  const year = new Date().getFullYear();
-  const lastDay = new Date(year, mos[2], 0); // last day of the quarter's last month
-  const daysLeft = Math.ceil((lastDay - new Date()) / (24*3600*1000));
-  return daysLeft <= weeksThreshold * 7;
+function wkBar(parts, okr) {
+  const max = Math.max(okr, parts.reduce((s, p) => s + Math.max(0, p.v), 0)) || 1;
+  let left = 0;
+  const segs = parts.map(p => { const w = Math.max(0, p.v) / max * 100; const h = `<div style="position:absolute;top:0;bottom:0;left:${left}%;width:${w}%;background:${p.c};${p.dashed ? 'border:1px dashed rgba(186,140,245,.7);box-sizing:border-box;' : ''}"></div>`; left += w; return h; }).join('');
+  return `<div class="wk-bar">${segs}<div class="wk-okr" style="left:${okr / max * 100}%" title="OKR"></div></div>`;
 }
 
-function renderWeeklyQuarterOutlook(data, q, year, snapshot) {
-  const horizon = document.getElementById('weekly-quarter-horizon');
-  const nextQ = q + 1;
-  if (nextQ > 4 || !isNearQuarterEnd(q, 6)) { horizon.style.display = 'none'; return; }
-  horizon.style.display = '';
+/* Month-by-month table for one quarter (+ total). OKR / LY rows fully greyed; pipe rows violet;
+   Base vs OKR colored like the rest of the dashboard (≥90% green, ≥70% yellow, else red). */
+function wkQuarterTable(v, pv) {
+  const cols = v.months.map((m, k) => ({ label: MONTHS[m.i], m, pm: pv ? pv.months[k] : null }));
+  cols.push({ label: `${qLabel(v.q)} total`, m: v, pm: pv, total: true });
+  const fut = c => c.total ? c.m.hasFuture : c.m.future;
+  const grey = 'color:var(--muted)', violet = `color:${PIPE_VIOLET}`;
+  const row = (label, f, opt = {}) => `<tr${opt.bold ? ' class="bold"' : ''}><td style="${opt.rowStyle || ''}">${label}</td>${cols.map(c => {
+    const st = (opt.rowStyle || '') + (opt.cellStyle ? opt.cellStyle(c) : '');
+    return `<td class="${c.total ? 'total-col' : ''}" style="${st}">${f(c)}</td>`;
+  }).join('')}</tr>`;
+  const pct = c => { const p = pctOf(c.m.base, c.m.okr); return c.m.okr ? `${p}%` : '—'; };
+  const yoy = c => c.m.ly ? `${c.m.base >= c.m.ly ? '+' : ''}${Math.round((c.m.base / c.m.ly - 1) * 100)}%` : '—';
+  const pipeRows = v.hasFuture ? `
+    ${row('Expected (signed + open)', c => fut(c) ? fmtMK(c.m.exp) : '—')}
+    ${row('Weighted pipe', c => c.m.wpipe ? fmtMK(c.m.wpipe) : '—', { rowStyle: violet })}
+    ${row('Base', c => fmtMK(c.m.base), { bold: true, rowStyle: violet })}
+    ${row('Stretch', c => fmtMK(c.m.stretch), { rowStyle: violet })}` : '';
+  const vsLabel = v.hasFuture ? 'Base' : 'Landing';
+  return `<table class="perf-table"><thead><tr><th></th>${cols.map(c => `<th class="${c.total ? 'total-col' : ''}">${c.label}</th>`).join('')}</tr></thead><tbody>
+    ${row('OKR', c => fmtMK(c.m.okr), { rowStyle: grey })}
+    ${row('LY (2025)', c => fmtMK(c.m.ly), { rowStyle: grey })}
+    ${row('Actual', c => c.m.act ? fmtMK(c.m.act) : '—')}
+    ${row(v.hasFuture ? 'Signed (actual + projection)' : 'Landing (actual + projection)', c => fmtMK(c.m.ap), { bold: !v.hasFuture })}
+    ${row('WoW', c => c.pm ? fmtDelta(c.m.ap - c.pm.ap) : '—', { cellStyle: c => c.pm ? `color:${c.m.ap - c.pm.ap >= 0 ? 'var(--green)' : 'var(--red)'}` : '' })}
+    ${pipeRows}
+    ${row(`${vsLabel} vs OKR`, pct, { bold: true, cellStyle: c => c.m.okr ? `color:${okrColor(pctOf(c.m.base, c.m.okr))}` : '' })}
+    ${row(`${vsLabel} vs LY`, yoy, { cellStyle: c => c.m.ly ? `color:${c.m.base >= c.m.ly ? 'var(--green)' : 'var(--red)'}` : '' })}
+  </tbody></table>`;
+}
 
-  const qKeyNext = qLabel(nextQ);
-  const qd = data.quarterly[qKeyNext];
-  if (!qd) { horizon.style.display = 'none'; return; }
-  const expected = qd.actual + qd.proj;
-  const gap = qd.okr - expected;
-  const nextPipe = sumIdx(pipelineMonthly('all').monthly, Q_MONTH_IDX[qKeyNext] || []);
-  const securedPct = expected>0 ? Math.round(100*qd.actual/expected) : 0;
-
-  document.getElementById('weekly-nextq-title').textContent = `📊 ${qKeyNext} ${year} — ramping`;
-  document.getElementById('weekly-nextq-kpis').innerHTML = `
-    <div>
-      <div class="weekly-kpi-label">Expected (Signed+Open)</div>
-      <div class="weekly-kpi-value">${fmtK1(expected)}</div>
-      ${nextPipe > 0 ? `<div class="weekly-kpi-sub" style="cursor:pointer" onclick="openPipelineModal(Q_MONTH_IDX['${qKeyNext}'], {label:'${qKeyNext}', am:'all'})">+ <span style="color:#BA8CF5;font-weight:600">${fmtK1(nextPipe)}</span> HubSpot pipeline (weighted) ↗</div>` : ''}
-    </div>
-    <div>
-      <div class="weekly-kpi-label">${qKeyNext} OKR</div>
-      <div class="weekly-kpi-value" style="color:var(--muted)">${fmtK1(qd.okr)}</div>
-    </div>
-    <div>
-      <div class="weekly-kpi-label">Gap vs target</div>
-      <div class="weekly-kpi-value" style="color:var(--orange)">${fmtK1(Math.max(0,gap))}</div>
-    </div>`;
-
-  // Clients coverage: among merchants with revenue in the CURRENT quarter, who already has
-  // a signed budget logged for the NEXT quarter's months.
-  const curMos = Q_MONTHS[q-1].map(m=>m-1), nextMos = Q_MONTHS[nextQ-1].map(m=>m-1);
-  let withRevenue = 0, covered = 0;
-  Object.values(data.merchants).forEach(m => {
-    const m26 = m.monthly_26 || [];
-    const rev = curMos.reduce((s,i)=>s+(m26[i]||0),0);
-    if (rev <= 0) return;
-    withRevenue++;
-    const signed = m.monthly_signed || [];
-    const nextSigned = nextMos.reduce((s,i)=>s+(signed[i]||0),0);
-    if (nextSigned > 0) covered++;
-  });
-  const stillToSign = withRevenue - covered;
-  const coveredPct = withRevenue>0 ? Math.round(100*covered/withRevenue) : 0;
-  document.getElementById('weekly-nextq-clients').innerHTML = `
-    <div>
-      <div class="weekly-kpi-label">${qLabel(q)} clients already covered for ${qKeyNext}</div>
-      <div class="weekly-kpi-value">${coveredPct}%<span style="font-size:9.5px;color:var(--muted);font-weight:400"> — ${covered} of ${withRevenue}</span></div>
-      <div class="weekly-kpi-sub">had ${qLabel(q)} revenue AND a ${qKeyNext} budget already logged</div>
-    </div>
-    <div>
-      <div class="weekly-kpi-label">Clients still to sign for ${qKeyNext}</div>
-      <div class="weekly-kpi-value neg">${stillToSign}</div>
-      <div class="weekly-kpi-sub">had ${qLabel(q)} revenue, no ${qKeyNext} budget yet ("budget à valider")</div>
-    </div>`;
-
-  // Opportunities — sourced entirely from the weekly snapshot (HubSpot, not in data.json)
-  const opp = snapshot && snapshot.opportunities;
-  const oppWrap = document.getElementById('weekly-opp-wrap');
-  const oppNote = document.getElementById('weekly-opp-note');
-  if (!opp) {
-    oppWrap.innerHTML = `<div style="color:var(--muted)">No opportunities snapshot available yet.</div>`;
-    oppNote.textContent = '';
-    return;
+/* ── WoW detail modal ── */
+function openWkModal(kind) {
+  const { vCur, vNext, q, nq } = WK.views, cur = WK.cur, prev = WK.prev;
+  const wk = `W${pad2(prev.week)} → W${pad2(cur.week)}`;
+  let title, sub, body;
+  const th = (l, a = 'right') => `<th style="text-align:${a};padding:6px 8px;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.4px;color:var(--text2);border-bottom:1px solid var(--border)">${l}</th>`;
+  const td = (v, a = 'right', extra = '') => `<td style="text-align:${a};padding:7px 8px;font-variant-numeric:tabular-nums;${extra}">${v}</td>`;
+  const colored = n => `color:${n > 0 ? 'var(--green)' : n < 0 ? 'var(--red)' : 'var(--text2)'}`;
+  if (kind === 'cur' || kind === 'next') {
+    const v = kind === 'cur' ? vCur : vNext;
+    const rows = merchantWoW(cur, prev, v.idxs), total = rows.reduce((s, r) => s + r.delta, 0);
+    const big = rows.filter(r => Math.abs(r.delta) >= 500), small = rows.filter(r => Math.abs(r.delta) < 500);
+    title = `${qLabel(v.q)} ${kind === 'cur' ? 'landing' : 'signed'} — ${fmtDelta(total)} (${wk})`;
+    sub = `Actual + projection per merchant, Monday snapshot vs previous Monday · ${rows.length} merchants moved`;
+    body = `<table style="width:100%;border-collapse:collapse;font-size:12px"><thead><tr>${th('Merchant', 'left')}${th('AM', 'left')}${th('W' + pad2(prev.week))}${th('W' + pad2(cur.week))}${th('Δ')}${v.idxs.map(i => th('Δ ' + MONTHS[i])).join('')}</tr></thead><tbody>
+      ${big.map(r => `<tr style="border-bottom:1px solid #161616;cursor:pointer" onclick="closeWkModal();openModal('${r.id}')">${td(merchantLabel(r.id) + (r.gone ? ' <span class="wk-mini">(no longer in data)</span>' : r.added ? ' <span class="wk-mini">(new)</span>' : ''), 'left', 'font-weight:500')}${td(r.am || '—', 'left', 'color:var(--text2)')}${td(fmtMK(r.was), 'right', 'color:var(--text2)')}${td(fmtMK(r.now))}${td(fmtDelta(r.delta), 'right', 'font-weight:700;' + colored(r.delta))}${r.byMonth.map(x => td(Math.abs(x) >= 500 ? fmtDelta(x) : '—', 'right', colored(x))).join('')}</tr>`).join('')}
+      ${small.length ? `<tr>${td(`${small.length} other merchants (each < €0.5K)`, 'left', 'color:var(--text2)')}${td('')}${td('')}${td('')}${td(fmtDelta(small.reduce((s, r) => s + r.delta, 0)), 'right', 'color:var(--text2)')}${v.idxs.map(() => td('')).join('')}</tr>` : ''}
+      <tr style="border-top:1px solid var(--border)">${td('Total', 'left', 'font-weight:700')}${td('')}${td('')}${td('')}${td(fmtDelta(total), 'right', 'font-weight:700;' + colored(total))}${v.idxs.map((i, k) => td(fmtDelta(rows.reduce((s, r) => s + r.byMonth[k], 0)), 'right', colored(rows.reduce((s, r) => s + r.byMonth[k], 0)))).join('')}</tr>
+    </tbody></table>`;
+  } else if (kind === 'base') {
+    const vp = WK.views.vPrevNext;
+    const expRows = merchantExpWoW(cur, prev, vNext.idxs), pipeRows = dealWeightedWoW(cur, prev, vNext.idxs);
+    const dExp = vNext.exp - vp.exp, dPipe = vNext.wpipe - vp.wpipe;
+    title = `${qLabel(nq)} Base — ${fmtDelta(vNext.base - vp.base)} (${wk})`;
+    sub = `Base = Expected (signed + open) ${fmtDelta(dExp)} + weighted HubSpot pipe ${fmtDelta(dPipe)}`;
+    const big = expRows.filter(r => Math.abs(r.delta) >= 500), small = expRows.filter(r => Math.abs(r.delta) < 500);
+    body = `<div class="wk-label" style="margin-top:4px">Expected (signed + open) — ${fmtDelta(dExp)}</div>
+      <table style="width:100%;border-collapse:collapse;font-size:12px;margin-bottom:18px"><thead><tr>${th('Merchant', 'left')}${th('AM', 'left')}${th('W' + pad2(prev.week))}${th('W' + pad2(cur.week))}${th('Δ')}</tr></thead><tbody>
+      ${big.map(r => `<tr style="border-bottom:1px solid #161616;cursor:pointer" onclick="closeWkModal();openModal('${r.id}')">${td(merchantLabel(r.id), 'left', 'font-weight:500')}${td(r.am || '—', 'left', 'color:var(--text2)')}${td(fmtMK(r.was), 'right', 'color:var(--text2)')}${td(fmtMK(r.now))}${td(fmtDelta(r.delta), 'right', 'font-weight:700;' + colored(r.delta))}</tr>`).join('')}
+      ${small.length ? `<tr>${td(`${small.length} other merchants (each < €0.5K)`, 'left', 'color:var(--text2)')}${td('')}${td('')}${td('')}${td(fmtDelta(small.reduce((s, r) => s + r.delta, 0)), 'right', 'color:var(--text2)')}</tr>` : ''}
+      </tbody></table>
+      <div class="wk-label" style="color:${PIPE_VIOLET}">Weighted HubSpot pipe — ${fmtDelta(dPipe)}</div>
+      ${pipeRows.length ? `<table style="width:100%;border-collapse:collapse;font-size:12px"><thead><tr>${th('Deal', 'left')}${th('What changed', 'left')}${th('W' + pad2(prev.week))}${th('W' + pad2(cur.week))}${th('Δ')}</tr></thead><tbody>
+      ${pipeRows.map(r => `<tr style="border-bottom:1px solid #161616">${td(`<a href="${HUBSPOT_DEAL_URL}${r.id}" target="_blank" rel="noopener" style="color:var(--text);text-decoration:none">${r.name}</a> <span class="am-pill">${r.source}</span>`, 'left')}${td(r.what, 'left', 'color:var(--text2)')}${td(fmtMK(r.was), 'right', 'color:var(--text2)')}${td(fmtMK(r.now))}${td(fmtDelta(r.delta), 'right', 'font-weight:700;' + colored(r.delta))}</tr>`).join('')}
+      </tbody></table>` : `<div class="wk-mini">No deal changed.</div>`}`;
+  } else {
+    const rows = dealWoW(cur, prev, WK.views.vPrio.q) || [];
+    const total = rows.reduce((s, r) => s + r.delta, 0);
+    title = `HubSpot pipe ${qLabel(WK.views.vPrio.q)} — ${fmtDelta(total)} (${wk})`;
+    sub = 'Gross amount allocated to the quarter, deal by deal · Monday pipe snapshot vs previous Monday';
+    body = rows.length ? `<table style="width:100%;border-collapse:collapse;font-size:12px"><thead><tr>${th('Deal', 'left')}${th('Owner', 'left')}${th('What changed', 'left')}${th('W' + pad2(prev.week))}${th('W' + pad2(cur.week))}${th('Δ')}</tr></thead><tbody>
+      ${rows.map(r => `<tr style="border-bottom:1px solid #161616">${td(`<a href="${HUBSPOT_DEAL_URL}${r.id}" target="_blank" rel="noopener" style="color:var(--text);text-decoration:none">${r.name}</a> <span class="am-pill">${r.source}</span>`, 'left')}${td(r.owner || '—', 'left', 'color:var(--text2)')}${td(r.what, 'left', 'color:var(--text2)')}${td(fmtMK(r.was), 'right', 'color:var(--text2)')}${td(fmtMK(r.now))}${td(fmtDelta(r.delta), 'right', 'font-weight:700;' + colored(r.delta))}</tr>`).join('')}
+    </tbody></table>` : `<div class="wk-mini">No deal changed.</div>`;
   }
-  const amTotal = opp.am.total, salesTotal = opp.sales.total, total = amTotal + salesTotal;
-  const coverage = gap>0 ? Math.round(100*total/gap) : 100;
-  const lineHtml = (l) => `<div class="opp-line"><span>${l.deal} <span class="opp-line-am">${l.am||''}</span>${l.note?` <span class="opp-line-am">${l.note}</span>`:''}</span><span class="opp-line-amt">${fmtK1(l.amount)}</span></div>`;
-  oppWrap.innerHTML = `
-    <div class="opp-total-row">
-      <div><div class="weekly-kpi-label">Total active opportunities</div><div class="opp-total-value">${fmtK1(total)}</div></div>
-      <div class="opp-coverage"><div class="opp-coverage-value" style="color:var(--yellow)">≈${coverage}%</div><div class="opp-coverage-label">of the ${fmtK1(Math.max(0,gap))} ${qKeyNext} gap covered</div></div>
-    </div>
-    <div class="opp-group">
-      <div class="opp-group-head"><div class="opp-group-name">AM opportunities <span style="font-weight:400;color:var(--text2);font-size:10.5px">— Negotiation ongoing only</span></div><div class="opp-group-total">${fmtK1(amTotal)}</div></div>
-      ${opp.am.lines.map(lineHtml).join('')}
-      ${opp.am.more_count ? `<div class="opp-line"><span style="color:var(--text2)">+ ${opp.am.more_count} more (${opp.am.more_note||''})</span><span class="opp-line-amt" style="color:var(--text2)">${fmtK1(opp.am.more_amount)}</span></div>` : ''}
-      ${opp.am.excluded_note ? `<div class="opp-line"><span style="color:var(--muted);font-style:italic">Excluded — earlier stage: ${opp.am.excluded_note}</span><span class="opp-line-amt" style="color:var(--muted)">—</span></div>` : ''}
-      ${opp.am.won_note ? `<div class="opp-line"><span style="color:var(--green);font-style:italic">Won this week, removed: ${opp.am.won_note}</span><span class="opp-line-amt" style="color:var(--green)">—</span></div>` : ''}
-    </div>
-    <div class="opp-group">
-      <div class="opp-group-head"><div class="opp-group-name">Sales opportunities</div><div class="opp-group-total">${fmtK1(salesTotal)}</div></div>
-      ${opp.sales.lines.map(lineHtml).join('')}
-      ${opp.sales.more_note ? `<div class="opp-line"><span style="color:var(--text2)">+ ${opp.sales.more_note}</span><span class="opp-line-amt" style="color:var(--text2)">—</span></div>` : ''}
-    </div>`;
-  oppNote.textContent = snapshot.opportunities_note || '';
+  document.getElementById('wk-modal-title').textContent = title;
+  document.getElementById('wk-modal-sub').textContent = sub;
+  document.getElementById('wk-modal-body').innerHTML = body;
+  document.getElementById('wk-modal-overlay').classList.add('open');
+}
+function closeWkModal() { document.getElementById('wk-modal-overlay').classList.remove('open'); }
+
+/* ── Slack text (same structure as the Weekly CL Update) ── */
+function weeklySlackText() {
+  const { vCur, vPrevCur, vNext, vPrevNext, vPrio } = WK.views, prev = WK.prev;
+  const w = prev ? `W${pad2(prev.week)}` : null;
+  const L = [];
+  const yoy = vCur.ly ? (Math.round((vCur.ap / vCur.ly - 1) * 1000) / 10) : null;
+  L.push(`${qLabel(vCur.q)} landing: ${fmtMK(vCur.ap)} vs ${fmtMK(vCur.okr)} OKR (${pctOf(vCur.ap, vCur.okr)}%)`);
+  L.push(`${fmtMK(vCur.act)} actual${vPrevCur ? `, ${fmtDelta(vCur.ap - vPrevCur.ap)} vs ${w}` : ''}${yoy != null ? `, ${yoy >= 0 ? '+' : ''}${yoy}% vs LY` : ''}.`);
+  if (vNext) {
+    L.push('');
+    L.push(`${qLabel(vNext.q)} is the main priority. Landing: Base ${fmtMK(vNext.base)} (${pctOf(vNext.base, vNext.okr)}%) | Stretch ${fmtMK(vNext.stretch)} (${pctOf(vNext.stretch, vNext.okr)}%) vs ${fmtMK(vNext.okr)} OKR`);
+    L.push(`Signed today: ${fmtMK(vNext.ap)} (${pctOf(vNext.ap, vNext.okr)}%)${vPrevNext ? `, ${fmtDelta(vNext.ap - vPrevNext.ap)} vs ${w}` : ''}.`);
+    L.push(vNext.months.map(m => `${MONTHS[m.i]} ${fmtMK(m.base)}`).join(' | ') + ' (Base)');
+  }
+  const idxs = vPrio.idxs, gap = Math.max(0, vPrio.okr - vPrio.ap);
+  const pd = vPrio.pipe.deals.map(x => ({ ...x, q: idxs.reduce((s, i) => s + x.grossByMonth[i], 0) })).filter(x => x.q > 0).sort((a, b) => b.q - a.q);
+  const tot = pd.reduce((s, x) => s + x.q, 0), commit = pd.filter(x => x.stage === 'Commit').reduce((s, x) => s + x.q, 0);
+  const list = l => { const n = l.slice(0, 4).map(x => `${x.client} (${fmtMK(x.q)})`); return n.length > 1 ? n.slice(0, -1).join(', ') + ' and ' + n[n.length - 1] : n.join(''); };
+  const am = pd.filter(x => x.source === 'AM'), sales = pd.filter(x => x.source === 'Sales');
+  L.push('');
+  L.push(`We have ${fmtMK(tot)} in active opportunities, covering ${pctOf(tot, gap)}% of the ${fmtMK(gap)} gap${commit ? `, of which ${fmtMK(commit)} already in Commit` : ''}:`);
+  L.push('');
+  if (am.length) L.push(`• AM: ${fmtMK(am.reduce((s, x) => s + x.q, 0))}, led by ${list(am)}`);
+  if (sales.length) L.push(`• Sales: ${fmtMK(sales.reduce((s, x) => s + x.q, 0))}, across ${list(sales)}`);
+  return L.join('\n');
+}
+function copyWeeklySlack() {
+  if (!WK.views) return;
+  const txt = weeklySlackText(), btn = document.getElementById('wk-copy-btn');
+  const done = () => { btn.textContent = 'Copied'; setTimeout(() => { btn.textContent = 'Copy for Slack'; }, 1500); };
+  if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(txt).then(done, () => window.prompt('Copy:', txt));
+  else window.prompt('Copy:', txt);
 }
 
 /* ── Quarterly OKRs — renseigner quand disponible, nouveaux AMs = null auto ── */
