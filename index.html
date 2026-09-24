@@ -1329,7 +1329,8 @@ function renderMainChart(ca, am) {
      hors horizon 2026 (ex. "S127") ;
    - deals des 6 owners CL uniquement ; filtre AM du Global tab appliqué sur l'owner. ── */
 const PIPE_RULES = {
-  sales: { label:'Sales', stages:{ 'Commit':0.75, 'Negotiation':0.5 } },
+  // Sales : pas de période dans le nom → montant pondéré ÷3, imputé sur les 3 mois qui suivent la mise à jour
+  sales: { label:'Sales', stages:{ 'Commit':0.75, 'Negotiation':0.5 }, spreadMonthsAfterUpdate:3 },
   am:    { label:'AM',    stages:{ 'Negotiation ongoing':0.5 } },
 };
 const PIPE_CL_OWNERS = ['472947881','76992305','1227580661','96209869','91941033','95067911'];
@@ -1358,6 +1359,12 @@ function parseDealPeriod(name, fallbackStartIdx) {
   const start = Math.min(...spans.map(s => s[0])), end = Math.max(...spans.map(s => s[1]));
   return { start, end, months: end - start + 1, fromTitle: true };
 }
+/* Sales : N mois à partir du mois qui suit la mise à jour du snapshot HubSpot (generated_at) */
+function salesPeriod(n) {
+  const upd = PIPELINE && PIPELINE.generated_at ? new Date(PIPELINE.generated_at) : new Date();
+  const start = upd.getFullYear()*12 + upd.getMonth() + 1;
+  return { start, end: start + n - 1, months: n, fromTitle: true, rule: `next ${n} months after update` };
+}
 function periodLabel(p) {
   const lbl = abs => MONTHS[abs % 12] + ' ' + String(Math.floor(abs/12)).slice(2);
   return `${lbl(p.start)} → ${lbl(p.end)}`;
@@ -1378,7 +1385,7 @@ function pipelineMonthly(am) {
     if (!weight || !PIPE_CL_OWNERS.includes(String(d.owner_id))) continue;
     if (am !== 'all' && d.owner !== am) continue;
     const client = d.name.split(' - ')[0].trim();
-    const period = parseDealPeriod(d.name, Math.min(firstFutureIdx, 11));
+    const period = rule.spreadMonthsAfterUpdate ? salesPeriod(rule.spreadMonthsAfterUpdate) : parseDealPeriod(d.name, Math.min(firstFutureIdx, 11));
     const weighted = (d.amount || 0) * weight;
     const base = { ...d, source: rule.label, weight, weighted, period, client };
     const merchant = GDATA.merchants[merchantSlug(client)];
@@ -1435,7 +1442,7 @@ function openPipelineModal(idxs, periodName, expectedFor) {
             <td style="padding:8px"><a href="${HUBSPOT_DEAL_URL}${d.id}" target="_blank" rel="noopener" style="color:var(--text);text-decoration:none;font-weight:500">${d.client}</a> <span class="am-pill" style="margin-left:6px">${d.owner||'—'}</span>
               <div style="font-size:10px;color:var(--muted);margin-top:2px">${d.name}</div></td>
             <td style="padding:8px;color:var(--text2)">${d.stage}</td>
-            <td style="padding:8px;color:var(--text2)">${periodLabel(d.period)} <span style="color:var(--muted)">(÷${d.period.months})</span>${d.period.fromTitle ? '' : `<div style="font-size:10px;color:var(--yellow);margin-top:2px" title="${PIPE_DEFAULT_NOTE}">⚠ default period</div>`}</td>
+            <td style="padding:8px;color:var(--text2)">${periodLabel(d.period)} <span style="color:var(--muted)">(÷${d.period.months})</span>${d.period.rule ? `<div style="font-size:10px;color:var(--muted);margin-top:2px">${d.period.rule}</div>` : ''}${d.period.fromTitle ? '' : `<div style="font-size:10px;color:var(--yellow);margin-top:2px" title="${PIPE_DEFAULT_NOTE}">⚠ default period</div>`}</td>
             <td style="text-align:right;padding:8px;font-variant-numeric:tabular-nums">${fmtBudget(d.amount)}</td>
             <td style="text-align:right;padding:8px;color:var(--text2)">${Math.round(d.weight*100)}%</td>
             <td style="text-align:right;padding:8px;font-variant-numeric:tabular-nums;color:var(--text2)">${fmtK1(d.weighted)}</td>
