@@ -1,5 +1,5 @@
 {
- "generated_at": "2026-09-24T14:18:24.393Z",
+ "generated_at": "2026-09-24T14:29:45.036Z",
  "source": "HubSpot — CL AM Opportunity Pipeline (890800820: Negotiation ongoing) + CL Sales Pipeline (842062383: Negotiation, Commit). Raw amounts; weighting & monthly split applied in index.html (PIPE_RULES). Refreshed by n8n CL Dashboard - HubSpot Pipeline Sync.",
  "deals": [
   {
@@ -55,15 +55,6 @@
    "stage": "Negotiation ongoing",
    "owner_id": "95067911",
    "owner": "Clément"
-  },
-  {
-   "id": "62485400442",
-   "pipeline": "am",
-   "name": "Decathlon - Q4 2026",
-   "amount": 27437,
-   "stage": "Negotiation ongoing",
-   "owner_id": "1227580661",
-   "owner": "Eloïse"
   },
   {
    "id": "378333436",
