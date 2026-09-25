@@ -3009,8 +3009,9 @@ function renderWeeklyTab() {
     ['wk-cur','wk-wins','wk-wow','wk-next','wk-pipe','wk-month-table'].forEach(id => el(id).innerHTML = '');
     return;
   }
-  // Priority = next quarter only during the last month of a quarter (Sept → Q4), else the current quarter
-  const q = snapQuarter(cur), nq = (q < 4 && snapCurIdx(cur.data) % 3 === 2) ? q + 1 : null;
+  // Priority = next quarter from 6 weeks before the current quarter ends (helps the team anticipate), else current
+  const q = snapQuarter(cur), mon = new Date(cur.monday), qEnd = new Date(mon.getFullYear(), q * 3, 0);
+  const nq = (q < 4 && (qEnd - mon) / 864e5 <= 42) ? q + 1 : null;
   const vCur = quarterView(cur, q), vPrevCur = prev ? quarterView(prev, q) : null;
   const vNext = nq ? quarterView(cur, nq) : null, vPrevNext = (nq && prev) ? quarterView(prev, nq) : null;
   const vPrio = vNext || vCur;
