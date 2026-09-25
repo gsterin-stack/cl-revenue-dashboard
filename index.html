@@ -405,7 +405,7 @@
           <div class="week-title" id="weekly-title">Weekly</div>
           <div class="wk-sub" id="weekly-sub">Frozen every Monday morning</div>
         </div>
-        <button class="wk-btn" id="wk-copy-btn" onclick="copyWeeklySlack()">Copy for Slack</button>
+        <div style="display:flex;gap:8px"><button class="wk-btn" id="wk-company-btn" onclick="copyCompanyUpdate()" title="Copies the Notion bullets for the company update">Company update</button><button class="wk-btn" id="wk-copy-btn" onclick="copyWeeklySlack()" title="Copies the Weekly CL Update and opens #cl-team in Slack: paste it there as a draft">Slack draft</button></div>
       </div>
 
       <div class="wk-card" id="wk-cur"></div>
@@ -3009,7 +3009,8 @@ function renderWeeklyTab() {
     ['wk-cur','wk-wins','wk-wow','wk-next','wk-pipe','wk-month-table'].forEach(id => el(id).innerHTML = '');
     return;
   }
-  const q = snapQuarter(cur), nq = q < 4 ? q + 1 : null;
+  // Priority = next quarter only during the last month of a quarter (Sept → Q4), else the current quarter
+  const q = snapQuarter(cur), nq = (q < 4 && snapCurIdx(cur.data) % 3 === 2) ? q + 1 : null;
   const vCur = quarterView(cur, q), vPrevCur = prev ? quarterView(prev, q) : null;
   const vNext = nq ? quarterView(cur, nq) : null, vPrevNext = (nq && prev) ? quarterView(prev, nq) : null;
   const vPrio = vNext || vCur;
@@ -3198,38 +3199,120 @@ function openWkModal(kind) {
 }
 function closeWkModal() { document.getElementById('wk-modal-overlay').classList.remove('open'); }
 
-/* ── Slack text (same structure as the Weekly CL Update) ── */
+/* ── Texts generated from the Monday snapshot ──
+   1) Weekly CL Update for #cl-team (same template as the cl-weekly-update skill, Slack emoji codes)
+   2) Company update (Notion bullets, max ~3 lines each): month landing, quarter landing, wins, WoW */
+const SLACK_CL_TEAM_URL = 'https://hellojoko.slack.com/archives/C04G06ZECNP';
+const fmtSigned = n => (n >= 0 ? '+' : '-') + fmtMK(Math.abs(n)).replace('−', '');
+function wkPct(a, b) { return b ? Math.round(a / b * 100) : 0; }
+function wkYoY(a, b) { return b ? (Math.round((a / b - 1) * 1000) / 10) : null; }
+/* Full-year 2026 landing per merchant (actual_26 + proj_26), this Monday vs last Monday; moves < €5K ignored */
+function yearMovers(cur, prev) {
+  if (!prev) return { up: [], down: [] };
+  const a = cur.data.merchants, b = prev.data.merchants, rows = [];
+  for (const id of new Set([...Object.keys(a), ...Object.keys(b)])) {
+    const land = m => m ? (m.actual_26 || 0) + (m.proj_26 || 0) : 0;
+    const d = land(a[id]) - land(b[id]);
+    if (Math.abs(d) >= 5000) rows.push({ id, d });
+  }
+  return { up: rows.filter(r => r.d > 0).sort((x, y) => y.d - x.d).slice(0, 3), down: rows.filter(r => r.d < 0).sort((x, y) => x.d - y.d).slice(0, 3) };
+}
+function weeklyWins() {
+  const cur = WK.cur;
+  return Array.isArray(cur.wins) ? cur.wins : (WEEKLY_SNAPSHOT && WEEKLY_SNAPSHOT.week === cur.week) ? (WEEKLY_SNAPSHOT.wins || []) : [];
+}
+/* Opportunities of the priority quarter, grouped per merchant (e.g. Celio acquisition + reactivation) */
+function prioDeals(v) {
+  const byClient = {};
+  for (const x of v.pipe.deals) {
+    const q = v.idxs.reduce((s, i) => s + x.grossByMonth[i], 0);
+    if (q <= 0) continue;
+    const k = x.source + '|' + x.client;
+    byClient[k] = byClient[k] || { client: x.client, source: x.source, q: 0 };
+    byClient[k].q += q;
+  }
+  return Object.values(byClient).sort((a, b) => b.q - a.q);
+}
+function listAnd(items) { return items.length > 1 ? items.slice(0, -1).join(', ') + ' and ' + items[items.length - 1] : items.join(''); }
+
 function weeklySlackText() {
-  const { vCur, vPrevCur, vNext, vPrevNext, vPrio } = WK.views, prev = WK.prev;
-  const w = prev ? `W${pad2(prev.week)}` : null;
+  const { vCur, vPrevCur, vNext, vPrevNext, vPrio } = WK.views, cur = WK.cur, prev = WK.prev;
+  const pw = prev ? `W${pad2(prev.week)}` : null, curMonth = MONTHS[snapCurIdx(cur.data)];
   const L = [];
-  const yoy = vCur.ly ? (Math.round((vCur.ap / vCur.ly - 1) * 1000) / 10) : null;
-  L.push(`${qLabel(vCur.q)} landing: ${fmtMK(vCur.ap)} vs ${fmtMK(vCur.okr)} OKR (${pctOf(vCur.ap, vCur.okr)}%)`);
-  L.push(`${fmtMK(vCur.act)} actual${vPrevCur ? `, ${fmtDelta(vCur.ap - vPrevCur.ap)} vs ${w}` : ''}${yoy != null ? `, ${yoy >= 0 ? '+' : ''}${yoy}% vs LY` : ''}.`);
+  L.push('Hey team + @Nicolas, here is the weekly update!', '');
+  L.push(`:rocket: Weekly CL Update: W${pad2(cur.week)}`, '');
+  const yoy = wkYoY(vCur.ap, vCur.ly);
+  if (vNext || !vCur.hasFuture) {
+    L.push(`*${qLabel(vCur.q)} landing: ${fmtMK(vCur.ap)} vs ${fmtMK(vCur.okr)} OKR (${wkPct(vCur.ap, vCur.okr)}%)*`);
+    L.push(`${fmtMK(vCur.act)} actual + ${fmtMK(vCur.ap - vCur.act)} projected for ${curMonth}.${vPrevCur ? ` ${fmtSigned(vCur.ap - vPrevCur.ap)} vs ${pw},` : ''}${yoy != null ? ` ${yoy >= 0 ? '+' : ''}${yoy}% vs LY.` : ''}`);
+  } else {
+    L.push(`*${qLabel(vCur.q)} landing: Base ${fmtMK(vCur.base)} (${wkPct(vCur.base, vCur.okr)}%) | Stretch ${fmtMK(vCur.stretch)} (${wkPct(vCur.stretch, vCur.okr)}%) vs ${fmtMK(vCur.okr)} OKR*`);
+    L.push(`Signed today: ${fmtMK(vCur.ap)} (${wkPct(vCur.ap, vCur.okr)}%), incl. ${fmtMK(vCur.act)} already invoiced. ${vCur.months.map(m => `${MONTHS[m.i]} ${fmtMK(m.base)}`).join(' | ')} (Base)`);
+  }
+  L.push('');
+  const wins = weeklyWins();
+  if (wins.length) L.push(`:clap: Wins this week: ${listAnd(wins.map(w => `${w.merchant} ${fmtMK(w.amount)}${w.am ? ` (${w.am})` : ''}`))}. Congrats!`);
+  const mv = yearMovers(cur, prev);
+  if (mv.up.length) L.push(`:chart_with_upwards_trend: Biggest moves this week: ${mv.up.map(r => `${merchantLabel(r.id)} (${fmtSigned(r.d)})`).join(', ')}`);
+  if (mv.down.length) L.push(`:warning: Biggest drops this week: ${mv.down.map(r => `${merchantLabel(r.id)} (${fmtSigned(r.d)})`).join(', ')}`);
   if (vNext) {
     L.push('');
-    L.push(`${qLabel(vNext.q)} is the main priority. Landing: Base ${fmtMK(vNext.base)} (${pctOf(vNext.base, vNext.okr)}%) | Stretch ${fmtMK(vNext.stretch)} (${pctOf(vNext.stretch, vNext.okr)}%) vs ${fmtMK(vNext.okr)} OKR`);
-    L.push(`Signed today: ${fmtMK(vNext.ap)} (${pctOf(vNext.ap, vNext.okr)}%)${vPrevNext ? `, ${fmtDelta(vNext.ap - vPrevNext.ap)} vs ${w}` : ''}.`);
-    L.push(vNext.months.map(m => `${MONTHS[m.i]} ${fmtMK(m.base)}`).join(' | ') + ' (Base)');
+    L.push(`*${qLabel(vNext.q)} is now the priority. Landing: Base ${fmtMK(vNext.base)} (${wkPct(vNext.base, vNext.okr)}%) | Stretch ${fmtMK(vNext.stretch)} (${wkPct(vNext.stretch, vNext.okr)}%) vs ${fmtMK(vNext.okr)} OKR*`);
+    L.push(`Signed today: ${fmtMK(vNext.ap)} (${wkPct(vNext.ap, vNext.okr)}%)${vPrevNext ? `, ${fmtSigned(vNext.ap - vPrevNext.ap)} vs ${pw}` : ''}. ${vNext.months.map(m => `${MONTHS[m.i]} ${fmtMK(m.base)}`).join(' | ')} (Base)`);
+    if (WK.views.baseComparable) L.push(`Base ${fmtSigned(vNext.base - vPrevNext.base)} vs ${pw}, Stretch ${fmtSigned(vNext.stretch - vPrevNext.stretch)}.`);
   }
-  const idxs = vPrio.idxs, gap = Math.max(0, vPrio.okr - vPrio.ap);
-  const pd = vPrio.pipe.deals.map(x => ({ ...x, q: idxs.reduce((s, i) => s + x.grossByMonth[i], 0) })).filter(x => x.q > 0).sort((a, b) => b.q - a.q);
-  const tot = pd.reduce((s, x) => s + x.q, 0), commit = pd.filter(x => x.stage === 'Commit').reduce((s, x) => s + x.q, 0);
-  const list = l => { const n = l.slice(0, 4).map(x => `${x.client} (${fmtMK(x.q)})`); return n.length > 1 ? n.slice(0, -1).join(', ') + ' and ' + n[n.length - 1] : n.join(''); };
-  const am = pd.filter(x => x.source === 'AM'), sales = pd.filter(x => x.source === 'Sales');
+  const gap = Math.max(0, vPrio.okr - vPrio.ap), pd = prioDeals(vPrio);
+  const tot = pd.reduce((s, x) => s + x.q, 0);
+  const grp = src => pd.filter(x => x.source === src);
   L.push('');
-  L.push(`We have ${fmtMK(tot)} in active opportunities, covering ${pctOf(tot, gap)}% of the ${fmtMK(gap)} gap${commit ? `, of which ${fmtMK(commit)} already in Commit` : ''}:`);
-  L.push('');
-  if (am.length) L.push(`• AM: ${fmtMK(am.reduce((s, x) => s + x.q, 0))}, led by ${list(am)}`);
-  if (sales.length) L.push(`• Sales: ${fmtMK(sales.reduce((s, x) => s + x.q, 0))}, across ${list(sales)}`);
+  L.push(`${vNext ? 'We have' : 'Active opportunities:'} ${fmtMK(tot)}${vNext ? ' in active opportunities' : ''}, covering ${wkPct(tot, gap)}% of the ${fmtMK(gap)} gap${vNext ? `, of which ${fmtMK(tot)} already in Negotiation/Commit` : ''}:`);
+  const am = grp('AM'), sales = grp('Sales');
+  if (am.length) L.push(`• AM: ${fmtMK(am.reduce((s, x) => s + x.q, 0))}, led by ${listAnd(am.slice(0, 4).map(x => `${x.client} (${fmtMK(x.q)})`))}`);
+  if (sales.length) L.push(`• Sales: ${fmtMK(sales.reduce((s, x) => s + x.q, 0))}, across ${listAnd(sales.map(x => `${x.client} (${fmtMK(x.q)})`))}`);
+  L.push('', '[Closing line: one or two sentences on this week]');
   return L.join('\n');
 }
+
+function companyUpdateText() {
+  const { vCur, vPrevCur, vNext, vPrevNext } = WK.views, cur = WK.cur, prev = WK.prev;
+  const i = snapCurIdx(cur.data), mo = vCur.months.find(m => m.i === i) || vCur.months[vCur.months.length - 1];
+  const pmo = vPrevCur ? vPrevCur.months.find(m => m.i === mo.i) : null;
+  const monthName = new Date(2026, mo.i, 1).toLocaleDateString('en-GB', { month: 'long' });
+  const rows = prev ? merchantWoW(cur, prev, [mo.i]).slice(0, 3) : [];
+  const yoyM = wkYoY(mo.ap, mo.ly), yoyQ = wkYoY(vCur.ap, vCur.ly);
+  const B = [];
+  B.push(`📅 **${monthName} landing: ${fmtMK(mo.ap)}**, ${wkPct(mo.ap, mo.okr)}% of the ${fmtMK(mo.okr)} OKR${yoyM != null ? ` and ${yoyM >= 0 ? '+' : ''}${Math.round(yoyM)}% vs ${monthName} 2025` : ''}.${pmo ? ` ${fmtSigned(mo.ap - pmo.ap)} vs last week${rows.length ? `, driven by ${listAnd(rows.map(r => merchantLabel(r.id)))}` : ''}.` : ''}`);
+  B.push(`📊 **${qLabel(vCur.q)} landing: ${fmtMK(vCur.ap)}**, ${wkPct(vCur.ap, vCur.okr)}% of the ${fmtMK(vCur.okr)} OKR${yoyQ != null ? ` and ${yoyQ >= 0 ? '+' : ''}${Math.round(yoyQ)}% vs ${qLabel(vCur.q)} 2025` : ''}, with ${fmtMK(vCur.act)} already booked.${vPrevCur ? ` ${fmtSigned(vCur.ap - vPrevCur.ap)} vs last week.` : ''}`);
+  const wins = weeklyWins();
+  B.push(wins.length
+    ? `🏆 **${wins.length > 1 ? 'Wins' : 'Win'} of the week: ${listAnd(wins.map(w => `${w.merchant} ${fmtMK(w.amount)}`))}**${wins.length === 1 && wins[0].am ? ` (${wins[0].am}${wins[0].deal ? `, ${wins[0].deal.split(' - ').slice(1).join(' ')}` : ''})` : ''}.`
+    : `🏆 **No new win closed last week.**`);
+  if (prev) {
+    const qRows = merchantWoW(cur, prev, vCur.idxs).slice(0, 3);
+    let wow = `🔄 **WoW movers:** ${qRows.map(r => `${merchantLabel(r.id)} ${fmtSigned(r.delta)}`).join(', ')}.`;
+    if (vNext && vPrevNext) {
+      const nRows = merchantWoW(cur, prev, vNext.idxs).slice(0, 1);
+      wow += ` ${qLabel(vNext.q)} signed revenue ${vNext.ap - vPrevNext.ap >= 0 ? 'grew' : 'fell'} ${fmtSigned(vNext.ap - vPrevNext.ap)}${nRows.length ? `, led by ${merchantLabel(nRows[0].id)} (${fmtSigned(nRows[0].delta)})` : ''}.`;
+    }
+    B.push(wow);
+  }
+  return B.map(b => '- ' + b).join('\n');
+}
+
+function wkCopy(txt, btn, label, after) {
+  const done = () => { btn.textContent = 'Copied'; setTimeout(() => { btn.textContent = label; }, 1800); if (after) after(); };
+  if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(txt).then(done, () => { window.prompt('Copy:', txt); if (after) after(); });
+  else { window.prompt('Copy:', txt); if (after) after(); }
+}
+/* Slack has no public API to create a user draft from a web page: copy the message, then open #cl-team to paste */
 function copyWeeklySlack() {
   if (!WK.views) return;
-  const txt = weeklySlackText(), btn = document.getElementById('wk-copy-btn');
-  const done = () => { btn.textContent = 'Copied'; setTimeout(() => { btn.textContent = 'Copy for Slack'; }, 1500); };
-  if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(txt).then(done, () => window.prompt('Copy:', txt));
-  else window.prompt('Copy:', txt);
+  const win = window.open('', '_blank');   // opened synchronously so the popup isn't blocked
+  wkCopy(weeklySlackText(), document.getElementById('wk-copy-btn'), 'Slack draft', () => { if (win) win.location = SLACK_CL_TEAM_URL; });
+}
+function copyCompanyUpdate() {
+  if (!WK.views) return;
+  wkCopy(companyUpdateText(), document.getElementById('wk-company-btn'), 'Company update');
 }
 
 /* ── Quarterly OKRs — renseigner quand disponible, nouveaux AMs = null auto ── */
