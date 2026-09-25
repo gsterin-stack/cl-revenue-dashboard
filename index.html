@@ -3133,8 +3133,7 @@ function wkQuarterTable(v, pv) {
   const pipeRows = v.hasFuture ? `
     ${row('Expected (signed + open)', c => fut(c) ? fmtMK(c.m.exp) : '—')}
     ${row('Weighted pipe', c => c.m.wpipe ? fmtMK(c.m.wpipe) : '—', { rowStyle: violet })}
-    ${row('Base', c => fmtMK(c.m.base), { bold: true, rowStyle: violet })}
-    ${row('Stretch', c => fmtMK(c.m.stretch), { rowStyle: violet })}` : '';
+    ${row('Base', c => fmtMK(c.m.base), { bold: true, rowStyle: violet })}` : '';
   const vsLabel = v.hasFuture ? 'Base' : 'Landing';
   return `<table class="perf-table"><thead><tr><th></th>${cols.map(c => `<th class="${c.total ? 'total-col' : ''}">${c.label}</th>`).join('')}</tr></thead><tbody>
     ${row('OKR', c => fmtMK(c.m.okr), { rowStyle: grey })}
