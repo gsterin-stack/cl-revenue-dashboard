@@ -1313,7 +1313,7 @@ function renderMainChart(ca, am) {
      mois prochain, ex. "S2 2026" vu en septembre), marchand en budget Open dans data.json
      (déjà dans Expected → double comptage ; à passer en capped d'abord, ex. Sephora), période
      hors horizon 2026 (ex. "S127") ;
-   - deals des 6 owners CL uniquement ; filtre AM du Global tab appliqué sur l'owner. ── */
+   - tous les owners (les deux pipelines ne contiennent que du Card-Linked) ; filtre AM du Global tab appliqué sur l'owner. ── */
 const PIPE_RULES = {
   // Sales : pas de période dans le nom → montant pondéré ÷3, imputé sur les 3 mois qui suivent la mise à jour
   sales: { label:'Sales', stages:{ 'Commit':0.75, 'Negotiation':0.5 }, spreadMonthsAfterUpdate:3 },
@@ -1371,7 +1371,7 @@ function pipelineCompute(pipe, data, am) {
   for (const d of pipe.deals) {
     const rule = PIPE_RULES[d.pipeline];
     const weight = rule && rule.stages[d.stage];
-    if (!weight || !PIPE_CL_OWNERS.includes(String(d.owner_id))) continue;
+    if (!weight) continue;   // both HubSpot pipelines are Card-Linked only → no owner filter, only Sales vs AM
     if (am !== 'all' && d.owner !== am) continue;
     const client = d.name.split(' - ')[0].trim();
     const period = rule.spreadMonthsAfterUpdate ? salesPeriod(rule.spreadMonthsAfterUpdate, pipe) : parseDealPeriod(d.name, Math.min(firstFutureIdx, 11));
