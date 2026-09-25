@@ -3133,8 +3133,8 @@ function wkQuarterTable(v, pv) {
   const pipeRows = v.hasFuture ? `
     ${row('Expected (signed + open)', c => fut(c) ? fmtMK(c.m.exp) : '—')}
     ${row('Weighted pipe', c => c.m.wpipe ? fmtMK(c.m.wpipe) : '—', { rowStyle: violet })}
-    ${row('Base', c => fmtMK(c.m.base), { bold: true, rowStyle: violet })}` : '';
-  const vsLabel = v.hasFuture ? 'Base' : 'Landing';
+    ${row('Total Expected + Pipeline (weighted — Base)', c => fmtMK(c.m.base), { bold: true, rowStyle: violet })}` : '';
+  const vsLabel = v.hasFuture ? 'Total (Base)' : 'Landing';
   return `<table class="perf-table"><thead><tr><th></th>${cols.map(c => `<th class="${c.total ? 'total-col' : ''}">${c.label}</th>`).join('')}</tr></thead><tbody>
     ${row('OKR', c => fmtMK(c.m.okr), { rowStyle: grey })}
     ${row('LY (2025)', c => fmtMK(c.m.ly), { rowStyle: grey })}
@@ -3142,8 +3142,8 @@ function wkQuarterTable(v, pv) {
     ${row(v.hasFuture ? 'Signed (actual + projection)' : 'Landing (actual + projection)', c => fmtMK(c.m.ap), { bold: !v.hasFuture })}
     ${row('WoW', c => c.pm ? fmtDelta(c.m.ap - c.pm.ap) : '—', { cellStyle: c => c.pm ? `color:${c.m.ap - c.pm.ap >= 0 ? 'var(--green)' : 'var(--red)'}` : '' })}
     ${pipeRows}
-    ${row(`${vsLabel} vs OKR`, pct, { bold: true, cellStyle: c => c.m.okr ? `color:${okrColor(pctOf(c.m.base, c.m.okr))}` : '' })}
     ${row(`${vsLabel} vs LY`, yoy, { cellStyle: c => c.m.ly ? `color:${c.m.base >= c.m.ly ? 'var(--green)' : 'var(--red)'}` : '' })}
+    ${row(`${vsLabel} vs OKR`, pct, { bold: true, cellStyle: c => c.m.okr ? `color:${okrColor(pctOf(c.m.base, c.m.okr))}` : '' })}
   </tbody></table>`;
 }
 
