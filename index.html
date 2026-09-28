@@ -3574,6 +3574,13 @@ function computeAccountAlert(id, m) {
       reasons.push({ sev,
         label: `⏰ Budget ending soon — ${daysLeft}d (${MONTHS[d.getMonth()]} ${d.getDate()})`,
         amount:'—', amountRaw:0, amountSub:'' });
+    } else if (daysLeft < 0 && daysLeft >= -30) {
+      // Same 30-day window as the Budget End column: the budget already ran out.
+      const rabD = m.required_additional_budget;
+      reasons.push({ sev:1,
+        label: `⛔ Budget depleted — since ${MONTHS[d.getMonth()]} ${d.getDate()}`,
+        amount: rabD > 0 ? `+${fmtK1(rabD)}` : '—', amountRaw: rabD > 0 ? rabD : 0,
+        amountSub: rabD > 0 ? 'needed to cover spend' : '' });
     }
   }
 
@@ -3585,7 +3592,7 @@ function computeAccountAlert(id, m) {
       label: `📊 Underspend risk${riskPct!=null?` — ${riskPct}%`:''}`,
       amount: `-${fmtK1(Math.abs(rab))}`, amountRaw: rab,
       amountSub: totalBudget>0 ? `of ${fmtBudget(totalBudget)} signed · by Dec 31` : 'by Dec 31' });
-  } else if (rab != null && rab > 15000 && m.is_capped) {
+  } else if (rab != null && rab > 15000 && m.is_capped && !budgetIsDepleted(m)) {
     // Only a real overspend when the signed budget actually covers the rest of the year —
     // otherwise there's simply no signed commitment yet for the coming months (crossing_date,
     // above, already flags that case with a precise date; no need to guess here too).
@@ -4048,13 +4055,19 @@ function closeWowModal() {
    when available from the SF-Budget-Risk n8n node.
    Falls back to JS burn-rate estimate when data not yet injected.
 ── */
+function budgetIsDepleted(r) {
+  const cd = r.crossing_date ? budgetCrossingDateStr(r) : null;
+  return !!(cd && cd.depleted);
+}
 function budgetCrossingDateStr(r) {
   // Real data from Snowflake (SF-Budget-Risk node)
   if (r.crossing_date) {
     const d = new Date(r.crossing_date);
     const daysLeft = Math.round((d - Date.now()) / 86400000);
     if (daysLeft < -30 || daysLeft > 400) return null;
-    return { date: MONTHS[d.getMonth()]+' '+d.getDate(), daysLeft };
+    // Date already passed = the budget ran out on that day (Snowflake stops counting revenue
+    // past it), not an upcoming end date.
+    return { date: MONTHS[d.getMonth()]+' '+d.getDate(), daysLeft, depleted: daysLeft < 0 };
   }
   // Fallback: JS burn-rate estimate
   if (r.budget_type !== 'capped' || r.remaining_budget == null || r.remaining_budget <= 0) return null;
@@ -4221,7 +4234,7 @@ function renderAMDeliveryTable(merchants, am, summary) {
           <td class="num"><strong>${fmt(r.actual_26)}</strong></td>
           <td class="num">${openBudgetCell}</td>
           <td class="num">${remCell}</td>
-          <td class="num">${(() => { const cd=budgetCrossingDateStr(r); if(!cd) return '<span class="neu">—</span>'; const c=cd.daysLeft<=30?'var(--red)':cd.daysLeft<=60?'#FFA040':'var(--green)'; return `<span style="color:${c};font-size:11px;font-weight:500">${cd.date}</span>`; })()}</td>
+          <td class="num">${(() => { const cd=budgetCrossingDateStr(r); if(!cd) return '<span class="neu">—</span>'; if(cd.depleted) return `<span style="color:var(--red);font-size:11px;font-weight:600;white-space:nowrap" title="Budget depleted on ${cd.date}${r.required_additional_budget>0?` — +${fmtK1(r.required_additional_budget)} needed`:''}">⛔ Depleted ${cd.date}</span>`; const c=cd.daysLeft<=30?'var(--red)':cd.daysLeft<=60?'#FFA040':'var(--green)'; return `<span style="color:${c};font-size:11px;font-weight:500">${cd.date}</span>`; })()}</td>
           <td class="num">${budgetStatusBadge(r)}</td>
           <td class="num">${avbCell}</td>
           <td style="text-align:center">${wowCell(r)}</td>
