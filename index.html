@@ -3578,7 +3578,7 @@ function computeAccountAlert(id, m) {
       // Same 30-day window as the Budget End column: the budget already ran out.
       const rabD = m.required_additional_budget;
       reasons.push({ sev:1,
-        label: `⛔ Budget depleted — since ${MONTHS[d.getMonth()]} ${d.getDate()}`,
+        label: `⛔ Out of budget since ${MONTHS[d.getMonth()]} ${d.getDate()}`,
         amount: rabD > 0 ? `+${fmtK1(rabD)}` : '—', amountRaw: rabD > 0 ? rabD : 0,
         amountSub: rabD > 0 ? 'needed to cover spend' : '' });
     }
@@ -4234,7 +4234,7 @@ function renderAMDeliveryTable(merchants, am, summary) {
           <td class="num"><strong>${fmt(r.actual_26)}</strong></td>
           <td class="num">${openBudgetCell}</td>
           <td class="num">${remCell}</td>
-          <td class="num">${(() => { const cd=budgetCrossingDateStr(r); if(!cd) return '<span class="neu">—</span>'; if(cd.depleted) return `<span style="color:var(--red);font-size:11px;font-weight:600;white-space:nowrap" title="Budget depleted on ${cd.date}${r.required_additional_budget>0?` — +${fmtK1(r.required_additional_budget)} needed`:''}">⛔ Depleted ${cd.date}</span>`; const c=cd.daysLeft<=30?'var(--red)':cd.daysLeft<=60?'#FFA040':'var(--green)'; return `<span style="color:${c};font-size:11px;font-weight:500">${cd.date}</span>`; })()}</td>
+          <td class="num">${(() => { const cd=budgetCrossingDateStr(r); if(!cd) return '<span class="neu">—</span>'; if(cd.depleted) return `<span style="color:var(--red);font-size:11px;font-weight:600;white-space:nowrap" title="Budget used up on ${cd.date}${r.required_additional_budget>0?` — +${fmtK1(r.required_additional_budget)} needed`:''}">⛔ Out of budget · ${cd.date}</span>`; const c=cd.daysLeft<=30?'var(--red)':cd.daysLeft<=60?'#FFA040':'var(--green)'; return `<span style="color:${c};font-size:11px;font-weight:500">${cd.date}</span>`; })()}</td>
           <td class="num">${budgetStatusBadge(r)}</td>
           <td class="num">${avbCell}</td>
           <td style="text-align:center">${wowCell(r)}</td>
