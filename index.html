@@ -207,6 +207,15 @@
     .modal-table .proj26 { color:rgba(100,231,106,.5); }
     .modal-table .past { color:var(--muted); }
     .modal-note { font-size:11px; color:var(--muted); margin-top:12px; }
+    .bh-wrap { background:var(--s2); border:1px solid var(--border); border-radius:9px; padding:12px 14px; margin-bottom:18px; }
+    .bh-head { display:flex; align-items:baseline; justify-content:space-between; gap:12px; margin-bottom:8px; }
+    .bh-sum { font-size:12px; color:var(--text2); }
+    .bh-sum b { color:var(--text); }
+    .bh-row { display:grid; grid-template-columns:18px 1fr auto auto; gap:10px; align-items:center; padding:7px 0; border-top:1px solid #1c1c1c; font-size:12px; font-variant-numeric:tabular-nums; }
+    .bh-row .bh-days { color:var(--text2); min-width:92px; text-align:right; }
+    .bh-row .bh-need { color:var(--text2); min-width:120px; text-align:right; }
+    .bh-open  { color:var(--red); font-weight:600; }
+    .bh-closed { color:var(--text2); }
 
     /* ── Weekly tab ── */
     .week-head { display:flex; align-items:baseline; justify-content:space-between; margin-bottom:2px; }
@@ -452,6 +461,7 @@
       <button class="modal-close" onclick="closeModalDirect()">✕</button>
     </div>
     <div class="modal-kpis" id="modal-kpis"></div>
+    <div id="modal-bh"></div>
     <div class="modal-chart-title">Monthly Revenue 2025 · 2026</div>
     <div class="modal-chart-legend" id="modal-chart-legend"></div>
     <div class="modal-chart-wrap"><canvas id="modal-chart"></canvas></div>
@@ -3578,7 +3588,7 @@ function computeAccountAlert(id, m) {
       // Same 30-day window as the Budget End column: the budget already ran out.
       const rabD = m.required_additional_budget;
       reasons.push({ sev:1,
-        label: `⛔ Out of budget since ${MONTHS[d.getMonth()]} ${d.getDate()}`,
+        label: `⛔ Budget ended on ${MONTHS[d.getMonth()]} ${d.getDate()}`,
         amount: rabD > 0 ? `+${fmtK1(rabD)}` : '—', amountRaw: rabD > 0 ? rabD : 0,
         amountSub: rabD > 0 ? 'needed to cover spend' : '' });
     }
@@ -4234,7 +4244,7 @@ function renderAMDeliveryTable(merchants, am, summary) {
           <td class="num"><strong>${fmt(r.actual_26)}</strong></td>
           <td class="num">${openBudgetCell}</td>
           <td class="num">${remCell}</td>
-          <td class="num">${(() => { const cd=budgetCrossingDateStr(r); if(!cd) return '<span class="neu">—</span>'; if(cd.depleted) return `<span style="color:var(--red);font-size:11px;font-weight:600;white-space:nowrap" title="Budget used up on ${cd.date}${r.required_additional_budget>0?` — +${fmtK1(r.required_additional_budget)} needed`:''}">⛔ Out of budget · ${cd.date}</span>`; const c=cd.daysLeft<=30?'var(--red)':cd.daysLeft<=60?'#FFA040':'var(--green)'; return `<span style="color:${c};font-size:11px;font-weight:500">${cd.date}</span>`; })()}</td>
+          <td class="num">${(() => { const cd=budgetCrossingDateStr(r); if(!cd) return '<span class="neu">—</span>'; if(cd.depleted) return `<span style="color:var(--red);font-size:11px;font-weight:600;white-space:nowrap" title="Budget ended on ${cd.date}${r.required_additional_budget>0?` — +${fmtK1(r.required_additional_budget)} needed`:''}">⛔ Budget ended · ${cd.date}</span>`; const c=cd.daysLeft<=30?'var(--red)':cd.daysLeft<=60?'#FFA040':'var(--green)'; return `<span style="color:${c};font-size:11px;font-weight:500">${cd.date}</span>`; })()}</td>
           <td class="num">${budgetStatusBadge(r)}</td>
           <td class="num">${avbCell}</td>
           <td style="text-align:center">${wowCell(r)}</td>
@@ -4482,6 +4492,38 @@ function closeNewClientsModal() {
 }
 
 /* ── Merchant Modal ── */
+/* ── Budget history (budget ended → new budget signed) ──
+   PREVIEW: episodes rebuilt by hand from the weekly snapshots (W38–W40). Re-sign dates are the
+   first snapshot where the crossing date moved again, so they are approximate ("~"). The real
+   version reads budget_overruns.json, kept up to date daily by n8n. */
+const BUDGET_HISTORY = {
+  'boulanger':    [{ ended:'2026-09-05', resigned:'2026-09-21', need:298297 }, { ended:'2026-09-27', resigned:null, need:232512 }],
+  'kiabi':        [{ ended:'2026-08-22', resigned:'2026-09-21', need:262184 }],
+  'vente-privee': [{ ended:'2026-09-04', resigned:'2026-09-21', need:162036 }],
+  'uber-eats':    [{ ended:'2026-09-13', resigned:'2026-09-28', need:245307 }],
+  'uber':         [{ ended:'2026-09-15', resigned:null,         need:17057  }],
+};
+function renderBudgetHistory(mid) {
+  const eps = (BUDGET_HISTORY[mid] || []).slice().sort((a,b) => b.ended.localeCompare(a.ended));
+  if (!eps.length) return '';
+  const day = 86400000, today = new Date(new Date().toDateString());
+  const fmtD = iso => { const d = new Date(iso); return `${MONTHS[d.getMonth()]} ${d.getDate()}`; };
+  const gap  = e => Math.max(0, Math.round(((e.resigned ? new Date(e.resigned) : today) - new Date(e.ended)) / day));
+  const closed = eps.filter(e => e.resigned);
+  const avg = closed.length ? Math.round(closed.reduce((s,e) => s + gap(e), 0) / closed.length) : null;
+  const rows = eps.map(e => e.resigned
+    ? `<div class="bh-row bh-closed"><span>✓</span><span>Budget ended ${fmtD(e.ended)} → new budget signed ~${fmtD(e.resigned)}</span>
+         <span class="bh-days">~${gap(e)} days without budget</span><span class="bh-need">needed then: +${fmtK1(e.need)}</span></div>`
+    : `<div class="bh-row"><span class="bh-open">⛔</span><span class="bh-open">Budget ended ${fmtD(e.ended)} — no new budget yet</span>
+         <span class="bh-days bh-open">${gap(e)} day${gap(e)===1?'':'s'} so far</span><span class="bh-need bh-open">needed now: +${fmtK1(e.need)}</span></div>`
+  ).join('');
+  return `<div class="bh-wrap">
+    <div class="bh-head">
+      <div class="modal-chart-title" style="margin:0">Budget history 2026</div>
+      <div class="bh-sum"><b>${eps.length} budget end${eps.length>1?'s':''}</b>${avg!=null?` · avg <b>${avg} days</b> before re-signing`:''}</div>
+    </div>${rows}</div>`;
+}
+
 function openModal(merchantId) {
   const m = GDATA.merchants[merchantId];
   if (!m) return;
@@ -4519,6 +4561,7 @@ function openModal(merchantId) {
       <div class="modal-kpi-value" style="color:var(--purple)">${m.remaining_budget!=null?fmt(m.remaining_budget):'—'}</div>
       <div class="modal-kpi-sub">${bpct!=null?`${bpct}% consumed`:'no contract data'}</div>
     </div>`;
+  document.getElementById('modal-bh').innerHTML = renderBudgetHistory(merchantId);
   const hasSigned = m.monthly_signed && m.monthly_signed.some(v => v > 0);
   document.getElementById('modal-chart-legend').innerHTML = `
     <div class="legend-item"><div class="legend-dot" style="background:rgba(160,160,160,.5)"></div>2025</div>
