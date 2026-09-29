@@ -1,5 +1,5 @@
 {
- "generated_at": "2026-09-28T06:30:00.748Z",
+ "generated_at": "2026-09-29T05:15:02.748Z",
  "source": "HubSpot — CL AM Opportunity Pipeline (890800820: Negotiation ongoing) + CL Sales Pipeline (842062383: Negotiation, Commit). All owners (Card-Linked pipelines). Raw amounts; weighting & monthly split applied in index.html (PIPE_RULES). Refreshed by n8n CL Dashboard - HubSpot Pipeline Sync.",
  "deals": [
   {
@@ -75,15 +75,6 @@
    "owner": "Cyprien"
   },
   {
-   "id": "63079428427",
-   "pipeline": "am",
-   "name": "Krys - Renew - S127",
-   "amount": 100000,
-   "stage": "Negotiation ongoing",
-   "owner_id": "95067911",
-   "owner": "Clément"
-  },
-  {
    "id": "65211201896",
    "pipeline": "am",
    "name": "Nocibé - Q4 2026",
@@ -115,15 +106,6 @@
    "pipeline": "am",
    "name": "Uber - Renewal Q4 2026",
    "amount": 400000,
-   "stage": "Negotiation ongoing",
-   "owner_id": "76992305",
-   "owner": "Eva"
-  },
-  {
-   "id": "64985980054",
-   "pipeline": "am",
-   "name": "Uber Eats - Renewal Q4 2026",
-   "amount": 300000,
    "stage": "Negotiation ongoing",
    "owner_id": "76992305",
    "owner": "Eva"
