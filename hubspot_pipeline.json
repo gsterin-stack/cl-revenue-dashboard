@@ -1,5 +1,5 @@
 {
- "generated_at": "2026-09-29T05:15:02.748Z",
+ "generated_at": "2026-09-30T05:15:02.514Z",
  "source": "HubSpot — CL AM Opportunity Pipeline (890800820: Negotiation ongoing) + CL Sales Pipeline (842062383: Negotiation, Commit). All owners (Card-Linked pipelines). Raw amounts; weighting & monthly split applied in index.html (PIPE_RULES). Refreshed by n8n CL Dashboard - HubSpot Pipeline Sync.",
  "deals": [
   {
@@ -7,7 +7,7 @@
    "pipeline": "sales",
    "name": "Auchan Retail - Sales",
    "amount": 50000,
-   "stage": "Negotiation",
+   "stage": "Commit",
    "owner_id": "472947881",
    "owner": "Cyprien"
   },
@@ -42,7 +42,7 @@
    "id": "63222345830",
    "pipeline": "am",
    "name": "Celio - Acquisition - Q4 2026",
-   "amount": 43000,
+   "amount": 51000,
    "stage": "Negotiation ongoing",
    "owner_id": "95067911",
    "owner": "Clément"
