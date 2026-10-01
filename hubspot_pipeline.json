@@ -1,5 +1,5 @@
 {
- "generated_at": "2026-09-30T17:08:24.888Z",
+ "generated_at": "2026-10-01T05:15:02.581Z",
  "source": "HubSpot — CL AM Opportunity Pipeline (890800820: Negotiation ongoing) + CL Sales Pipeline (842062383: Negotiation, Commit). All owners (Card-Linked pipelines). Raw amounts; weighting & monthly split applied in index.html (PIPE_RULES). Refreshed by n8n CL Dashboard - HubSpot Pipeline Sync.",
  "deals": [
   {
@@ -73,6 +73,15 @@
    "stage": "Commit",
    "owner_id": "472947881",
    "owner": "Cyprien"
+  },
+  {
+   "id": "63083859304",
+   "pipeline": "am",
+   "name": "Nocibé - Q1 2027 - Q3 2027",
+   "amount": 225000,
+   "stage": "Negotiation ongoing",
+   "owner_id": "91941033",
+   "owner": "Romain"
   },
   {
    "id": "65211143019",
