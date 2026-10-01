@@ -909,8 +909,35 @@ function getPacingCtx() {
   }
   if (!y || !mo || !d) return null;
   const daysInMonth = new Date(y, mo, 0).getDate();
-  return { daysElapsed: d, daysInMonth };
+  return { daysElapsed: d, daysInMonth, y, mo, d };
 }
+/* OKR expected to date: what the cumulative target says we should have booked by the data date
+   (GDATA.updated_at) to land the full-year OKR. Book-wide ('all') = monthly OKR (chart_arrays.OKR),
+   past months in full + current month prorated by days. Single AM = quarterly OKRs, past quarters in
+   full + current quarter prorated by days. Returns { toDate, fullYear, date } or null if any needed
+   OKR is missing. */
+function okrToDate(am) {
+  const ctx = getPacingCtx();
+  if (!ctx) return null;
+  const { y, mo, d } = ctx;
+  if (am === 'all' && GDATA.chart_arrays && GDATA.chart_arrays.OKR) {
+    const okr = GDATA.chart_arrays.OKR.map(v => v || 0);
+    const past = okr.slice(0, mo - 1).reduce((a, b) => a + b, 0);
+    return { toDate: past + okr[mo - 1] * d / ctx.daysInMonth,
+             fullYear: okr.reduce((a, b) => a + b, 0), date: new Date(y, mo - 1, d) };
+  }
+  const amOkr = getAMOkr(am);
+  const q = Math.ceil(mo / 3);
+  const qs = Array.from({length: q}, (_, i) => amOkr[qLabel(i + 1)]);
+  if (!qs.every(v => v != null)) return null;
+  const qStart = new Date(y, (q - 1) * 3, 1), qEnd = new Date(y, q * 3, 1), today = new Date(y, mo - 1, d + 1);
+  const frac = (today - qStart) / (qEnd - qStart);
+  const all4 = ['Q1','Q2','Q3','Q4'].map(k => amOkr[k]);
+  return { toDate: qs.slice(0, -1).reduce((a, b) => a + b, 0) + qs[q - 1] * frac,
+           fullYear: all4.every(v => v != null) ? all4.reduce((a, b) => a + b, 0) : null,
+           date: new Date(y, mo - 1, d) };
+}
+function fmtDayMonth(dt) { return `${dt.getDate()} ${MONTHS[dt.getMonth()]}`; }
 /* Projects month-end delivery from the run rate observed so far, re-smoothed daily.
    Muted (grey) through day 4 — a 1-2 day run rate is too noisy to alert on. */
 function computePacing(now, target, ctx) {
@@ -1229,7 +1256,10 @@ function renderKPIs(s) {
     ytdOkrSum = okrQuarters.length && okrQuarters.every(v => v != null)
       ? okrQuarters.reduce((a,b)=>a+b, 0) : null;
   }
-  const ytdOkrPct  = ytdOkrSum ? Math.round(s.ytd_actual/ytdOkrSum*100) : null;
+  // % vs the OKR expected to date (cumulative target prorated to the data date), not vs the
+  // full Q1…current-quarter sum — otherwise the KPI collapses at every quarter start.
+  const okrPace    = ytdOkrSum ? okrToDate(activeGlobalAM) : null;
+  const ytdOkrPct  = okrPace ? Math.round(s.ytd_actual/okrPace.toDate*100) : null;
   const ytdOkrColor= ytdOkrPct==null ? 'var(--text)' : ytdOkrPct>=90?'var(--green)':ytdOkrPct>=70?'var(--yellow)':'var(--red)';
 
   const kpis = [
@@ -1237,11 +1267,11 @@ function renderKPIs(s) {
       value: fmtK(s.ytd_actual),
       sub: ytdYoyHtml || `<span class="neu">${ytdRange}</span>`,
       clickable: false },
-    { label:`YTD vs Q1–${qLabel(q)} OKR`,
+    { label:'YTD vs OKR to date',
       value: ytdOkrPct!=null ? ytdOkrPct+'%' : '—',
       valueColor: ytdOkrColor,
-      sub: ytdOkrSum
-        ? `<span class="neu">${ytdRange}</span> vs ${fmtK(ytdOkrSum)} cible`
+      sub: okrPace
+        ? `vs ${fmtK(okrPace.toDate)} expected at ${fmtDayMonth(okrPace.date)}${okrPace.fullYear ? ` <span class="neu">· ${fmtK(okrPace.fullYear)} full year</span>` : ''}`
         : `<span style="font-size:11px;color:var(--muted);font-style:italic">OKR not set</span>`,
       clickable: false },
     { label:'New Client Revenue',
@@ -3449,7 +3479,9 @@ function renderAMQKPIs(merchants, am, summary) {
     ytd = rows.reduce((s,r)=>s+(r.actual_26||0), 0);
     const ytdQuarters = Array.from({length:q},(_,i)=>amOkr[qLabel(i+1)]);
     ytdOkrSum = ytdQuarters.every(v=>v!=null) ? ytdQuarters.reduce((s,v)=>s+v,0) : null;
-    ytdPct    = ytdOkrSum ? Math.round(ytd/ytdOkrSum*100) : null;
+    const pace = ytdOkrSum ? okrToDate(am) : null;
+    if (pace) ytdOkrSum = pace.toDate;
+    ytdPct    = pace ? Math.round(ytd/pace.toDate*100) : null;
     ytdColor  = ytdPct==null?'var(--text)':ytdPct>=90?'var(--green)':ytdPct>=70?'var(--yellow)':'var(--red)';
   }
 
@@ -3477,10 +3509,10 @@ function renderAMQKPIs(merchants, am, summary) {
       ${qProgressHtml}
     </div>
     ${showOkrTile ? `<div class="kpi">
-      <div class="kpi-label">YTD vs Q1–${qLabel(q)} OKR</div>
+      <div class="kpi-label">YTD vs OKR to date</div>
       <div class="kpi-value" style="color:${ytdColor}">${fmtK(ytd)}</div>
       <div class="kpi-sub">${ytdOkrSum
-        ? `<span style="color:${ytdColor};font-weight:700">${ytdPct}%</span> <span class="neu">vs ${fmtK(ytdOkrSum)} cible</span>`
+        ? `<span style="color:${ytdColor};font-weight:700">${ytdPct}%</span> <span class="neu">vs ${fmtK(ytdOkrSum)} expected to date</span>`
         : okrPlaceholder}</div>
     </div>` : ''}
     <div class="kpi">
