@@ -1326,6 +1326,15 @@ const PIPE_RULES = {
 };
 const PIPE_CL_OWNERS = ['472947881','76992305','1227580661','96209869','91941033','95067911'];
 const PIPE_YEAR = 2026;
+/* Jusqu'au 10 du mois, le mois en cours garde son pipe (signatures de début de mois) : il est
+   traité comme un mois à venir (Expected + Pipeline) au lieu de basculer sur A+P dès le 1er. */
+const PIPE_GRACE_DAYS = 10;
+function pipeFirstIdx(data, pipe) {
+  const ytd = (data && data.summary.ytd_months) || 0;
+  const ref = pipe && pipe.generated_at ? new Date(pipe.generated_at) : new Date();
+  const grace = ytd > 0 && ref.getFullYear() === PIPE_YEAR && ref.getMonth() === ytd - 1 && ref.getDate() <= PIPE_GRACE_DAYS;
+  return grace ? ytd - 1 : ytd;
+}
 const PIPE_DEFAULT_NOTE = 'no period in deal name — spread over the next quarter';
 const HUBSPOT_DEAL_URL = 'https://app.hubspot.com/contacts/4965379/record/0-3/';
 
@@ -1351,10 +1360,10 @@ function parseDealPeriod(name, fallbackStartIdx) {
   return { start, end, months: end - start + 1, fromTitle: true };
 }
 /* Sales : N mois à partir du mois qui suit la mise à jour du snapshot HubSpot (generated_at) */
-function salesPeriod(n, pipe) {
+function salesPeriod(n, pipe, grace) {
   pipe = pipe || PIPELINE;
   const upd = pipe && pipe.generated_at ? new Date(pipe.generated_at) : new Date();
-  const start = upd.getFullYear()*12 + upd.getMonth() + 1;
+  const start = upd.getFullYear()*12 + upd.getMonth() + (grace ? 0 : 1);   // grace : le mois en cours compte encore
   return { start, end: start + n - 1, months: n, fromTitle: true, rule: `next ${n} months after update` };
 }
 function periodLabel(p) {
@@ -1371,7 +1380,8 @@ function pipelineCompute(pipe, data, am) {
   const monthly = new Array(12).fill(0), grossMonthly = new Array(12).fill(0);
   const deals = [], excluded = [];
   if (!pipe || !Array.isArray(pipe.deals) || !data) return { monthly, grossMonthly, deals, excluded };
-  const firstFutureIdx = data.summary.ytd_months || 0;   // mois en cours = ytd_months-1 → on démarre au suivant
+  const firstFutureIdx = pipeFirstIdx(data, pipe);   // mois suivant le mois en cours (ou le mois en cours jusqu'au 10)
+  const grace = firstFutureIdx < (data.summary.ytd_months || 0);
   const horizonQStart = PIPE_YEAR*12 + Math.floor(firstFutureIdx/3)*3;   // 1er mois du trimestre du mois prochain
   for (const d of pipe.deals) {
     const rule = PIPE_RULES[d.pipeline];
@@ -1379,7 +1389,7 @@ function pipelineCompute(pipe, data, am) {
     if (!weight) continue;   // both HubSpot pipelines are Card-Linked only → no owner filter, only Sales vs AM
     if (am !== 'all' && d.owner !== am) continue;
     const client = d.name.split(' - ')[0].trim();
-    const period = rule.spreadMonthsAfterUpdate ? salesPeriod(rule.spreadMonthsAfterUpdate, pipe) : parseDealPeriod(d.name, Math.min(firstFutureIdx, 11));
+    const period = rule.spreadMonthsAfterUpdate ? salesPeriod(rule.spreadMonthsAfterUpdate, pipe, grace) : parseDealPeriod(d.name, Math.min(firstFutureIdx, 11));
     const weighted = (d.amount || 0) * weight;
     const base = { ...d, source: rule.label, weight, weighted, period, client };
     const merchant = data.merchants[merchantSlug(client)];
@@ -1731,7 +1741,8 @@ function renderMonthlyTable(ca, ytdMonths, am) {
   // Mois clos + mois en cours masqués (on s'appuie sur Actual+Proj) ; le Total = atterrissage
   // annuel = A+P jusqu'au mois en cours + Expected+Pipeline sur les mois à venir.
   const pipeM      = pipelineMonthly(am).monthly;
-  const expM       = (ca.EXPECTED || new Array(12).fill(0)).map((v,i) => i < ytdMonths ? null : (v || 0) + (pipeM[i] || 0));
+  const pipeFrom   = pipeFirstIdx(GDATA, PIPELINE);   // = ytdMonths, ou ytdMonths-1 jusqu'au 10 du mois
+  const expM       = (ca.EXPECTED || new Array(12).fill(0)).map((v,i) => i < pipeFrom ? null : (v || 0) + (pipeM[i] || 0));
   const pipeTotal  = pipeM.reduce((a,b)=>a+b,0);
   const landing    = expM.reduce((a,v,i) => a + (v == null ? totRow[i] : v), 0);
   const expPipeRow = [...expM, landing];
@@ -1742,7 +1753,7 @@ function renderMonthlyTable(ca, ytdMonths, am) {
             const sep = i===12 ? 'border-left:1px solid var(--border);' : '';
             if (v == null) return `<td style="text-align:right;${sep}color:var(--muted)" title="Closed / current month — see Total A+P">—</td>`;
             const pipe = i<12 ? (pipeM[i] || 0) : pipeTotal;
-            const tip = i===12 ? ` title="Landing: A+P through ${MONTHS[ytdMonths-1]} + Expected+Pipeline after (incl. ${fmt(pipe)} pipeline)"`
+            const tip = i===12 ? ` title="Landing: ${pipeFrom ? `A+P through ${MONTHS[pipeFrom-1]} + ` : ''}Expected+Pipeline after (incl. ${fmt(pipe)} pipeline)"`
                       : pipe>0 ? ` title="Expected ${fmt(v-pipe)} + Pipeline ${fmt(pipe)}"` : '';
             return `<td${tip} style="text-align:right;${sep}color:${v>0?'#BA8CF5':'var(--muted)'};font-weight:700">${v>0?fmt(v):'—'}</td>`;
           }).join('')}
@@ -1928,7 +1939,7 @@ function renderQSection(q, ca, am) {
   // ── Expected + HubSpot Pipeline (weighted) — même lecture que Total A+P, cf. brique violet clair du chart ──
   // Trimestres entièrement clos/en cours masqués ; un trimestre à cheval = A+P jusqu'au mois en
   // cours + Expected+Pipeline après. Total = atterrissage annuel sur la même règle.
-  const ytdM       = (GDATA && GDATA.summary.ytd_months) || 0;
+  const ytdM       = pipeFirstIdx(GDATA, PIPELINE);   // mois en cours inclus côté Exp+Pipe jusqu'au 10
   const blended    = new Array(12).fill(0).map((_,i) => i < ytdM
     ? (ca.R26A[i]||0) + (ca.R26P[i]||0)
     : (expectedArr[i]||0) + (pipeM[i]||0));
@@ -1941,7 +1952,7 @@ function renderQSection(q, ca, am) {
             const sep = i===4?'border-left:1px solid var(--border);':'';
             if (v == null) return `<td style="text-align:right;${sep}color:var(--muted)" title="Closed / current quarter — see Total A+P">—</td>`;
             const pipe = i<4 ? qPipe[i] : qPipe.reduce((a,b)=>a+b,0);
-            const tip = i===4 ? ` title="Landing: A+P through ${MONTHS[ytdM-1]} + Expected+Pipeline after (incl. ${fmt(pipe)} pipeline)"`
+            const tip = i===4 ? ` title="Landing: ${ytdM ? `A+P through ${MONTHS[ytdM-1]} + ` : ''}Expected+Pipeline after (incl. ${fmt(pipe)} pipeline)"`
                       : pipe>0 ? ` title="Expected + A+P mix incl. Pipeline ${fmt(pipe)}"` : '';
             return `<td${tip} style="text-align:right;${sep}color:${v>0?'#BA8CF5':'var(--muted)'};font-weight:700">${v>0?fmt(v):'—'}</td>`;
           }).join('')}
@@ -2928,10 +2939,11 @@ function snapQuarter(snap) { return Math.ceil((new Date(snap.monday).getMonth() 
 function quarterView(snap, q) {
   const sd = snap.data, ca = sd.chart_arrays, cur = snapCurIdx(sd);
   const pipe = pipelineCompute(snap.pipeline, sd, 'all');
+  const pipeFrom = pipeFirstIdx(sd, snap.pipeline);   // cur+1, ou cur jusqu'au 10 du mois
   const idxs = Q_MONTH_IDX[qLabel(q)];
   const months = idxs.map(i => {
     const ap = (ca.R26A[i] || 0) + (ca.R26P[i] || 0);
-    const future = i > cur;
+    const future = i >= pipeFrom;
     const exp = ca.EXPECTED[i] || 0;
     return { i, ap, act: ca.R26A[i] || 0, okr: ca.OKR[i] || 0, ly: ca.R25[i] || 0, exp, future,
       wpipe: future ? pipe.monthly[i] : 0, gpipe: future ? pipe.grossMonthly[i] : 0,
