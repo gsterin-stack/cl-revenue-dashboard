@@ -410,7 +410,7 @@
           <div class="week-title" id="weekly-title">Weekly</div>
           <div class="wk-sub" id="weekly-sub">Frozen every Monday morning</div>
         </div>
-        <div style="display:flex;gap:8px"><button class="wk-btn" id="wk-company-btn" onclick="copyCompanyUpdate()" title="Copies the Notion bullets for the company update">Company update</button><button class="wk-btn" id="wk-copy-btn" onclick="copyWeeklySlack()" title="Copies the Weekly CL Update and opens #cl-team in Slack: paste it there as a draft">Slack draft</button></div>
+        <div style="display:flex;gap:8px"><button class="wk-btn" id="wk-company-btn" onclick="copyCompanyUpdate()" title="Copies the Notion bullets for the company update">Company update</button><button class="wk-btn" id="wk-copy-btn" onclick="copyWeeklySlack()" title="Copies the Weekly CL Update to the clipboard, ready to review and paste in #cl-team">Copy Slack update</button></div>
       </div>
 
       <div class="wk-card" id="wk-cur"></div>
@@ -3261,7 +3261,6 @@ function closeWkModal() { document.getElementById('wk-modal-overlay').classList.
 /* ── Texts generated from the Monday snapshot ──
    1) Weekly CL Update for #cl-team (same template as the cl-weekly-update skill, Slack emoji codes)
    2) Company update (Notion bullets, max ~3 lines each): month landing, quarter landing, wins, WoW */
-const SLACK_CL_TEAM_URL = 'https://hellojoko.slack.com/archives/C04G06ZECNP';
 const fmtSigned = n => (n >= 0 ? '+' : '-') + fmtMK(Math.abs(n)).replace('−', '');
 function wkPct(a, b) { return b ? Math.round(a / b * 100) : 0; }
 function wkYoY(a, b) { return b ? (Math.round((a / b - 1) * 1000) / 10) : null; }
@@ -3358,16 +3357,23 @@ function companyUpdateText() {
   return B.map(b => '- ' + b).join('\n');
 }
 
-function wkCopy(txt, btn, label, after) {
-  const done = () => { btn.textContent = 'Copied'; setTimeout(() => { btn.textContent = label; }, 1800); if (after) after(); };
-  if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(txt).then(done, () => { window.prompt('Copy:', txt); if (after) after(); });
-  else { window.prompt('Copy:', txt); if (after) after(); }
+function wkCopy(txt, btn, label) {
+  const done = () => { btn.textContent = 'Copied ✓'; setTimeout(() => { btn.textContent = label; }, 1800); };
+  /* Fallback for browsers / contexts where the async Clipboard API is unavailable or refused */
+  const legacy = () => {
+    const ta = document.createElement('textarea');
+    ta.value = txt; ta.setAttribute('readonly', ''); ta.style.position = 'fixed'; ta.style.opacity = '0';
+    document.body.appendChild(ta); ta.select();
+    let ok = false; try { ok = document.execCommand('copy'); } catch (e) {}
+    document.body.removeChild(ta);
+    if (ok) done(); else window.prompt('Copy:', txt);
+  };
+  if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(txt).then(done, legacy);
+  else legacy();
 }
-/* Slack has no public API to create a user draft from a web page: copy the message, then open #cl-team to paste */
 function copyWeeklySlack() {
   if (!WK.views) return;
-  const win = window.open('', '_blank');   // opened synchronously so the popup isn't blocked
-  wkCopy(weeklySlackText(), document.getElementById('wk-copy-btn'), 'Slack draft', () => { if (win) win.location = SLACK_CL_TEAM_URL; });
+  wkCopy(weeklySlackText(), document.getElementById('wk-copy-btn'), 'Copy Slack update');
 }
 function copyCompanyUpdate() {
   if (!WK.views) return;
