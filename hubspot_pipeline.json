@@ -1,5 +1,5 @@
 {
- "generated_at": "2026-10-02T09:23:05.810Z",
+ "generated_at": "2026-10-05T05:15:02.697Z",
  "source": "HubSpot — CL AM Opportunity Pipeline (890800820: Negotiation ongoing) + CL Sales Pipeline (842062383: Negotiation, Commit). All owners (Card-Linked pipelines). Raw amounts; weighting & monthly split applied in index.html (PIPE_RULES). Refreshed by n8n CL Dashboard - HubSpot Pipeline Sync.",
  "deals": [
   {
@@ -46,6 +46,15 @@
    "stage": "Negotiation ongoing",
    "owner_id": "95067911",
    "owner": "Clément"
+  },
+  {
+   "id": "4174504794",
+   "pipeline": "sales",
+   "name": "Conforama - Sales",
+   "amount": 60000,
+   "stage": "Negotiation",
+   "owner_id": "472947881",
+   "owner": "Cyprien"
   },
   {
    "id": "378333436",
