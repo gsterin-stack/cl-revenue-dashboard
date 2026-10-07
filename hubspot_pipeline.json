@@ -1,12 +1,12 @@
 {
- "generated_at": "2026-10-06T05:15:02.427Z",
+ "generated_at": "2026-10-07T05:15:02.804Z",
  "source": "HubSpot — CL AM Opportunity Pipeline (890800820: Negotiation ongoing) + CL Sales Pipeline (842062383: Negotiation, Commit). All owners (Card-Linked pipelines). Raw amounts; weighting & monthly split applied in index.html (PIPE_RULES). Refreshed by n8n CL Dashboard - HubSpot Pipeline Sync.",
  "deals": [
   {
-   "id": "63083854108",
+   "id": "65730749354",
    "pipeline": "am",
-   "name": "Blablacar - Renew - Q4 2026",
-   "amount": 85000,
+   "name": "Blablacar - Renew - Oct 2026",
+   "amount": 22400,
    "stage": "Negotiation ongoing",
    "owner_id": "95067911",
    "owner": "Clément"
