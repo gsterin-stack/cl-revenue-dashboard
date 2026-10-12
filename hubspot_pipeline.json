@@ -1,5 +1,5 @@
 {
- "generated_at": "2026-10-12T05:15:02.960Z",
+ "generated_at": "2026-10-12T12:41:23.311Z",
  "source": "HubSpot — CL AM Opportunity Pipeline (890800820: Negotiation ongoing) + CL Sales Pipeline (842062383: Negotiation, Commit). All owners (Card-Linked pipelines). Raw amounts; weighting & monthly split applied in index.html (PIPE_RULES). Refreshed by n8n CL Dashboard - HubSpot Pipeline Sync.",
  "deals": [
   {
@@ -21,10 +21,10 @@
    "owner": "Eloïse"
   },
   {
-   "id": "65204373685",
+   "id": "65887334015",
    "pipeline": "am",
-   "name": "Carrefour - New offers 0226 - Q4 2026",
-   "amount": 160000,
+   "name": "Carrefour - Upsell Market 2026",
+   "amount": 85000,
    "stage": "Negotiation ongoing",
    "owner_id": "76992305",
    "owner": "Eva"
