@@ -1014,6 +1014,17 @@ function isChurnedMerchant(m) {
   return (m26[augIdx]||0) === 0 && (m26[curMoIdx]||0) === 0;
 }
 
+/* ── Capped account with budget signed this month (or an Open budget in Airtable) but no
+   card-linked offer live today (live_offers, from the SF - Live Offers node) — there is
+   nothing to pace, so the pace views show a badge instead of a % and the AM View raises it
+   as Urgent. live_offers is undefined on data older than that node: never flagged then. ── */
+function hasNoLiveOffer(m) {
+  if (!GDATA || !m || !m.is_capped || m.live_offers !== 0) return false;
+  const curMoIdx = (GDATA.summary.ytd_months||1) - 1;
+  return ((m.monthly_signed && m.monthly_signed[curMoIdx]) || 0) > 0 || m.open_budget != null;
+}
+const NO_OFFER_BADGE = `<span style="font-size:10px;font-weight:700;color:var(--red);border:1px solid var(--red);border-radius:4px;padding:1px 5px;white-space:nowrap" title="Budget signed but no card-linked offer live — no pace to measure">⛔ NO LIVE OFFER</span>`;
+
 /* ── Full-period run-rate projection from the current in-progress month's MTD actual ── */
 function runRateProjection(now, ctx) {
   if (!ctx || ctx.daysElapsed <= 0) return now;
@@ -1558,7 +1569,8 @@ function openMonthDrilldownModal(moIdx) {
   const monthLabel = MONTHS[moIdx];
   const curMoIdx = (GDATA.summary.ytd_months||1) - 1;
   const list = Object.entries(filterMerchantsByAM(GDATA.merchants, activeGlobalAM))
-    .map(([id, m]) => ({ id, ...m, status: merchantMonthStatus(m, moIdx), churn: !m.is_capped && isChurnedMerchant(m) }))
+    .map(([id, m]) => ({ id, ...m, status: merchantMonthStatus(m, moIdx), churn: !m.is_capped && isChurnedMerchant(m),
+      noOffer: moIdx >= curMoIdx && hasNoLiveOffer(m) }))
     .filter(r => r.status);
   const capped = list.filter(r => r.status.type==='capped').sort((a,b) => a.status.pct - b.status.pct);
   const open   = list.filter(r => r.status.type==='open').sort((a,b) => a.status.pct - b.status.pct);
@@ -1598,6 +1610,8 @@ function paceGraceNote(isCurrentMonth) {
 /* ── Aggregate pace summary tile shown above each Capped/Open pace table — quick read on the
    whole block before scanning individual merchants. ── */
 function renderPaceTotals(list, refLabel) {
+  // No live offer = no pace to measure (cf. hasNoLiveOffer) — left out of the aggregate.
+  list = list.filter(r => !r.noOffer);
   if (!list.length) return '';
   const totalTarget = list.reduce((s,r) => s + (r.status.target||0), 0);
   const totalDelta  = list.reduce((s,r) => s + (r.status.delta||0), 0);
@@ -1671,11 +1685,13 @@ function paceTableInner(tableId) {
       <tr style="cursor:pointer;border-bottom:1px solid #161616" onclick="closeMonthModal();openModal('${r.id}')">
         <td style="padding:8px;font-weight:500">${merchantLabel(r.id)} <span class="am-pill" style="margin-left:6px">${r.am||'—'}</span></td>
         <td style="text-align:right;padding:8px;color:var(--text2)">${fmtK1(r.status.target)}</td>
-        <td style="text-align:right;padding:8px;font-weight:700;color:${r.status.color}">${r.churn
+        ${r.noOffer ? `<td style="text-align:right;padding:8px">${NO_OFFER_BADGE}</td>
+        <td style="text-align:right;padding:8px;color:var(--muted)">—</td>
+        ${showPacing ? paceCellsHTML(null) : ''}` : `<td style="text-align:right;padding:8px;font-weight:700;color:${r.status.color}">${r.churn
           ? `<span style="font-size:10px;font-weight:700;color:var(--churn);border:1px solid var(--churn);border-radius:4px;padding:1px 5px" title="No revenue for 2 straight months — no action expected">😴 CHURN</span>`
           : `${r.status.pct}%`}</td>
         <td style="text-align:right;padding:8px;font-variant-numeric:tabular-nums;color:${r.status.delta>=0?'var(--green)':'var(--red)'}">${fmtDeltaK(r.status.delta)}</td>
-        ${showPacing ? paceCellsHTML(r.status.pacing) : ''}
+        ${showPacing ? paceCellsHTML(r.status.pacing) : ''}`}
       </tr>`).join('')}</tbody>
   </table>`;
 }
@@ -2265,8 +2281,10 @@ function openQuarterPaceModal(qKey) {
   const idxs = Q_MONTH_IDX[qKey];
   if (!idxs) return;
 
+  const curMoIdx = (GDATA.summary.ytd_months||1) - 1;
   const list = Object.entries(filterMerchantsByAM(GDATA.merchants, activeGlobalAM))
-    .map(([id, m]) => ({ id, ...m, status: merchantRangeStatus(m, idxs), churn: !m.is_capped && isChurnedMerchant(m) }))
+    .map(([id, m]) => ({ id, ...m, status: merchantRangeStatus(m, idxs), churn: !m.is_capped && isChurnedMerchant(m),
+      noOffer: Math.max(...idxs) >= curMoIdx && hasNoLiveOffer(m) }))
     .filter(r => r.status);
   const capped = list.filter(r => r.status.type==='capped').sort((a,b) => a.status.pct - b.status.pct);
   const open   = list.filter(r => r.status.type==='open').sort((a,b) => a.status.pct - b.status.pct);
@@ -3594,13 +3612,31 @@ function computeAccountAlert(id, m) {
   const reasons = [];
   let paceHealthPct = null;
 
-  const isChurn = isChurnedMerchant(m);
+  // Signed budget but no live offer: Urgent on its own, and it replaces both the pace signal
+  // (nothing to pace) and the churn reading (the revenue gap is the missing offer, not churn).
+  const noOffer = hasNoLiveOffer(m);
+  const isChurn = !noOffer && isChurnedMerchant(m);
   const impact  = totalBudgetImpact(m);
+
+  if (noOffer) {
+    const signedCur = signed[curMoIdx] || 0;
+    reasons.push({ sev:1,
+      label: '⛔ No live offer — budget signed',
+      amount: fmtK1(signedCur > 0 ? signedCur : m.open_budget), amountRaw: signedCur > 0 ? signedCur : m.open_budget,
+      amountSub: signedCur > 0 ? `signed for ${MONTHS[curMoIdx]}` : 'open budget' });
+  }
+  // Offers live but no revenue on them for more than 3 days (days_without_revenue, from the
+  // SF - Live Offers node) — a Watch: the offer may simply not have picked up yet.
+  if (m.live_offers > 0 && m.days_without_revenue > 3) {
+    reasons.push({ sev:2,
+      label: `💤 Live offer, no revenue for ${m.days_without_revenue}d`,
+      amount:'—', amountRaw:0, amountSub:`${m.live_offers} offer${m.live_offers===1?'':'s'} live` });
+  }
 
   const ctx = getPacingCtx();
   const useCurrent = !!(ctx && ctx.daysElapsed > 4);
   const paceMoIdx = useCurrent ? curMoIdx : augIdx;
-  if (paceMoIdx >= 0) {
+  if (paceMoIdx >= 0 && !noOffer) {
     const target = m.is_capped ? signed[paceMoIdx] : m25[paceMoIdx];
     const cur = m26[paceMoIdx] || 0;
     if (target != null && target > 0) {
@@ -4291,7 +4327,8 @@ function renderAMDeliveryTable(merchants, am, summary) {
           : paceDisplay && paceDisplay.daysElapsed != null
           ? ` title="Projected month-end vs target (run-rate as of day ${paceDisplay.daysElapsed}/${paceDisplay.daysInMonth})"`
           : '';
-        const paceCell = paceDisplay
+        const paceCell = hasNoLiveOffer(r) ? NO_OFFER_BADGE
+          : paceDisplay
           ? `<span${paceTip} style="display:inline-flex;align-items:center;gap:4px;color:${paceDisplay.color};font-weight:700">
                <span style="width:7px;height:7px;border-radius:50%;background:${paceDisplay.color};display:inline-block;flex-shrink:0"></span>${paceDisplay.pct}%
              </span>`
