@@ -3098,14 +3098,30 @@ function renderWeeklyTab() {
   el('weekly-sub').textContent = `Frozen Monday ${d.toLocaleDateString('en-GB', { day:'2-digit', month:'short' })}` + (prev ? ` · WoW vs ${pw}` : ' · no previous snapshot for WoW');
 
   // Current quarter + its month table
-  const qn = qLabel(q), dCur = vPrevCur ? vCur.ap - vPrevCur.ap : null;
+  const qn = qLabel(q);
   const yoy = vCur.ly ? Math.round((vCur.ap / vCur.ly - 1) * 1000) / 10 : null;
-  const pc = pctOf(vCur.ap, vCur.okr);
+  // Landing bar layers: Actual | Projection (= Actual + Projection) | Signed (Expected on future months, incremental) | Pipe weighted | Pipe 100%
+  const curSigned = Math.max(0, vCur.base - vCur.wpipe - vCur.ap);
+  const curHead = vCur.hasFuture ? vCur.base : vCur.ap;
+  const dCur = vPrevCur ? curHead - (vCur.hasFuture ? vPrevCur.base : vPrevCur.ap) : null;
+  const dCurAp = vPrevCur ? vCur.ap - vPrevCur.ap : null;
+  const pc = pctOf(curHead, vCur.okr);
+  const sw = (bg, bd) => `<i style="display:inline-block;width:9px;height:9px;border-radius:2px;background:${bg};${bd ? `border:1px ${bd};box-sizing:border-box;` : ''}margin:0 5px 0 0;vertical-align:-1px"></i>`;
+  const curLegend = vCur.hasFuture
+    ? `${sw('var(--green)')}Actual ${fmtMK(vCur.act)} · ${sw('rgba(100,231,106,.35)')}Actual + Projection ${fmtMK(vCur.ap)} · ${sw('rgba(146,84,227,.55)', 'solid rgba(146,84,227,.9)')}+ Signed ${fmtMK(curSigned)} · ${sw('rgba(146,84,227,.18)', 'dashed rgba(186,140,245,.8)')}+ Pipe weighted ${fmtMK(vCur.wpipe)} · ${sw('rgba(186,140,245,.15)', 'dashed rgba(186,140,245,.5)')}+ Pipe 100% ${fmtMK(vCur.stretch - vCur.base)} · <span style="color:var(--yellow)">|</span> OKR`
+    : `${sw('var(--green)')}Actual ${fmtMK(vCur.act)} · ${sw('rgba(100,231,106,.35)')}Actual + Projection ${fmtMK(vCur.ap)} · <span style="color:var(--yellow)">|</span> OKR`;
   el('wk-cur').innerHTML = `
     <div class="wk-row-head"><span class="wk-label">${qn} ${cur.year} · current quarter</span>${dCur != null ? `<span class="wk-pill ${dCls(dCur)}">${fmtDelta(dCur)} vs ${pw}</span>` : ''}</div>
-    <div class="wk-big">${fmtMK(vCur.ap)} <span>landing · <b style="color:${okrColor(pc)}">${pc}%</b> of ${fmtMK(vCur.okr)} OKR</span></div>
-    ${wkBar([{ v: vCur.act, c: 'var(--green)' }, { v: vCur.ap - vCur.act, c: 'rgba(100,231,106,.35)' }], vCur.okr)}
-    <div class="wk-sub">${fmtMK(vCur.act)} actual${yoy != null ? ` · ${yoy >= 0 ? '+' : ''}${yoy}% vs LY` : ''}${vCur.hasFuture ? ` · Base ${fmtMK(vCur.base)} (${pctOf(vCur.base, vCur.okr)}% of OKR) · Stretch ${fmtMK(vCur.stretch)} (${pctOf(vCur.stretch, vCur.okr)}%)` : ''}</div>
+    <div class="wk-big">${fmtMK(curHead)} <span>${vCur.hasFuture ? 'Base' : 'landing'} · <b style="color:${okrColor(pc)}">${pc}%</b> of ${fmtMK(vCur.okr)} OKR${vCur.hasFuture ? ` · Stretch ${fmtMK(vCur.stretch)} (${pctOf(vCur.stretch, vCur.okr)}%)` : ''}</span></div>
+    ${wkBar([
+      { v: vCur.act, c: 'var(--green)' },
+      { v: vCur.ap - vCur.act, c: 'rgba(100,231,106,.35)' },
+      { v: curSigned, c: 'rgba(146,84,227,.55)', border: '1px solid rgba(146,84,227,.9)' },
+      { v: vCur.wpipe, c: 'rgba(146,84,227,.18)', border: '1px dashed rgba(186,140,245,.8)' },
+      { v: vCur.stretch - vCur.base, c: 'rgba(186,140,245,.15)', border: '1px dashed rgba(186,140,245,.5)' }
+    ], vCur.okr)}
+    <div class="wk-sub">${curLegend}</div>
+    <div class="wk-sub">${fmtMK(vCur.act)} actual${yoy != null ? ` · ${yoy >= 0 ? '+' : ''}${yoy}% vs LY` : ''}</div>
     <div class="table-wrap" style="margin-top:14px">${wkQuarterTable(vCur, vPrevCur)}</div>`;
 
   // Wins of the week — celebrated on their own card
@@ -3131,7 +3147,7 @@ function renderWeeklyTab() {
   let wow = `<div class="wk-label">What moved since ${pw || '—'}</div>`;
   if (!prev) wow += `<div class="wk-mini" style="padding:8px 0">WoW starts once two Monday snapshots exist.</div>`;
   else {
-    wow += line(`${qn} landing`, dCur, topMovers(merchantWoW(cur, prev, vCur.idxs), 3), `openWkModal('cur')`);
+    wow += line(`${qn} landing`, dCurAp, topMovers(merchantWoW(cur, prev, vCur.idxs), 3), `openWkModal('cur')`);
     if (vNext) {
       if (baseComparable) {
         const pipeRows = dealWeightedWoW(cur, prev, vNext.idxs), expRows = merchantExpWoW(cur, prev, vNext.idxs);
@@ -3191,7 +3207,7 @@ function renderWeeklyTab() {
 function wkBar(parts, okr) {
   const max = Math.max(okr, parts.reduce((s, p) => s + Math.max(0, p.v), 0)) || 1;
   let left = 0;
-  const segs = parts.map(p => { const w = Math.max(0, p.v) / max * 100; const h = `<div style="position:absolute;top:0;bottom:0;left:${left}%;width:${w}%;background:${p.c};${p.dashed ? 'border:1px dashed rgba(186,140,245,.7);box-sizing:border-box;' : ''}"></div>`; left += w; return h; }).join('');
+  const segs = parts.map(p => { const w = Math.max(0, p.v) / max * 100; if (!w) return ''; const h = `<div style="position:absolute;top:0;bottom:0;left:${left}%;width:${w}%;background:${p.c};${p.border ? `border:${p.border};box-sizing:border-box;` : p.dashed ? 'border:1px dashed rgba(186,140,245,.7);box-sizing:border-box;' : ''}"></div>`; left += w; return h; }).join('');
   return `<div class="wk-bar">${segs}<div class="wk-okr" style="left:${okr / max * 100}%" title="OKR"></div></div>`;
 }
 
