@@ -1140,7 +1140,10 @@ function renderAll(data) {
     .catch(() => null)
     .then(pipe => {
       PIPELINE = normalizePipeOwners(pipe);
-      if (pipe) renderGlobalSections(GDATA, activeGlobalAM);
+      if (pipe) {
+        renderGlobalSections(GDATA, activeGlobalAM);
+        try { renderAMQKPIs(GDATA.merchants, activeAMView, GDATA.summary); renderAMAlertRail(GDATA.merchants, activeAMView); } catch(e) { console.error('renderAMView pipe', e); }
+      }
     })
     .then(() => fetch('./quarter_history.json', { cache: 'no-cache' }))
     .then(r => r.ok ? r.json() : [])
@@ -3012,9 +3015,19 @@ function merchantAP(m, i, sd) {
 function snapQuarter(snap) { return Math.ceil((new Date(snap.monday).getMonth() + 1) / 3); }
 
 function quarterView(snap, q) {
-  const sd = snap.data, ca = sd.chart_arrays, cur = snapCurIdx(sd);
-  const pipe = pipelineCompute(snap.pipeline, sd, 'all');
-  const pipeFrom = pipeFirstIdx(sd, snap.pipeline);   // cur+1, ou cur jusqu'au 10 du mois
+  const sd = snap.data;
+  // pipeFirstIdx : cur+1, ou cur jusqu'au 10 du mois
+  return quarterViewOf(sd.chart_arrays, pipelineCompute(snap.pipeline, sd, 'all'), pipeFirstIdx(sd, snap.pipeline), q);
+}
+/* Même vue, en live (data.json + hubspot_pipeline.json du jour) pour un AM — onglet AM.
+   OKR = cible trimestrielle de l'AM (AM_OKR_DATA) ; 'all' garde la ligne OKR du book. */
+function amQuarterView(am, q) {
+  const ca = deriveChartArraysForAM(filterMerchantsByAM(GDATA.merchants, am), am, GDATA.summary.ytd_months, GDATA.chart_arrays);
+  const v = quarterViewOf(ca, pipelineCompute(PIPELINE, GDATA, am), pipeFirstIdx(GDATA, PIPELINE), q);
+  if (am !== 'all') v.okr = getAMOkr(am)[qLabel(q)] || 0;
+  return v;
+}
+function quarterViewOf(ca, pipe, pipeFrom, q) {
   const idxs = Q_MONTH_IDX[qLabel(q)];
   const months = idxs.map(i => {
     const ap = (ca.R26A[i] || 0) + (ca.R26P[i] || 0);
@@ -3121,27 +3134,12 @@ function renderWeeklyTab() {
   // Current quarter + its month table
   const qn = qLabel(q);
   const yoy = vCur.ly ? Math.round((vCur.ap / vCur.ly - 1) * 1000) / 10 : null;
-  // Landing bar layers: Actual | Projection (= Actual + Projection) | Signed (Expected on future months, incremental) | Pipe weighted | Pipe 100%
-  const curSigned = Math.max(0, vCur.base - vCur.wpipe - vCur.ap);
   const curHead = vCur.hasFuture ? vCur.base : vCur.ap;
   const dCur = vPrevCur ? curHead - (vCur.hasFuture ? vPrevCur.base : vPrevCur.ap) : null;
   const dCurAp = vPrevCur ? vCur.ap - vPrevCur.ap : null;
-  const pc = pctOf(curHead, vCur.okr);
-  const sw = (bg, bd) => `<i style="display:inline-block;width:9px;height:9px;border-radius:2px;background:${bg};${bd ? `border:1px ${bd};box-sizing:border-box;` : ''}margin:0 5px 0 0;vertical-align:-1px"></i>`;
-  const curLegend = vCur.hasFuture
-    ? `${sw('var(--green)')}Actual ${fmtMK(vCur.act)} · ${sw('rgba(100,231,106,.35)')}Actual + Projection ${fmtMK(vCur.ap)} · ${sw('rgba(146,84,227,.55)', 'solid rgba(146,84,227,.9)')}+ Signed ${fmtMK(curSigned)} · ${sw('rgba(146,84,227,.18)', 'dashed rgba(186,140,245,.8)')}+ Pipe weighted ${fmtMK(vCur.wpipe)} · ${sw('rgba(186,140,245,.15)', 'dashed rgba(186,140,245,.5)')}+ Pipe 100% ${fmtMK(vCur.stretch - vCur.base)} · <span style="color:var(--yellow)">|</span> OKR`
-    : `${sw('var(--green)')}Actual ${fmtMK(vCur.act)} · ${sw('rgba(100,231,106,.35)')}Actual + Projection ${fmtMK(vCur.ap)} · <span style="color:var(--yellow)">|</span> OKR`;
   el('wk-cur').innerHTML = `
     <div class="wk-row-head"><span class="wk-label">${qn} ${cur.year} · current quarter</span>${dCur != null ? `<span class="wk-pill ${dCls(dCur)}">${fmtDelta(dCur)} vs ${pw}</span>` : ''}</div>
-    <div class="wk-big">${fmtMK(curHead)} <span>${vCur.hasFuture ? 'Base' : 'landing'} · <b style="color:${okrColor(pc)}">${pc}%</b> of ${fmtMK(vCur.okr)} OKR${vCur.hasFuture ? ` · Stretch ${fmtMK(vCur.stretch)} (${pctOf(vCur.stretch, vCur.okr)}%)` : ''}</span></div>
-    ${wkBar([
-      { v: vCur.act, c: 'var(--green)' },
-      { v: vCur.ap - vCur.act, c: 'rgba(100,231,106,.35)' },
-      { v: curSigned, c: 'rgba(146,84,227,.55)', border: '1px solid rgba(146,84,227,.9)' },
-      { v: vCur.wpipe, c: 'rgba(146,84,227,.18)', border: '1px dashed rgba(186,140,245,.8)' },
-      { v: vCur.stretch - vCur.base, c: 'rgba(186,140,245,.15)', border: '1px dashed rgba(186,140,245,.5)' }
-    ], vCur.okr)}
-    <div class="wk-sub">${curLegend}</div>
+    ${landingBarHtml(vCur)}
     <div class="wk-sub">${fmtMK(vCur.act)} actual${yoy != null ? ` · ${yoy >= 0 ? '+' : ''}${yoy}% vs LY` : ''}</div>
     <div class="table-wrap" style="margin-top:14px">${wkQuarterTable(vCur, vPrevCur)}</div>`;
 
@@ -3225,11 +3223,37 @@ function renderWeeklyTab() {
   el('wk-month-card').style.display = vNext ? '' : 'none';
 }
 
+/* Atterrissage d'un trimestre : montant + % OKR, barre empilée, légende. Partagé Weekly / onglet AM.
+   Couches : Actual | Projection (= Actual + Projection) | Signed (Expected des mois à venir, incrémental) | Pipe pondéré | Pipe 100% */
+function landingBarHtml(v) {
+  const signed = Math.max(0, v.base - v.wpipe - v.ap);
+  const head = v.hasFuture ? v.base : v.ap;
+  const pc = pctOf(head, v.okr);
+  const sw = (bg, bd) => `<i style="display:inline-block;width:9px;height:9px;border-radius:2px;background:${bg};${bd ? `border:1px ${bd};box-sizing:border-box;` : ''}margin:0 5px 0 0;vertical-align:-1px"></i>`;
+  const okrTxt = v.okr
+    ? `<b style="color:${okrColor(pc)}">${pc}%</b> of ${fmtMK(v.okr)} OKR${v.hasFuture ? ` · Stretch ${fmtMK(v.stretch)} (${pctOf(v.stretch, v.okr)}%)` : ''}`
+    : `<i style="color:var(--muted)">OKR not set</i>${v.hasFuture ? ` · Stretch ${fmtMK(v.stretch)}` : ''}`;
+  const okrMark = v.okr ? ` · <span style="color:var(--yellow)">|</span> OKR` : '';
+  const legend = v.hasFuture
+    ? `${sw('var(--green)')}Actual ${fmtMK(v.act)} · ${sw('rgba(100,231,106,.35)')}Actual + Projection ${fmtMK(v.ap)} · ${sw('rgba(146,84,227,.55)', 'solid rgba(146,84,227,.9)')}+ Signed ${fmtMK(signed)} · ${sw('rgba(146,84,227,.18)', 'dashed rgba(186,140,245,.8)')}+ Pipe weighted ${fmtMK(v.wpipe)} · ${sw('rgba(186,140,245,.15)', 'dashed rgba(186,140,245,.5)')}+ Pipe 100% ${fmtMK(v.stretch - v.base)}${okrMark}`
+    : `${sw('var(--green)')}Actual ${fmtMK(v.act)} · ${sw('rgba(100,231,106,.35)')}Actual + Projection ${fmtMK(v.ap)}${okrMark}`;
+  return `
+    <div class="wk-big">${fmtMK(head)} <span>${v.hasFuture ? 'Base' : 'landing'} · ${okrTxt}</span></div>
+    ${wkBar([
+      { v: v.act, c: 'var(--green)' },
+      { v: v.ap - v.act, c: 'rgba(100,231,106,.35)' },
+      { v: signed, c: 'rgba(146,84,227,.55)', border: '1px solid rgba(146,84,227,.9)' },
+      { v: v.wpipe, c: 'rgba(146,84,227,.18)', border: '1px dashed rgba(186,140,245,.8)' },
+      { v: v.stretch - v.base, c: 'rgba(186,140,245,.15)', border: '1px dashed rgba(186,140,245,.5)' }
+    ], v.okr)}
+    <div class="wk-sub">${legend}</div>`;
+}
+
 function wkBar(parts, okr) {
   const max = Math.max(okr, parts.reduce((s, p) => s + Math.max(0, p.v), 0)) || 1;
   let left = 0;
   const segs = parts.map(p => { const w = Math.max(0, p.v) / max * 100; if (!w) return ''; const h = `<div style="position:absolute;top:0;bottom:0;left:${left}%;width:${w}%;background:${p.c};${p.border ? `border:${p.border};box-sizing:border-box;` : p.dashed ? 'border:1px dashed rgba(186,140,245,.7);box-sizing:border-box;' : ''}"></div>`; left += w; return h; }).join('');
-  return `<div class="wk-bar">${segs}<div class="wk-okr" style="left:${okr / max * 100}%" title="OKR"></div></div>`;
+  return `<div class="wk-bar">${segs}${okr ? `<div class="wk-okr" style="left:${okr / max * 100}%" title="OKR"></div>` : ''}</div>`;
 }
 
 /* Month-by-month table for one quarter (+ total). OKR / LY rows fully greyed; pipe rows violet;
@@ -3532,11 +3556,10 @@ function renderAMViewFull(merchants, summary) {
 function renderAMQKPIs(merchants, am, summary) {
   const q      = currentQ();
   const wk     = weekInQ(q);
-  const qRev   = amQRevenue(merchants, am, q);
   const amOkr  = getAMOkr(am);
-  const qOkr   = amOkr[qLabel(q)] ?? null;
-  const qPct   = qOkr ? Math.round(qRev/qOkr*100) : null;
-  const qColor = qPct==null?'var(--text)':qPct>=90?'var(--green)':qPct>=70?'var(--yellow)':'var(--red)';
+  // Atterrissage du trimestre en cours, même barre que le Weekly mais en live et filtrée sur l'AM
+  const lv     = amQuarterView(am, q);
+  const lvYoy  = lv.ly ? Math.round((lv.ap / lv.ly - 1) * 1000) / 10 : null;
 
   const rows        = merchantRows(merchants, am);
 
@@ -3555,28 +3578,14 @@ function renderAMQKPIs(merchants, am, summary) {
     ytdColor  = ytdPct==null?'var(--text)':ytdPct>=90?'var(--green)':ytdPct>=70?'var(--yellow)':'var(--red)';
   }
 
-  const qProgressHtml = `
-    <div class="q-progress-wrap">
-      <div class="q-progress-track">
-        <div class="q-progress-fill" style="width:${Math.round(wk/13*100)}%;background:${qColor}"></div>
-      </div>
-      <div class="q-progress-ticks">
-        <span class="q-progress-tick">${qRange(q)}</span>
-        <span class="q-progress-tick">W${wk}/13</span>
-      </div>
-    </div>`;
-
   const okrPlaceholder = `<span style="font-size:11px;color:var(--muted);font-style:italic">OKR not set</span>`;
 
-  document.getElementById('am-q-kpi-bar').style.gridTemplateColumns = showOkrTile ? 'repeat(3,1fr)' : 'repeat(2,1fr)';
+  document.getElementById('am-q-kpi-bar').style.gridTemplateColumns = showOkrTile ? '2fr 1fr 1fr' : '2fr 1fr';
   document.getElementById('am-q-kpi-bar').innerHTML = `
     <div class="kpi">
-      <div class="kpi-label">${qLabel(q)} Achievement</div>
-      <div class="kpi-value" style="color:${qColor}">${qOkr ? fmtK(qRev) : fmtK(qRev)}</div>
-      <div class="kpi-sub">${qOkr
-        ? `<span style="color:${qColor};font-weight:700">${qPct}%</span> <span class="neu">vs ${fmtK(qOkr)} OKR</span>`
-        : okrPlaceholder}</div>
-      ${qProgressHtml}
+      <div class="wk-row-head"><span class="kpi-label">${qLabel(q)} ${PIPE_YEAR} · current quarter</span><span class="wk-pill">${qRange(q)} · W${wk}/13</span></div>
+      ${landingBarHtml(lv)}
+      <div class="wk-sub">${fmtMK(lv.act)} actual${lvYoy != null ? ` · ${lvYoy >= 0 ? '+' : ''}${lvYoy}% vs LY` : ''}</div>
     </div>
     ${showOkrTile ? `<div class="kpi">
       <div class="kpi-label">YTD vs OKR to date</div>
@@ -3877,10 +3886,13 @@ function renderAMAlertRail(merchants, am) {
   lastAMAlerts = computeAMAlerts(merchants, am);
   activeAlertSev = 'red';
   alertSortState.key = null;
-  const total  = lastAMAlerts.length;
   const red    = lastAMAlerts.filter(a=>a.sev==='red').length;
   const orange = lastAMAlerts.filter(a=>a.sev==='orange').length;
   const churn  = lastAMAlerts.filter(a=>a.sev==='churn').length;
+  // Opportunités HubSpot de l'AM qui tombent sur le trimestre en cours (mêmes règles que le Weekly)
+  const pq     = qLabel(currentQ()), pIdx = Q_MONTH_IDX[pq];
+  const pDeals = pipelineMonthly(am).deals.map(d => ({ w: sumIdx(d.byMonth, pIdx), g: sumIdx(d.grossByMonth, pIdx) })).filter(d => d.g > 0);
+  const pW = pDeals.reduce((s, d) => s + d.w, 0), pG = pDeals.reduce((s, d) => s + d.g, 0);
 
   document.getElementById('am-alert-rail').innerHTML = `
     <div class="alert-headline">
@@ -3899,10 +3911,10 @@ function renderAMAlertRail(merchants, am) {
         <div class="alert-headline-label">😴 Churn</div>
         <div class="alert-headline-sub">2+ months with no revenue</div>
       </div>
-      <div class="alert-headline-stat" style="color:var(--green)" onclick="setAlertSevFilter('all', this)">
-        <div class="alert-headline-num" style="color:var(--green)">${total}</div>
-        <div class="alert-headline-label">✓ Total</div>
-        <div class="alert-headline-sub">active accounts</div>
+      <div class="alert-headline-stat" style="color:${PIPE_VIOLET}" onclick="openPipelineModal(Q_MONTH_IDX['${pq}'], {label:'${pq}', am:'${am}'})" title="Open the ${pq} HubSpot deals">
+        <div class="alert-headline-num" style="color:${PIPE_VIOLET}">${pDeals.length}</div>
+        <div class="alert-headline-label">💼 Pipe ${pq}</div>
+        <div class="alert-headline-sub">${PIPELINE ? (pDeals.length ? `${fmtMK(pW)} weighted · ${fmtMK(pG)} at 100%` : 'no open HubSpot deal') : 'loading HubSpot…'}</div>
       </div>
     </div>
     <div id="am-alert-table-wrap"></div>
