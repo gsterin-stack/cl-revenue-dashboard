@@ -3656,8 +3656,8 @@ function amLandingClick(kind) {
     total = `<span style="font-size:20px">${tile('Actual', fmtMK(A), C.act.text)}${tile('Projection', fmtMK(AP), C.proj.text)}${tile('Signed', fmtMK(S), C.signed.text)}${tile('Difference', `${D >= 0 ? '+' : '−'}${fmtMK(Math.abs(D))}`, D >= 0 ? 'var(--green)' : 'var(--red)')}</span>`;
     head = `${th('Client', 'left')}${th('Actual')}${th('Projection')}${th('Signed')}${th('Difference')}`;
     rows = list.map(r => `<tr style="border-bottom:1px solid #161616;cursor:pointer" onclick="closeLandingModal();openWowModal('${r.id}')">
-      <td style="padding:7px 8px;font-weight:500">${merchantLabel(r.id)}${r.signedQ == null ? ' <span style="font-size:10px;color:var(--muted)">open</span>' : ''}${hasNoLiveOffer(GDATA.merchants[r.id]) ? ` ${NO_OFFER_BADGE}` : ''}</td>
-      ${colored(r.act, C.act.text)}${colored(r.ap, C.proj.text)}${r.signedQ != null ? colored(r.signedQ, C.signed.text) : dash}${r.signedQ != null ? diff(r.ap - r.signedQ) : dash}</tr>`).join('')
+      <td style="padding:7px 8px;font-weight:500">${merchantLabel(r.id)}${r.signedQ == null ? ' <span style="font-size:10px;color:var(--muted)">open</span>' : ''}</td>
+      ${hasNoLiveOffer(GDATA.merchants[r.id]) ? `<td colspan="2" style="text-align:center;padding:7px 8px">${NO_OFFER_BADGE}</td>` : colored(r.act, C.act.text) + colored(r.ap, C.proj.text)}${r.signedQ != null ? colored(r.signedQ, C.signed.text) : dash}${r.signedQ != null ? diff(r.ap - r.signedQ) : dash}</tr>`).join('')
       + `<tr style="border-top:1px solid var(--border)"><td style="padding:8px;font-weight:700">Total</td>${colored(A, C.act.text, 1)}${colored(AP, C.proj.text, 1)}${colored(S, C.signed.text, 1)}${diff(D)}</tr>`;
   }
   document.getElementById('landing-modal').style.borderTopColor = col.text;
