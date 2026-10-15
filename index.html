@@ -550,6 +550,20 @@
   </div>
 </div>
 
+<!-- ═══ AM VIEW — liste simple (client + montant) d'une couche de la barre d'atterrissage ═══ -->
+<div class="modal-overlay" id="landing-modal-overlay" onclick="if(event.target===this)closeLandingModal()">
+  <div class="modal" style="width:min(640px,96vw)">
+    <div class="modal-header">
+      <div>
+        <div class="modal-title" id="landing-modal-title">—</div>
+        <div class="modal-sub" id="landing-modal-sub"></div>
+      </div>
+      <button class="modal-close" onclick="closeLandingModal()">✕</button>
+    </div>
+    <div id="landing-modal-body"></div>
+  </div>
+</div>
+
 <!-- ═══ HUBSPOT PIPELINE (WEIGHTED) MODAL — Monthly chart, stacked above Expected ═══ -->
 <div class="modal-overlay" id="pipe-modal-overlay" onclick="if(event.target===this)closePipelineModal()">
   <div class="modal" style="width:min(1080px,96vw)">
@@ -3232,7 +3246,7 @@ function renderWeeklyTab() {
 /* Atterrissage d'un trimestre : montant + % OKR, barre empilée, légende. Partagé Weekly / onglet AM.
    Couches : Actual | Projection (= Actual + Projection) | Signed (Expected des mois à venir, incrémental) | Pipe pondéré | Pipe 100% */
 function landingBarHtml(v, click) {
-  /* click (optionnel) : nom d'une fonction globale appelée avec 'pace' | 'signed' | 'pipe' — rend
+  /* click (optionnel) : nom d'une fonction globale appelée avec 'act' | 'proj' | 'signed' | 'pipe' — rend
      chaque couche de la barre et de la légende cliquable (onglet AM). Le Weekly n'en passe pas. */
   const signed = Math.max(0, v.base - v.wpipe - v.ap);
   const head = v.hasFuture ? v.base : v.ap;
@@ -3244,7 +3258,7 @@ function landingBarHtml(v, click) {
     ? `<b style="color:${okrColor(pc)}">${pc}%</b> of ${fmtMK(v.okr)} OKR${v.hasFuture ? ` · Stretch ${fmtMK(v.stretch)} (${pctOf(v.stretch, v.okr)}%)` : ''}`
     : `<i style="color:var(--muted)">OKR not set</i>${v.hasFuture ? ` · Stretch ${fmtMK(v.stretch)}` : ''}`;
   const okrMark = v.okr ? ` · <span style="color:var(--yellow)">|</span> OKR` : '';
-  const legendAP = `${item('pace', sw('var(--green)'), `Actual ${fmtMK(v.act)}`)} · ${item('pace', sw('rgba(100,231,106,.35)'), `Actual + Projection ${fmtMK(v.ap)}`)}`;
+  const legendAP = `${item('act', sw('var(--green)'), `Actual ${fmtMK(v.act)}`)} · ${item('proj', sw('rgba(100,231,106,.35)'), `Actual + Projection ${fmtMK(v.ap)}`)}`;
   const legend = v.hasFuture
     ? `${legendAP} · ${item('signed', sw('rgba(146,84,227,.55)', 'solid rgba(146,84,227,.9)'), `+ Signed ${fmtMK(signed)}`)} · ${item('pipe', sw('rgba(146,84,227,.18)', 'dashed rgba(186,140,245,.8)'), `+ Pipe weighted ${fmtMK(v.wpipe)}`)} · ${item('pipe', sw('rgba(186,140,245,.15)', 'dashed rgba(186,140,245,.5)'), `+ Pipe 100% ${fmtMK(v.stretch - v.base)}`)}${okrMark}`
     : `${legendAP}${okrMark}`;
@@ -3252,8 +3266,8 @@ function landingBarHtml(v, click) {
   return `
     <div class="wk-big">${fmtMK(head)} <span>${v.hasFuture ? 'Base' : 'landing'} · ${okrTxt}</span></div>
     ${wkBar([
-      { v: v.act, c: 'var(--green)', title: `Actual ${fmtMK(v.act)}`, ...k('pace') },
-      { v: v.ap - v.act, c: 'rgba(100,231,106,.35)', title: `Projection ${fmtMK(v.ap - v.act)} (Actual + Projection ${fmtMK(v.ap)})`, ...k('pace') },
+      { v: v.act, c: 'var(--green)', title: `Actual ${fmtMK(v.act)}`, ...k('act') },
+      { v: v.ap - v.act, c: 'rgba(100,231,106,.35)', title: `Projection ${fmtMK(v.ap - v.act)} (Actual + Projection ${fmtMK(v.ap)})`, ...k('proj') },
       { v: signed, c: 'rgba(146,84,227,.55)', border: '1px solid rgba(146,84,227,.9)', title: `Signed ${fmtMK(signed)}`, ...k('signed') },
       { v: v.wpipe, c: 'rgba(146,84,227,.18)', border: '1px dashed rgba(186,140,245,.8)', title: `Pipe weighted ${fmtMK(v.wpipe)}`, ...k('pipe') },
       { v: v.stretch - v.base, c: 'rgba(186,140,245,.15)', border: '1px dashed rgba(186,140,245,.5)', title: `Pipe 100% ${fmtMK(v.stretch - v.base)}`, ...k('pipe') }
@@ -3564,18 +3578,72 @@ function renderAMViewFull(merchants, summary) {
   renderAMDeliveryTable(merchants, activeAMView, summary);
 }
 
-/* ── Clic sur une couche de la barre d'atterrissage de l'onglet AM : mêmes modales que les graphs du
-   Global (Actual/Projection → Delivery vs Plan, Signed → Expected vs LY, Pipe → deals HubSpot), sur
-   le trimestre en cours et l'AM sélectionné. Ces modales lisent activeGlobalAM : on le bascule le
-   temps du rendu (synchrone), puis on le restaure. ── */
-function amLandingClick(kind) {
-  const am = activeAMView, qKey = qLabel(currentQ());
-  if (kind === 'pipe') return openPipelineModal(Q_MONTH_IDX[qKey], { label: qKey, am });
-  const prev = activeGlobalAM;
-  activeGlobalAM = am;
-  try { kind === 'signed' ? openQuarterModal(qKey) : openQuarterPaceModal(qKey); }
-  finally { activeGlobalAM = prev; }
+/* ── Clic sur une couche de la barre d'atterrissage de l'onglet AM : vue temps réel volontairement
+   minimale — juste les clients et leur montant dans la couche cliquée (le détail complet reste dans
+   le Global). Montants par marchand calculés comme deriveChartArraysForAM / quarterViewOf :
+   Actual = réalisé, Projection = reste projeté (forecast du mois en cours + mois à venir),
+   Signed = Expected − (Actual + Projection) sur les mois à venir, Pipe = deals HubSpot du trimestre. ── */
+function amLandingRows(am, q) {
+  const idxs = Q_MONTH_IDX[qLabel(q)], ytd = GDATA.summary.ytd_months || 0, cur = ytd - 1;
+  const from = pipeFirstIdx(GDATA, PIPELINE);
+  return Object.entries(filterMerchantsByAM(GDATA.merchants, am)).map(([id, m]) => {
+    let act = 0, proj = 0, signed = 0;
+    for (const i of idxs) {
+      const v = (m.monthly_26 && m.monthly_26[i]) || 0;
+      const a = i < ytd ? v : 0;
+      const p = (i < ytd ? 0 : v) + (i === cur && m.current_month_forecast != null ? Math.max(0, m.current_month_forecast) : 0);
+      act += a; proj += p;
+      if (i >= from) {
+        let e = m.is_capped ? ((m.monthly_signed && m.monthly_signed[i] != null) ? m.monthly_signed[i] : v) : v;
+        if (i === cur && !m.is_capped) e += currentMonthRemainder(m);
+        signed += e - (a + p);
+      }
+    }
+    return { id, act, proj, signed };
+  });
 }
+function amLandingClick(kind) {
+  if (!GDATA) return;
+  const am = activeAMView, q = currentQ(), qKey = qLabel(q), idxs = Q_MONTH_IDX[qKey];
+  const who = am === 'all' ? 'All' : am;
+  const th = (l, align = 'right') => `<th style="text-align:${align};padding:6px 8px;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.4px;color:var(--text2);border-bottom:1px solid var(--border)">${l}</th>`;
+  const td = (v, extra = '') => `<td style="text-align:right;padding:7px 8px;font-variant-numeric:tabular-nums;${extra}">${v}</td>`;
+  const amt = n => td(fmtMK(n), n < 0 ? 'color:var(--red)' : '');
+  let title, sub, head, rows, foot;
+  if (kind === 'pipe') {
+    const deals = pipelineMonthly(am).deals
+      .map(d => ({ d, w: sumIdx(d.byMonth, idxs), g: sumIdx(d.grossByMonth, idxs) }))
+      .filter(x => x.g > 0).sort((a, b) => b.g - a.g);
+    const W = deals.reduce((s, x) => s + x.w, 0), G = deals.reduce((s, x) => s + x.g, 0);
+    title = `${qKey} — Pipe — ${who}`;
+    sub = `${deals.length} HubSpot deals · amount counted in ${qKey} · weighted by stage`;
+    head = `${th('Client', 'left')}${th('Stage', 'left')}${th('Weighted')}${th('100%')}`;
+    rows = deals.map(({ d, w, g }) => `<tr style="border-bottom:1px solid #161616">
+      <td style="padding:7px 8px"><a href="${HUBSPOT_DEAL_URL}${d.id}" target="_blank" rel="noopener" style="color:var(--text);text-decoration:none;font-weight:500">${d.client}</a></td>
+      <td style="padding:7px 8px;color:var(--text2)">${d.stage}</td>${amt(w)}${amt(g)}</tr>`).join('');
+    foot = `<td style="padding:8px;font-weight:700">Total</td><td></td>${td(fmtMK(W), 'font-weight:700')}${td(fmtMK(G), 'font-weight:700')}`;
+  } else {
+    const label = { act: 'Actual', proj: 'Projection', signed: 'Signed' }[kind];
+    const list = amLandingRows(am, q).filter(r => Math.abs(r[kind]) >= 1).sort((a, b) => b[kind] - a[kind]);
+    const T = list.reduce((s, r) => s + r[kind], 0);
+    title = `${qKey} — ${label} — ${who}`;
+    sub = { act: `Revenue booked so far in ${qKey}`,
+            proj: `Revenue still projected in ${qKey} (rest of the current month + months to come)`,
+            signed: `Signed budget on top of the projection, months to come` }[kind] + ` · ${list.length} clients`;
+    head = `${th('Client', 'left')}${th(label)}`;
+    rows = list.map(r => `<tr style="border-bottom:1px solid #161616;cursor:pointer" onclick="closeLandingModal();openModal('${r.id}')">
+      <td style="padding:7px 8px;font-weight:500">${merchantLabel(r.id)}</td>${amt(r[kind])}</tr>`).join('');
+    foot = `<td style="padding:8px;font-weight:700">Total</td>${td(fmtMK(T), 'font-weight:700')}`;
+  }
+  document.getElementById('landing-modal-title').textContent = title;
+  document.getElementById('landing-modal-sub').textContent = sub;
+  document.getElementById('landing-modal-body').innerHTML = rows
+    ? `<table style="width:100%;border-collapse:collapse;font-size:12.5px"><thead><tr>${head}</tr></thead><tbody>${rows}</tbody>
+       <tfoot><tr style="border-top:1px solid var(--border)">${foot}</tr></tfoot></table>`
+    : `<div style="color:var(--muted);font-size:12px;padding:12px 0">Nothing in this category.</div>`;
+  document.getElementById('landing-modal-overlay').classList.add('open');
+}
+function closeLandingModal() { document.getElementById('landing-modal-overlay').classList.remove('open'); }
 
 /* ── Q-aware KPI strip ── */
 function renderAMQKPIs(merchants, am, summary) {
