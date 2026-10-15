@@ -551,12 +551,13 @@
 </div>
 
 <!-- ═══ AM VIEW — liste simple (client + montant) d'une couche de la barre d'atterrissage ═══ -->
-<div class="modal-overlay" id="landing-modal-overlay" onclick="if(event.target===this)closeLandingModal()">
-  <div class="modal" style="width:min(640px,96vw)">
+<div class="modal-overlay" id="landing-modal-overlay" style="align-items:flex-start;padding-top:12vh" onclick="if(event.target===this)closeLandingModal()">
+  <div class="modal" id="landing-modal" style="width:min(640px,96vw);max-height:80vh;border-top-width:3px">
     <div class="modal-header">
       <div>
         <div class="modal-title" id="landing-modal-title">—</div>
         <div class="modal-sub" id="landing-modal-sub"></div>
+        <div id="landing-modal-total" style="font-size:28px;font-weight:700;font-variant-numeric:tabular-nums;margin-top:10px"></div>
       </div>
       <button class="modal-close" onclick="closeLandingModal()">✕</button>
     </div>
@@ -3602,44 +3603,56 @@ function amLandingRows(am, q) {
     return { id, act, proj, signed };
   });
 }
+/* Couleur de chaque couche = celle de la barre (texte : version lisible des teintes translucides) */
+const LANDING_COLORS = {
+  act:    { text: 'var(--green)', bar: 'var(--green)' },
+  proj:   { text: '#8FD694',      bar: 'rgba(100,231,106,.35)' },
+  signed: { text: '#A97BEF',      bar: 'rgba(146,84,227,.75)' },
+  pipe:   { text: PIPE_VIOLET,    bar: 'rgba(186,140,245,.45)' },
+};
 function amLandingClick(kind) {
   if (!GDATA) return;
   const am = activeAMView, q = currentQ(), qKey = qLabel(q), idxs = Q_MONTH_IDX[qKey];
-  const who = am === 'all' ? 'All' : am;
+  const who = am === 'all' ? 'All' : am, col = LANDING_COLORS[kind];
   const th = (l, align = 'right') => `<th style="text-align:${align};padding:6px 8px;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.4px;color:var(--text2);border-bottom:1px solid var(--border)">${l}</th>`;
-  const td = (v, extra = '') => `<td style="text-align:right;padding:7px 8px;font-variant-numeric:tabular-nums;${extra}">${v}</td>`;
-  const amt = n => td(fmtMK(n), n < 0 ? 'color:var(--red)' : '');
-  let title, sub, head, rows, foot;
+  const td = (v, extra = '') => `<td style="text-align:right;padding:7px 8px;font-variant-numeric:tabular-nums;white-space:nowrap;${extra}">${v}</td>`;
+  const amt = (n, strong) => td(fmtMK(n), n < 0 ? 'color:var(--red)' : strong ? `color:${col.text};font-weight:600` : '');
+  // mini-barre proportionnelle au plus gros montant de la liste, couleur de la couche
+  const meter = (n, max) => `<td style="padding:7px 8px;width:34%"><div style="height:6px;border-radius:3px;background:var(--s3)"><div style="height:6px;border-radius:3px;width:${max > 0 ? Math.max(0, n) / max * 100 : 0}%;background:${col.bar}"></div></div></td>`;
+  let title, sub, total, head, rows;
   if (kind === 'pipe') {
     const deals = pipelineMonthly(am).deals
       .map(d => ({ d, w: sumIdx(d.byMonth, idxs), g: sumIdx(d.grossByMonth, idxs) }))
       .filter(x => x.g > 0).sort((a, b) => b.g - a.g);
     const W = deals.reduce((s, x) => s + x.w, 0), G = deals.reduce((s, x) => s + x.g, 0);
+    const max = Math.max(0, ...deals.map(x => x.g));
     title = `${qKey} — Pipe — ${who}`;
     sub = `${deals.length} HubSpot deals · amount counted in ${qKey} · weighted by stage`;
-    head = `${th('Client', 'left')}${th('Stage', 'left')}${th('Weighted')}${th('100%')}`;
+    total = `${fmtMK(W)} <span style="font-size:14px;font-weight:400;color:var(--text2)">weighted · ${fmtMK(G)} at 100%</span>`;
+    head = `${th('Client', 'left')}${th('Stage', 'left')}${th('', 'left')}${th('Weighted')}${th('100%')}`;
     rows = deals.map(({ d, w, g }) => `<tr style="border-bottom:1px solid #161616">
       <td style="padding:7px 8px"><a href="${HUBSPOT_DEAL_URL}${d.id}" target="_blank" rel="noopener" style="color:var(--text);text-decoration:none;font-weight:500">${d.client}</a></td>
-      <td style="padding:7px 8px;color:var(--text2)">${d.stage}</td>${amt(w)}${amt(g)}</tr>`).join('');
-    foot = `<td style="padding:8px;font-weight:700">Total</td><td></td>${td(fmtMK(W), 'font-weight:700')}${td(fmtMK(G), 'font-weight:700')}`;
+      <td style="padding:7px 8px;color:var(--text2);white-space:nowrap">${d.stage}</td>${meter(g, max)}${amt(w, true)}${amt(g)}</tr>`).join('');
   } else {
     const label = { act: 'Actual', proj: 'Projection', signed: 'Signed' }[kind];
     const list = amLandingRows(am, q).filter(r => Math.abs(r[kind]) >= 1).sort((a, b) => b[kind] - a[kind]);
-    const T = list.reduce((s, r) => s + r[kind], 0);
+    const T = list.reduce((s, r) => s + r[kind], 0), max = Math.max(0, ...list.map(r => r[kind]));
     title = `${qKey} — ${label} — ${who}`;
     sub = { act: `Revenue booked so far in ${qKey}`,
             proj: `Revenue still projected in ${qKey} (rest of the current month + months to come)`,
             signed: `Signed budget on top of the projection, months to come` }[kind] + ` · ${list.length} clients`;
-    head = `${th('Client', 'left')}${th(label)}`;
+    total = fmtMK(T);
+    head = `${th('Client', 'left')}${th('', 'left')}${th(label)}`;
     rows = list.map(r => `<tr style="border-bottom:1px solid #161616;cursor:pointer" onclick="closeLandingModal();openModal('${r.id}')">
-      <td style="padding:7px 8px;font-weight:500">${merchantLabel(r.id)}</td>${amt(r[kind])}</tr>`).join('');
-    foot = `<td style="padding:8px;font-weight:700">Total</td>${td(fmtMK(T), 'font-weight:700')}`;
+      <td style="padding:7px 8px;font-weight:500">${merchantLabel(r.id)}</td>${meter(r[kind], max)}${amt(r[kind], true)}</tr>`).join('');
   }
+  document.getElementById('landing-modal').style.borderTopColor = col.text;
   document.getElementById('landing-modal-title').textContent = title;
   document.getElementById('landing-modal-sub').textContent = sub;
+  const tot = document.getElementById('landing-modal-total');
+  tot.innerHTML = total; tot.style.color = col.text;
   document.getElementById('landing-modal-body').innerHTML = rows
-    ? `<table style="width:100%;border-collapse:collapse;font-size:12.5px"><thead><tr>${head}</tr></thead><tbody>${rows}</tbody>
-       <tfoot><tr style="border-top:1px solid var(--border)">${foot}</tr></tfoot></table>`
+    ? `<table style="width:100%;border-collapse:collapse;font-size:12.5px"><thead><tr>${head}</tr></thead><tbody>${rows}</tbody></table>`
     : `<div style="color:var(--muted);font-size:12px;padding:12px 0">Nothing in this category.</div>`;
   document.getElementById('landing-modal-overlay').classList.add('open');
 }
