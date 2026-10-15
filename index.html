@@ -279,6 +279,12 @@
     .wk-big span { font-size:13px; font-weight:400; color:var(--text2); }
     .wk-bar { position:relative; height:9px; border-radius:5px; background:var(--s3); margin:12px 0 8px; }
     .wk-okr { position:absolute; top:-4px; bottom:-4px; width:2px; background:var(--yellow); }
+    .wk-bar-click { height:14px; }
+    .wk-bar-click > div[onclick] { cursor:pointer; transition:filter .12s; }
+    .wk-bar-click > div[onclick]:hover { filter:brightness(1.6); outline:1px solid rgba(255,255,255,.5); z-index:1; }
+    .wk-bar-click .wk-okr { pointer-events:none; z-index:2; }
+    .wk-click { cursor:pointer; white-space:nowrap; }
+    .wk-click:hover { color:var(--text); text-decoration:underline; }
     .wk-pill { font-size:11px; font-weight:700; padding:2px 8px; border-radius:5px; background:var(--s3); }
     .wk-pill.pos, .wk-amt.pos { color:var(--green); }
     .wk-pill.neg, .wk-amt.neg { color:var(--red); }
@@ -3225,35 +3231,41 @@ function renderWeeklyTab() {
 
 /* Atterrissage d'un trimestre : montant + % OKR, barre empilée, légende. Partagé Weekly / onglet AM.
    Couches : Actual | Projection (= Actual + Projection) | Signed (Expected des mois à venir, incrémental) | Pipe pondéré | Pipe 100% */
-function landingBarHtml(v) {
+function landingBarHtml(v, click) {
+  /* click (optionnel) : nom d'une fonction globale appelée avec 'pace' | 'signed' | 'pipe' — rend
+     chaque couche de la barre et de la légende cliquable (onglet AM). Le Weekly n'en passe pas. */
   const signed = Math.max(0, v.base - v.wpipe - v.ap);
   const head = v.hasFuture ? v.base : v.ap;
   const pc = pctOf(head, v.okr);
+  const on = kind => click ? ` onclick="${click}('${kind}')" class="wk-click"` : '';
   const sw = (bg, bd) => `<i style="display:inline-block;width:9px;height:9px;border-radius:2px;background:${bg};${bd ? `border:1px ${bd};box-sizing:border-box;` : ''}margin:0 5px 0 0;vertical-align:-1px"></i>`;
+  const item = (kind, swatch, txt) => `<span${on(kind)}>${swatch}${txt}</span>`;
   const okrTxt = v.okr
     ? `<b style="color:${okrColor(pc)}">${pc}%</b> of ${fmtMK(v.okr)} OKR${v.hasFuture ? ` · Stretch ${fmtMK(v.stretch)} (${pctOf(v.stretch, v.okr)}%)` : ''}`
     : `<i style="color:var(--muted)">OKR not set</i>${v.hasFuture ? ` · Stretch ${fmtMK(v.stretch)}` : ''}`;
   const okrMark = v.okr ? ` · <span style="color:var(--yellow)">|</span> OKR` : '';
+  const legendAP = `${item('pace', sw('var(--green)'), `Actual ${fmtMK(v.act)}`)} · ${item('pace', sw('rgba(100,231,106,.35)'), `Actual + Projection ${fmtMK(v.ap)}`)}`;
   const legend = v.hasFuture
-    ? `${sw('var(--green)')}Actual ${fmtMK(v.act)} · ${sw('rgba(100,231,106,.35)')}Actual + Projection ${fmtMK(v.ap)} · ${sw('rgba(146,84,227,.55)', 'solid rgba(146,84,227,.9)')}+ Signed ${fmtMK(signed)} · ${sw('rgba(146,84,227,.18)', 'dashed rgba(186,140,245,.8)')}+ Pipe weighted ${fmtMK(v.wpipe)} · ${sw('rgba(186,140,245,.15)', 'dashed rgba(186,140,245,.5)')}+ Pipe 100% ${fmtMK(v.stretch - v.base)}${okrMark}`
-    : `${sw('var(--green)')}Actual ${fmtMK(v.act)} · ${sw('rgba(100,231,106,.35)')}Actual + Projection ${fmtMK(v.ap)}${okrMark}`;
+    ? `${legendAP} · ${item('signed', sw('rgba(146,84,227,.55)', 'solid rgba(146,84,227,.9)'), `+ Signed ${fmtMK(signed)}`)} · ${item('pipe', sw('rgba(146,84,227,.18)', 'dashed rgba(186,140,245,.8)'), `+ Pipe weighted ${fmtMK(v.wpipe)}`)} · ${item('pipe', sw('rgba(186,140,245,.15)', 'dashed rgba(186,140,245,.5)'), `+ Pipe 100% ${fmtMK(v.stretch - v.base)}`)}${okrMark}`
+    : `${legendAP}${okrMark}`;
+  const k = kind => click ? { click: `${click}('${kind}')` } : {};
   return `
     <div class="wk-big">${fmtMK(head)} <span>${v.hasFuture ? 'Base' : 'landing'} · ${okrTxt}</span></div>
     ${wkBar([
-      { v: v.act, c: 'var(--green)' },
-      { v: v.ap - v.act, c: 'rgba(100,231,106,.35)' },
-      { v: signed, c: 'rgba(146,84,227,.55)', border: '1px solid rgba(146,84,227,.9)' },
-      { v: v.wpipe, c: 'rgba(146,84,227,.18)', border: '1px dashed rgba(186,140,245,.8)' },
-      { v: v.stretch - v.base, c: 'rgba(186,140,245,.15)', border: '1px dashed rgba(186,140,245,.5)' }
-    ], v.okr)}
+      { v: v.act, c: 'var(--green)', title: `Actual ${fmtMK(v.act)}`, ...k('pace') },
+      { v: v.ap - v.act, c: 'rgba(100,231,106,.35)', title: `Projection ${fmtMK(v.ap - v.act)} (Actual + Projection ${fmtMK(v.ap)})`, ...k('pace') },
+      { v: signed, c: 'rgba(146,84,227,.55)', border: '1px solid rgba(146,84,227,.9)', title: `Signed ${fmtMK(signed)}`, ...k('signed') },
+      { v: v.wpipe, c: 'rgba(146,84,227,.18)', border: '1px dashed rgba(186,140,245,.8)', title: `Pipe weighted ${fmtMK(v.wpipe)}`, ...k('pipe') },
+      { v: v.stretch - v.base, c: 'rgba(186,140,245,.15)', border: '1px dashed rgba(186,140,245,.5)', title: `Pipe 100% ${fmtMK(v.stretch - v.base)}`, ...k('pipe') }
+    ], v.okr, !!click)}
     <div class="wk-sub">${legend}</div>`;
 }
 
-function wkBar(parts, okr) {
+function wkBar(parts, okr, clickable) {
   const max = Math.max(okr, parts.reduce((s, p) => s + Math.max(0, p.v), 0)) || 1;
   let left = 0;
-  const segs = parts.map(p => { const w = Math.max(0, p.v) / max * 100; if (!w) return ''; const h = `<div style="position:absolute;top:0;bottom:0;left:${left}%;width:${w}%;background:${p.c};${p.border ? `border:${p.border};box-sizing:border-box;` : p.dashed ? 'border:1px dashed rgba(186,140,245,.7);box-sizing:border-box;' : ''}"></div>`; left += w; return h; }).join('');
-  return `<div class="wk-bar">${segs}${okr ? `<div class="wk-okr" style="left:${okr / max * 100}%" title="OKR"></div>` : ''}</div>`;
+  const segs = parts.map(p => { const w = Math.max(0, p.v) / max * 100; if (!w) return ''; const h = `<div${p.title ? ` title="${p.title}"` : ''}${p.click ? ` onclick="${p.click}"` : ''} style="position:absolute;top:0;bottom:0;left:${left}%;width:${w}%;background:${p.c};${p.border ? `border:${p.border};box-sizing:border-box;` : p.dashed ? 'border:1px dashed rgba(186,140,245,.7);box-sizing:border-box;' : ''}"></div>`; left += w; return h; }).join('');
+  return `<div class="wk-bar${clickable ? ' wk-bar-click' : ''}">${segs}${okr ? `<div class="wk-okr" style="left:${okr / max * 100}%" title="OKR"></div>` : ''}</div>`;
 }
 
 /* Month-by-month table for one quarter (+ total). OKR / LY rows fully greyed; pipe rows violet;
@@ -3552,6 +3564,19 @@ function renderAMViewFull(merchants, summary) {
   renderAMDeliveryTable(merchants, activeAMView, summary);
 }
 
+/* ── Clic sur une couche de la barre d'atterrissage de l'onglet AM : mêmes modales que les graphs du
+   Global (Actual/Projection → Delivery vs Plan, Signed → Expected vs LY, Pipe → deals HubSpot), sur
+   le trimestre en cours et l'AM sélectionné. Ces modales lisent activeGlobalAM : on le bascule le
+   temps du rendu (synchrone), puis on le restaure. ── */
+function amLandingClick(kind) {
+  const am = activeAMView, qKey = qLabel(currentQ());
+  if (kind === 'pipe') return openPipelineModal(Q_MONTH_IDX[qKey], { label: qKey, am });
+  const prev = activeGlobalAM;
+  activeGlobalAM = am;
+  try { kind === 'signed' ? openQuarterModal(qKey) : openQuarterPaceModal(qKey); }
+  finally { activeGlobalAM = prev; }
+}
+
 /* ── Q-aware KPI strip ── */
 function renderAMQKPIs(merchants, am, summary) {
   const q      = currentQ();
@@ -3584,7 +3609,7 @@ function renderAMQKPIs(merchants, am, summary) {
   document.getElementById('am-q-kpi-bar').innerHTML = `
     <div class="kpi">
       <div class="wk-row-head"><span class="kpi-label">${qLabel(q)} ${PIPE_YEAR} · current quarter</span><span class="wk-pill">${qRange(q)} · W${wk}/13</span></div>
-      ${landingBarHtml(lv)}
+      ${landingBarHtml(lv, 'amLandingClick')}
       <div class="wk-sub">${fmtMK(lv.act)} actual${lvYoy != null ? ` · ${lvYoy >= 0 ? '+' : ''}${lvYoy}% vs LY` : ''}</div>
     </div>
     ${showOkrTile ? `<div class="kpi">
