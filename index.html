@@ -3645,7 +3645,7 @@ function amLandingClick(kind) {
     const C = LANDING_COLORS;
     const list = amLandingRows(am, q).filter(r => r.ap >= 1 || (r.signedQ || 0) >= 1).sort((a, b) => Math.max(b.ap, b.signedQ || 0) - Math.max(a.ap, a.signedQ || 0));
     const sum = f => list.reduce((s, r) => s + (f(r) || 0), 0);
-    const A = sum(r => r.act), AP = sum(r => r.ap), S = sum(r => r.signedQ), D = sum(r => r.signedQ != null ? r.ap - r.signedQ : 0);
+    const A = sum(r => r.act), AP = sum(r => r.ap), S = sum(r => r.signedQ), D = AP - S;   // écart total = Projection − Signed affichés
     const nOpen = list.filter(r => r.signedQ == null).length;
     const dash = td('—', 'color:var(--muted)');
     const diff = n => td(`${n >= 0 ? '+' : '−'}${fmtMK(Math.abs(n))}`, `font-weight:600;color:${n >= 0 ? 'var(--green)' : 'var(--red)'}`);
