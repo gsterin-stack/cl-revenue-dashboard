@@ -3647,7 +3647,7 @@ function amLandingClick(kind) {
     title = `${qKey} — Clients — ${who}`;
     sub = `${list.length} clients · Projection = Actual + Projection for ${qKey} · Signed = budget signed for the whole quarter${nOpen ? ` · ${nOpen} open accounts (no signed budget)` : ''}`;
     const tile = (l, v, c) => `<span style="margin-right:22px"><span style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.4px;color:var(--text2)">${l}</span> <span style="color:${c}">${v}</span></span>`;
-    total = `<span style="font-size:20px">${tile('Actual', fmtMK(A), C.act.text)}${tile('Projection', fmtMK(AP), C.proj.text)}${tile('Signed', fmtMK(S), C.signed.text)}</span>`;
+    total = `<span style="font-size:20px">${tile('Actual', fmtMK(A), C.act.text)}${tile('Projection', fmtMK(AP), C.proj.text)}${tile('Difference', `${D >= 0 ? '+' : '−'}${fmtMK(Math.abs(D))}`, D >= 0 ? 'var(--green)' : 'var(--red)')}${tile('Signed', fmtMK(S), C.signed.text)}</span>`;
     head = `${th('Client', 'left')}${th('Actual')}${th('Projection')}${th('Signed')}${th('Difference')}`;
     rows = list.map(r => `<tr style="border-bottom:1px solid #161616;cursor:pointer" onclick="closeLandingModal();openModal('${r.id}')">
       <td style="padding:7px 8px;font-weight:500">${merchantLabel(r.id)}${r.signedQ == null ? ' <span style="font-size:10px;color:var(--muted)">open</span>' : ''}</td>
