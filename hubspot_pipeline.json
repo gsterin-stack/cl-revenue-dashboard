@@ -1,13 +1,24 @@
 {
- "generated_at": "2026-10-15T14:17:56.296Z",
- "source": "HubSpot — CL AM Opportunity Pipeline (890800820: Negotiation ongoing) + CL Sales Pipeline (842062383: Negotiation, Commit). All owners (Card-Linked pipelines). Raw amounts; weighting & monthly split applied in index.html (PIPE_RULES). Refreshed by n8n CL Dashboard - HubSpot Pipeline Sync.",
+ "generated_at": "2026-10-15T15:13:23.094Z",
+ "source": "HubSpot — CL AM Opportunity Pipeline (890800820: Meeting scheduled, Proposal sent, Negotiation ongoing) + CL Sales Pipeline (842062383: Recommendation / Proposal, Negotiation, Commit). All owners (Card-Linked pipelines). Raw amounts + HubSpot stage probability; weighting & monthly split applied in index.html (PIPE_RULES). Refreshed by n8n CL Dashboard - HubSpot Pipeline Sync.",
  "deals": [
+  {
+   "id": "63083854108",
+   "pipeline": "am",
+   "name": "Blablacar - Renew - Nov Dec 2026",
+   "amount": 60000,
+   "stage": "Meeting scheduled",
+   "probability": 0.1,
+   "owner_id": "95067911",
+   "owner": "Clément"
+  },
   {
    "id": "65730749354",
    "pipeline": "am",
    "name": "Blablacar - Renew - Oct 2026",
    "amount": 22400,
    "stage": "Negotiation ongoing",
+   "probability": 0.6,
    "owner_id": "95067911",
    "owner": "Clément"
   },
@@ -17,6 +28,17 @@
    "name": "Boulanger - Renewal - Q4 2026",
    "amount": 265000,
    "stage": "Negotiation ongoing",
+   "probability": 0.6,
+   "owner_id": "1227580661",
+   "owner": "Eloïse"
+  },
+  {
+   "id": "65949685154",
+   "pipeline": "am",
+   "name": "BUT - Relaunch - FY S2 2026",
+   "amount": 0,
+   "stage": "Meeting scheduled",
+   "probability": 0.1,
    "owner_id": "1227580661",
    "owner": "Eloïse"
   },
@@ -26,6 +48,7 @@
    "name": "Celio - Acquisition - Q4 2026",
    "amount": 51000,
    "stage": "Negotiation ongoing",
+   "probability": 0.6,
    "owner_id": "95067911",
    "owner": "Clément"
   },
@@ -35,6 +58,7 @@
    "name": "Celio - Réactivation - Q4 2026",
    "amount": 20000,
    "stage": "Negotiation ongoing",
+   "probability": 0.6,
    "owner_id": "95067911",
    "owner": "Clément"
   },
@@ -42,8 +66,9 @@
    "id": "4174504794",
    "pipeline": "sales",
    "name": "Conforama - Sales",
-   "amount": 60000,
+   "amount": 15000,
    "stage": "Negotiation",
+   "probability": 0.4,
    "owner_id": "472947881",
    "owner": "Cyprien"
   },
@@ -52,9 +77,30 @@
    "pipeline": "sales",
    "name": "Deliveroo - Sales",
    "amount": 50000,
-   "stage": "Negotiation",
+   "stage": "Recommendation / Proposal",
+   "probability": 0.1,
    "owner_id": "472947881",
    "owner": "Cyprien"
+  },
+  {
+   "id": "13289814389",
+   "pipeline": "sales",
+   "name": "E.Leclerc - Sales",
+   "amount": 50000,
+   "stage": "Recommendation / Proposal",
+   "probability": 0.1,
+   "owner_id": "472947881",
+   "owner": "Cyprien"
+  },
+  {
+   "id": "65730726540",
+   "pipeline": "am",
+   "name": "Histoire d'Or - Renewal - Q4 2026",
+   "amount": 49000,
+   "stage": "Proposal sent",
+   "probability": 0.3,
+   "owner_id": "95067911",
+   "owner": "Clément"
   },
   {
    "id": "13386458005",
@@ -62,6 +108,7 @@
    "name": "Intermarché - Sales",
    "amount": 250000,
    "stage": "Commit",
+   "probability": 0.75,
    "owner_id": "472947881",
    "owner": "Cyprien"
   },
@@ -71,8 +118,19 @@
    "name": "Kiabi - Upsell - Q4 2026",
    "amount": 60000,
    "stage": "Negotiation ongoing",
+   "probability": 0.6,
    "owner_id": "1227580661",
    "owner": "Eloïse"
+  },
+  {
+   "id": "65887357814",
+   "pipeline": "am",
+   "name": "Nespresso - Renew - 2027",
+   "amount": 77000,
+   "stage": "Proposal sent",
+   "probability": 0.3,
+   "owner_id": "95067911",
+   "owner": "Clément"
   },
   {
    "id": "63083859304",
@@ -80,6 +138,7 @@
    "name": "Nocibé - Q1 2027 - Q3 2027",
    "amount": 225000,
    "stage": "Negotiation ongoing",
+   "probability": 0.6,
    "owner_id": "91941033",
    "owner": "Romain"
   },
@@ -89,8 +148,29 @@
    "name": "Uber - Renewal Q4 2026",
    "amount": 350000,
    "stage": "Negotiation ongoing",
+   "probability": 0.6,
    "owner_id": "76992305",
    "owner": "Eva"
+  },
+  {
+   "id": "66021688889",
+   "pipeline": "am",
+   "name": "Veepee - Renewal - December 2026",
+   "amount": 40000,
+   "stage": "Meeting scheduled",
+   "probability": 0.1,
+   "owner_id": "1227580661",
+   "owner": "Eloïse"
+  },
+  {
+   "id": "66020765552",
+   "pipeline": "am",
+   "name": "Veepee - Renewal - Novembre 2026",
+   "amount": 70000,
+   "stage": "Proposal sent",
+   "probability": 0.3,
+   "owner_id": "1227580661",
+   "owner": "Eloïse"
   },
   {
    "id": "66020706322",
@@ -98,6 +178,17 @@
    "name": "Veepee - Renewal - Octobre 2026",
    "amount": 40000,
    "stage": "Negotiation ongoing",
+   "probability": 0.6,
+   "owner_id": "1227580661",
+   "owner": "Eloïse"
+  },
+  {
+   "id": "60893085195",
+   "pipeline": "am",
+   "name": "Veepee - Upsell - S2 Repeat offer",
+   "amount": 46000,
+   "stage": "Meeting scheduled",
+   "probability": 0.1,
    "owner_id": "1227580661",
    "owner": "Eloïse"
   },
@@ -107,6 +198,17 @@
    "name": "Vertbaudet - Optin - S2 2026",
    "amount": 12000,
    "stage": "Negotiation ongoing",
+   "probability": 0.6,
+   "owner_id": "1227580661",
+   "owner": "Eloïse"
+  },
+  {
+   "id": "63436306208",
+   "pipeline": "am",
+   "name": "Vertbaudet - Renewal - Q4 2026",
+   "amount": 34167,
+   "stage": "Meeting scheduled",
+   "probability": 0.1,
    "owner_id": "1227580661",
    "owner": "Eloïse"
   }
