@@ -1101,7 +1101,28 @@ function openCurrentMonthRemainder(merchants) {
 }
 
 /* ── Main render ── */
+/* ── Rattachements d'AM : le book de Cyprien (marchands + deals HubSpot) est suivi dans Sales
+   (OKR, filtre AM, pipe). Appliqué à data.json, hubspot_pipeline.json et aux snapshots Weekly. ── */
+const AM_ALIAS = { 'Cyprien': 'Sales' };
+const amAlias = am => AM_ALIAS[am] || am;
+function normalizeAMs(data) {
+  if (!data || data._amNormalized) return data;
+  for (const m of Object.values(data.merchants || {})) if (m.am) m.am = amAlias(m.am);
+  if (data.summary && Array.isArray(data.summary.ams)) data.summary.ams = [...new Set(data.summary.ams.filter(a => !AM_ALIAS[a]).concat(data.summary.ams.map(amAlias)))];
+  data._amNormalized = true;
+  return data;
+}
+function normalizePipeOwners(pipe) {
+  if (pipe && Array.isArray(pipe.deals)) pipe.deals.forEach(d => { if (d.owner) d.owner = amAlias(d.owner); });
+  return pipe;
+}
+function normalizeSnap(snap) {
+  if (snap) { normalizeAMs(snap.data); normalizePipeOwners(snap.pipeline); }
+  return snap;
+}
+
 function renderAll(data) {
+  normalizeAMs(data);
   GDATA = data;
   const curIdx = (data.summary.ytd_months||1) - 1;
   if (data.chart_arrays && Array.isArray(data.chart_arrays.EXPECTED) && !data.chart_arrays._expCurPatched) {
@@ -1118,7 +1139,7 @@ function renderAll(data) {
     .then(r => r.ok ? r.json() : null)
     .catch(() => null)
     .then(pipe => {
-      PIPELINE = pipe;
+      PIPELINE = normalizePipeOwners(pipe);
       if (pipe) renderGlobalSections(GDATA, activeGlobalAM);
     })
     .then(() => fetch('./quarter_history.json', { cache: 'no-cache' }))
@@ -2961,7 +2982,7 @@ const WK = { cur: null, prev: null, history: [], views: null };
 function pad2(n) { return String(n).padStart(2, '0'); }
 function mondayOf(d) { const x = new Date(d.getFullYear(), d.getMonth(), d.getDate()); x.setDate(x.getDate() - ((x.getDay() + 6) % 7)); return x; }
 function snapKey(d) { const th = new Date(d); th.setDate(th.getDate() + 3); return `${th.getFullYear()}-W${pad2(isoWeek(d))}`; }
-function fetchSnap(d) { return fetch(`./snapshots/${snapKey(d)}.json`, { cache: 'no-cache' }).then(r => r.ok ? r.json() : null).catch(() => null); }
+function fetchSnap(d) { return fetch(`./snapshots/${snapKey(d)}.json`, { cache: 'no-cache' }).then(r => r.ok ? r.json() : null).then(normalizeSnap).catch(() => null); }
 function fmtMK(n) {
   if (n == null || isNaN(n)) return '—';
   const a = Math.abs(n), s = n < 0 ? '−' : '';
@@ -3417,11 +3438,14 @@ function copyCompanyUpdate() {
 /* ── Quarterly OKRs — renseigner quand disponible, nouveaux AMs = null auto ── */
 const AM_OKR_DATA = {
   /* Format: 'Prénom': { Q1: €, Q2: €, Q3: €, Q4: € }  — laisser null si inconnu */
-  'Eva':       { Q1: null, Q2: null, Q3: 1147648, Q4: null },
-  'Eloïse':    { Q1: null, Q2: null, Q3: 675210,  Q4: null },
+  'Eva':       { Q1: null, Q2: null, Q3: 1147648, Q4: 1600000 },
+  'Eloïse':    { Q1: null, Q2: null, Q3: 675210,  Q4: 1050000 },
   'Raphaëlle': { Q1: null, Q2: null, Q3: 46998,   Q4: null },
   'Théo':      { Q1: null, Q2: null, Q3: 391496,  Q4: null },
   'Romain':    { Q1: null, Q2: null, Q3: 682521,  Q4: null },
+  'Camelia':   { Q1: null, Q2: null, Q3: null,    Q4: 80000 },
+  'Clément':   { Q1: null, Q2: null, Q3: null,    Q4: 420000 },
+  'Sales':     { Q1: null, Q2: null, Q3: null,    Q4: 400000 },   // inclut le book de Cyprien (AM_ALIAS)
 };
 // Fallback propre pour tout AM non listé (nouveau, etc.)
 // Pour 'all', on utilise la cible globale du book (GDATA.quarterly, fournie par n8n) plutôt que
