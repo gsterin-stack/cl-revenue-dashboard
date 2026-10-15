@@ -1399,7 +1399,9 @@ function renderMainChart(ca, am) {
 
 /* ── HubSpot pipeline (weighted) — brique violet clair au-dessus d'Expected, mois à venir uniquement.
    Source : hubspot_pipeline.json (deals bruts). Règles :
-   - pondération par stade (PIPE_RULES) ;
+   - étapes retenues et pondération (PIPE_RULES) : AM à partir de « Meeting scheduled », Sales à partir de
+     « Recommendation / Proposal ». Poids = probabilité de l'étape dans HubSpot (d.probability, remontée par
+     n8n) ; à défaut (anciens fichiers / snapshots), la valeur de PIPE_RULES (= HubSpot au 15/10/2026) ;
    - montant réparti à parts égales sur les mois couverts par la période du titre
      (Q4 2026 → /3, S2 2026 → /6, "Q4 2026-Q3 2027" → /12, "S127" = S1 2027) ;
    - sans période lisible dans le titre → trimestre du mois prochain (PIPE_DEFAULT_NOTE) ;
@@ -1411,8 +1413,8 @@ function renderMainChart(ca, am) {
    - tous les owners (les deux pipelines ne contiennent que du Card-Linked) ; filtre AM du Global tab appliqué sur l'owner. ── */
 const PIPE_RULES = {
   // Sales : pas de période dans le nom → montant pondéré ÷3, imputé sur les 3 mois qui suivent la mise à jour
-  sales: { label:'Sales', stages:{ 'Commit':0.75, 'Negotiation':0.5 }, spreadMonthsAfterUpdate:3 },
-  am:    { label:'AM',    stages:{ 'Negotiation ongoing':0.5 } },
+  sales: { label:'Sales', stages:{ 'Recommendation / Proposal':0.3, 'Negotiation':0.5, 'Commit':0.9 }, spreadMonthsAfterUpdate:3 },
+  am:    { label:'AM',    stages:{ 'Meeting scheduled':0.1, 'Proposal sent':0.3, 'Negotiation ongoing':0.6 } },
 };
 const PIPE_CL_OWNERS = ['472947881','76992305','1227580661','96209869','91941033','95067911'];
 const PIPE_YEAR = 2026;
@@ -1475,7 +1477,8 @@ function pipelineCompute(pipe, data, am) {
   const horizonQStart = PIPE_YEAR*12 + Math.floor(firstFutureIdx/3)*3;   // 1er mois du trimestre du mois prochain
   for (const d of pipe.deals) {
     const rule = PIPE_RULES[d.pipeline];
-    const weight = rule && rule.stages[d.stage];
+    if (!rule || rule.stages[d.stage] == null) continue;   // étape hors périmètre
+    const weight = typeof d.probability === 'number' ? d.probability : rule.stages[d.stage];
     if (!weight) continue;   // both HubSpot pipelines are Card-Linked only → no owner filter, only Sales vs AM
     if (am !== 'all' && d.owner !== am) continue;
     const client = d.name.split(' - ')[0].trim();
