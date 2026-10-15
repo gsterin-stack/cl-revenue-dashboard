@@ -1,5 +1,5 @@
 {
- "generated_at": "2026-10-15T15:16:51.166Z",
+ "generated_at": "2026-10-15T16:00:33.318Z",
  "source": "HubSpot — CL AM Opportunity Pipeline (890800820: Meeting scheduled, Proposal sent, Negotiation ongoing) + CL Sales Pipeline (842062383: Recommendation / Proposal, Negotiation, Commit). All owners (Card-Linked pipelines). Raw amounts + stage probability from the HubSpot pipeline settings; weighting & monthly split applied in index.html (PIPE_RULES). Refreshed by n8n CL Dashboard - HubSpot Pipeline Sync.",
  "deals": [
   {
