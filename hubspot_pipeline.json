@@ -1,5 +1,5 @@
 {
- "generated_at": "2026-10-15T14:13:47.045Z",
+ "generated_at": "2026-10-15T14:17:56.296Z",
  "source": "HubSpot — CL AM Opportunity Pipeline (890800820: Negotiation ongoing) + CL Sales Pipeline (842062383: Negotiation, Commit). All owners (Card-Linked pipelines). Raw amounts; weighting & monthly split applied in index.html (PIPE_RULES). Refreshed by n8n CL Dashboard - HubSpot Pipeline Sync.",
  "deals": [
   {
@@ -66,6 +66,15 @@
    "owner": "Cyprien"
   },
   {
+   "id": "66020829276",
+   "pipeline": "am",
+   "name": "Kiabi - Upsell - Q4 2026",
+   "amount": 60000,
+   "stage": "Negotiation ongoing",
+   "owner_id": "1227580661",
+   "owner": "Eloïse"
+  },
+  {
    "id": "63083859304",
    "pipeline": "am",
    "name": "Nocibé - Q1 2027 - Q3 2027",
@@ -82,6 +91,15 @@
    "stage": "Negotiation ongoing",
    "owner_id": "76992305",
    "owner": "Eva"
+  },
+  {
+   "id": "66020706322",
+   "pipeline": "am",
+   "name": "Veepee - Renewal - Octobre 2026",
+   "amount": 40000,
+   "stage": "Negotiation ongoing",
+   "owner_id": "1227580661",
+   "owner": "Eloïse"
   },
   {
    "id": "60893103234",
