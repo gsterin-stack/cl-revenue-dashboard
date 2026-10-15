@@ -3649,7 +3649,7 @@ function amLandingClick(kind) {
     const tile = (l, v, c) => `<span style="margin-right:22px"><span style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.4px;color:var(--text2)">${l}</span> <span style="color:${c}">${v}</span></span>`;
     total = `<span style="font-size:20px">${tile('Actual', fmtMK(A), C.act.text)}${tile('Projection', fmtMK(AP), C.proj.text)}${tile('Difference', `${D >= 0 ? '+' : '−'}${fmtMK(Math.abs(D))}`, D >= 0 ? 'var(--green)' : 'var(--red)')}${tile('Signed', fmtMK(S), C.signed.text)}</span>`;
     head = `${th('Client', 'left')}${th('Actual')}${th('Projection')}${th('Signed')}${th('Difference')}`;
-    rows = list.map(r => `<tr style="border-bottom:1px solid #161616;cursor:pointer" onclick="closeLandingModal();openModal('${r.id}')">
+    rows = list.map(r => `<tr style="border-bottom:1px solid #161616;cursor:pointer" onclick="amLandingMerchant('${r.id}', '${kind}')">
       <td style="padding:7px 8px;font-weight:500">${merchantLabel(r.id)}${r.signedQ == null ? ' <span style="font-size:10px;color:var(--muted)">open</span>' : ''}</td>
       ${colored(r.act, C.act.text)}${colored(r.ap, C.proj.text)}${r.signedQ != null ? colored(r.signedQ, C.signed.text) : dash}${r.signedQ != null ? diff(r.ap - r.signedQ) : dash}</tr>`).join('')
       + `<tr style="border-top:1px solid var(--border)"><td style="padding:8px;font-weight:700">Total</td>${colored(A, C.act.text, 1)}${colored(AP, C.proj.text, 1)}${colored(S, C.signed.text, 1)}${diff(D)}</tr>`;
@@ -3663,6 +3663,43 @@ function amLandingClick(kind) {
     ? `<table style="width:100%;border-collapse:collapse;font-size:12.5px"><thead><tr>${head}</tr></thead><tbody>${rows}</tbody></table>`
     : `<div style="color:var(--muted);font-size:12px;padding:12px 0">Nothing in this category.</div>`;
   document.getElementById('landing-modal-overlay').classList.add('open');
+}
+/* Q4 d'un marchand, mois par mois (même fenêtre, avec retour à la liste) */
+function amLandingMerchant(id, backKind) {
+  const m = GDATA.merchants[id];
+  if (!m) return;
+  const q = currentQ(), qKey = qLabel(q), idxs = Q_MONTH_IDX[qKey], C = LANDING_COLORS;
+  const ytd = GDATA.summary.ytd_months || 0, cur = ytd - 1;
+  const th = (l, align = 'right') => `<th style="text-align:${align};padding:6px 8px;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.4px;color:var(--text2);border-bottom:1px solid var(--border)">${l}</th>`;
+  const td = (v, extra = '') => `<td style="text-align:right;padding:7px 8px;font-variant-numeric:tabular-nums;white-space:nowrap;${extra}">${v}</td>`;
+  const dash = td('—', 'color:var(--muted)');
+  const colored = (n, c, strong) => td(fmtMK(n), `color:${c};${strong ? 'font-weight:700' : ''}`);
+  const diff = n => td(`${n >= 0 ? '+' : '−'}${fmtMK(Math.abs(n))}`, `font-weight:600;color:${n >= 0 ? 'var(--green)' : 'var(--red)'}`);
+  const months = idxs.map(i => {
+    const v = (m.monthly_26 && m.monthly_26[i]) || 0;
+    const act = i < ytd ? v : 0;
+    const ap = v + (i === cur && m.current_month_forecast != null ? Math.max(0, m.current_month_forecast) : 0);
+    const signed = m.is_capped ? ((m.monthly_signed && m.monthly_signed[i] != null) ? m.monthly_signed[i] : v) : null;
+    return { i, act, ap, signed, state: i < cur ? 'closed' : i === cur ? 'in progress' : 'to come' };
+  });
+  const tot = k => months.reduce((s, x) => s + (x[k] || 0), 0);
+  const A = tot('act'), AP = tot('ap'), S = m.is_capped ? tot('signed') : null;
+  const tile = (l, v, c) => `<span style="margin-right:22px"><span style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.4px;color:var(--text2)">${l}</span> <span style="color:${c}">${v}</span></span>`;
+  const sgn = n => `${n >= 0 ? '+' : '−'}${fmtMK(Math.abs(n))}`;
+  const row = (label, x, bold) => `<tr style="border-bottom:1px solid #161616${bold ? ';border-top:1px solid var(--border)' : ''}">
+      <td style="padding:7px 8px;${bold ? 'font-weight:700' : 'font-weight:500'}">${label}</td>
+      ${x.state === 'to come' ? dash : colored(x.act, C.act.text, bold)}${colored(x.ap, C.proj.text, bold)}${x.signed != null ? colored(x.signed, C.signed.text, bold) : dash}${x.signed != null ? diff(x.ap - x.signed) : dash}</tr>`;
+  document.getElementById('landing-modal').style.borderTopColor = C.proj.text;
+  document.getElementById('landing-modal-title').innerHTML = `<a href="#" onclick="event.preventDefault();amLandingClick('${backKind}')" style="color:var(--text2);text-decoration:none;font-size:14px;font-weight:500;margin-right:8px">← Clients</a>${qKey} — ${merchantLabel(id)}`;
+  document.getElementById('landing-modal-sub').textContent = `${m.am || '—'} · ${m.is_capped ? 'Capped' : 'Open — no signed budget'} · Projection = Actual + Projection`;
+  const totEl = document.getElementById('landing-modal-total');
+  totEl.style.color = '';
+  totEl.innerHTML = `<span style="font-size:20px">${tile('Actual', fmtMK(A), C.act.text)}${tile('Projection', fmtMK(AP), C.proj.text)}${S != null ? tile('Difference', sgn(AP - S), AP - S >= 0 ? 'var(--green)' : 'var(--red)') + tile('Signed', fmtMK(S), C.signed.text) : ''}</span>`;
+  document.getElementById('landing-modal-body').innerHTML = `<table style="width:100%;border-collapse:collapse;font-size:12.5px">
+    <thead><tr>${th('Month', 'left')}${th('Actual')}${th('Projection')}${th('Signed')}${th('Difference')}</tr></thead>
+    <tbody>${months.map(x => row(`${MONTHS[x.i]} <span style="font-size:10px;color:var(--muted);font-weight:400">${x.state}</span>`, x)).join('')}
+    ${row(`${qKey} total`, { act: A, ap: AP, signed: S }, true)}</tbody></table>
+    <div style="margin-top:12px;text-align:right"><a href="#" onclick="event.preventDefault();closeLandingModal();openModal('${id}')" style="font-size:11px;color:var(--text2)">Open merchant page →</a></div>`;
 }
 function closeLandingModal() { document.getElementById('landing-modal-overlay').classList.remove('open'); }
 
