@@ -1430,6 +1430,10 @@ function pipeFirstIdx(data, pipe) {
 const PIPE_DEFAULT_NOTE = 'no period in deal name — spread over the next quarter';
 const HUBSPOT_DEAL_URL = 'https://app.hubspot.com/contacts/4965379/record/0-3/';
 
+const PIPE_MONTHS = { jan:0, janv:0, janvier:0, january:0, feb:1, fev:1, fevr:1, fevrier:1, february:1,
+  mar:2, mars:2, march:2, apr:3, avr:3, avril:3, april:3, may:4, mai:4, jun:5, juin:5, june:5,
+  jul:6, juil:6, juillet:6, july:6, aug:7, aou:7, aout:7, august:7, sep:8, sept:8, septembre:8, september:8,
+  oct:9, octobre:9, october:9, nov:10, novembre:10, november:10, dec:11, decembre:11, december:11 };
 function parseDealPeriod(name, fallbackStartIdx) {
   // tokens Q1-4 / S1-2 / H1-2, année optionnelle ("Q4 2026", "Q4 26", "S127", "S2") — année absente = PIPE_YEAR
   const re = /\b([QSH])([1-4])\s?(?:'|20)?(\d{2})?(?![\d])/gi;
@@ -1442,6 +1446,20 @@ function parseDealPeriod(name, fallbackStartIdx) {
     const len = kind === 'Q' ? 3 : 6;
     const start = year*12 + (n-1)*len;
     spans.push([start, start + len - 1]);
+  }
+  // Sinon : mois (FR/EN, entiers ou abrégés : "Octobre 2026", "Nov Dec 2026", "December 2026"),
+  // puis année seule ("Renew - 2027" → toute l'année). Lus après le nom du client (avant le 1er " - ").
+  if (!spans.length) {
+    const rest = name.split(' - ').slice(1).join(' ').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+    const tokens = rest.split(/[^a-z0-9]+/).filter(Boolean);
+    const months = [], years = [];
+    let pending = [];
+    for (const tk of tokens) {
+      if (PIPE_MONTHS[tk] != null) { const mo = { m: PIPE_MONTHS[tk], y: null }; months.push(mo); pending.push(mo); }
+      else if (/^20\d\d$/.test(tk)) { const y = +tk; years.push(y); pending.forEach(mo => mo.y = y); pending = []; }
+    }
+    months.forEach(mo => { const a = (mo.y || PIPE_YEAR)*12 + mo.m; spans.push([a, a]); });
+    if (!months.length) years.forEach(y => spans.push([y*12, y*12 + 11]));
   }
   if (!spans.length) {
     const qStart = Math.floor(fallbackStartIdx/3)*3;
@@ -1497,7 +1515,10 @@ function pipelineCompute(pipe, data, am) {
         grossByMonth[i] = grossPerMonth; grossMonthly[i] += grossPerMonth;
       }
     }
-    if (!byMonth.some(v => v > 0)) { excluded.push({ ...base, reason:`outside ${PIPE_YEAR}` }); continue; }
+    if (!byMonth.some(v => v > 0)) {
+      const past = period.end < PIPE_YEAR*12 + firstFutureIdx;
+      excluded.push({ ...base, reason: past ? 'month already in progress — counted in Actual + Projection' : `outside ${PIPE_YEAR}` }); continue;
+    }
     deals.push({ ...base, perMonth, byMonth, grossByMonth });
   }
   return { monthly, grossMonthly, deals, excluded };
