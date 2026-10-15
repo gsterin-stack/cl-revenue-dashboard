@@ -552,7 +552,7 @@
 
 <!-- ═══ AM VIEW — liste simple (client + montant) d'une couche de la barre d'atterrissage ═══ -->
 <div class="modal-overlay" id="landing-modal-overlay" style="align-items:flex-start;padding-top:12vh" onclick="if(event.target===this)closeLandingModal()">
-  <div class="modal" id="landing-modal" style="width:min(640px,96vw);max-height:80vh;border-top-width:3px">
+  <div class="modal" id="landing-modal" style="width:min(760px,96vw);max-height:80vh;border-top-width:3px">
     <div class="modal-header">
       <div>
         <div class="modal-title" id="landing-modal-title">—</div>
@@ -3600,7 +3600,11 @@ function amLandingRows(am, q) {
         signed += e - (a + p);
       }
     }
-    return { id, act, proj, signed };
+    // Budget signé sur tout le trimestre (capped uniquement — un compte open n'a pas de budget signé)
+    const signedQ = m.is_capped
+      ? idxs.reduce((s, i) => s + ((m.monthly_signed && m.monthly_signed[i] != null) ? m.monthly_signed[i] : ((m.monthly_26 && m.monthly_26[i]) || 0)), 0)
+      : null;
+    return { id, act, proj, signed, ap: act + proj, signedQ };
   });
 }
 /* Couleur de chaque couche = celle de la barre (texte : version lisible des teintes translucides) */
@@ -3631,23 +3635,30 @@ function amLandingClick(kind) {
       <td style="padding:7px 8px"><a href="${HUBSPOT_DEAL_URL}${d.id}" target="_blank" rel="noopener" style="color:var(--text);text-decoration:none;font-weight:500">${d.client}</a></td>
       <td style="padding:7px 8px;color:var(--text2);white-space:nowrap">${d.stage}</td>${amt(w, true)}${amt(g)}</tr>`).join('');
   } else {
-    const label = { act: 'Actual', proj: 'Projection', signed: 'Signed' }[kind];
-    const list = amLandingRows(am, q).filter(r => Math.abs(r[kind]) >= 1).sort((a, b) => b[kind] - a[kind]);
-    const T = list.reduce((s, r) => s + r[kind], 0);
-    title = `${qKey} — ${label} — ${who}`;
-    sub = { act: `Revenue booked so far in ${qKey}`,
-            proj: `Revenue still projected in ${qKey} (rest of the current month + months to come)`,
-            signed: `Signed budget on top of the projection, months to come` }[kind] + ` · ${list.length} clients`;
-    total = fmtMK(T);
-    head = `${th('Client', 'left')}${th(label)}`;
+    // Actual / Projection / Signed → un seul tableau par client : où en est chaque compte vs son budget du trimestre
+    const C = LANDING_COLORS;
+    const list = amLandingRows(am, q).filter(r => r.ap >= 1 || (r.signedQ || 0) >= 1).sort((a, b) => Math.max(b.ap, b.signedQ || 0) - Math.max(a.ap, a.signedQ || 0));
+    const sum = f => list.reduce((s, r) => s + (f(r) || 0), 0);
+    const A = sum(r => r.act), AP = sum(r => r.ap), S = sum(r => r.signedQ), D = sum(r => r.signedQ != null ? r.ap - r.signedQ : 0);
+    const nOpen = list.filter(r => r.signedQ == null).length;
+    const dash = td('—', 'color:var(--muted)');
+    const diff = n => td(`${n >= 0 ? '+' : '−'}${fmtMK(Math.abs(n))}`, `font-weight:600;color:${n >= 0 ? 'var(--green)' : 'var(--red)'}`);
+    const colored = (n, c, strong) => td(fmtMK(n), `color:${c};${strong ? 'font-weight:700' : ''}`);
+    title = `${qKey} — Clients — ${who}`;
+    sub = `${list.length} clients · Projection = Actual + Projection for ${qKey} · Signed = budget signed for the whole quarter${nOpen ? ` · ${nOpen} open accounts (no signed budget)` : ''}`;
+    const tile = (l, v, c) => `<span style="margin-right:22px"><span style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.4px;color:var(--text2)">${l}</span> <span style="color:${c}">${v}</span></span>`;
+    total = `<span style="font-size:20px">${tile('Actual', fmtMK(A), C.act.text)}${tile('Projection', fmtMK(AP), C.proj.text)}${tile('Signed', fmtMK(S), C.signed.text)}</span>`;
+    head = `${th('Client', 'left')}${th('Actual')}${th('Projection')}${th('Signed')}${th('Difference')}`;
     rows = list.map(r => `<tr style="border-bottom:1px solid #161616;cursor:pointer" onclick="closeLandingModal();openModal('${r.id}')">
-      <td style="padding:7px 8px;font-weight:500">${merchantLabel(r.id)}</td>${amt(r[kind], true)}</tr>`).join('');
+      <td style="padding:7px 8px;font-weight:500">${merchantLabel(r.id)}${r.signedQ == null ? ' <span style="font-size:10px;color:var(--muted)">open</span>' : ''}</td>
+      ${colored(r.act, C.act.text)}${colored(r.ap, C.proj.text)}${r.signedQ != null ? colored(r.signedQ, C.signed.text) : dash}${r.signedQ != null ? diff(r.ap - r.signedQ) : dash}</tr>`).join('')
+      + `<tr style="border-top:1px solid var(--border)"><td style="padding:8px;font-weight:700">Total</td>${colored(A, C.act.text, 1)}${colored(AP, C.proj.text, 1)}${colored(S, C.signed.text, 1)}${diff(D)}</tr>`;
   }
   document.getElementById('landing-modal').style.borderTopColor = col.text;
   document.getElementById('landing-modal-title').textContent = title;
   document.getElementById('landing-modal-sub').textContent = sub;
   const tot = document.getElementById('landing-modal-total');
-  tot.innerHTML = total; tot.style.color = col.text;
+  tot.innerHTML = total; tot.style.color = kind === 'pipe' ? col.text : '';
   document.getElementById('landing-modal-body').innerHTML = rows
     ? `<table style="width:100%;border-collapse:collapse;font-size:12.5px"><thead><tr>${head}</tr></thead><tbody>${rows}</tbody></table>`
     : `<div style="color:var(--muted);font-size:12px;padding:12px 0">Nothing in this category.</div>`;
