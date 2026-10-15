@@ -280,8 +280,8 @@
     .wk-bar { position:relative; height:9px; border-radius:5px; background:var(--s3); margin:12px 0 8px; }
     .wk-okr { position:absolute; top:-4px; bottom:-4px; width:2px; background:var(--yellow); }
     .wk-bar-click { height:14px; }
-    .wk-bar-click > div[onclick] { cursor:pointer; transition:filter .12s; }
-    .wk-bar-click > div[onclick]:hover { filter:brightness(1.6); outline:1px solid rgba(255,255,255,.5); z-index:1; }
+    .wk-bar-click .wk-grp { position:absolute; top:-3px; bottom:-3px; cursor:pointer; border-radius:4px; z-index:1; transition:background .12s; }
+    .wk-bar-click .wk-grp:hover { background:rgba(255,255,255,.14); outline:1px solid rgba(255,255,255,.55); }
     .wk-bar-click .wk-okr { pointer-events:none; z-index:2; }
     .wk-click { cursor:pointer; white-space:nowrap; }
     .wk-click:hover { color:var(--text); text-decoration:underline; }
@@ -3247,7 +3247,7 @@ function renderWeeklyTab() {
 /* Atterrissage d'un trimestre : montant + % OKR, barre empilée, légende. Partagé Weekly / onglet AM.
    Couches : Actual | Projection (= Actual + Projection) | Signed (Expected des mois à venir, incrémental) | Pipe pondéré | Pipe 100% */
 function landingBarHtml(v, click) {
-  /* click (optionnel) : nom d'une fonction globale appelée avec 'act' | 'proj' | 'signed' | 'pipe' — rend
+  /* click (optionnel) : nom d'une fonction globale appelée avec 'clients' (Actual + Projection + Signed, une seule zone) | 'pipe' — rend
      chaque couche de la barre et de la légende cliquable (onglet AM). Le Weekly n'en passe pas. */
   const signed = Math.max(0, v.base - v.wpipe - v.ap);
   const head = v.hasFuture ? v.base : v.ap;
@@ -3259,17 +3259,17 @@ function landingBarHtml(v, click) {
     ? `<b style="color:${okrColor(pc)}">${pc}%</b> of ${fmtMK(v.okr)} OKR${v.hasFuture ? ` · Stretch ${fmtMK(v.stretch)} (${pctOf(v.stretch, v.okr)}%)` : ''}`
     : `<i style="color:var(--muted)">OKR not set</i>${v.hasFuture ? ` · Stretch ${fmtMK(v.stretch)}` : ''}`;
   const okrMark = v.okr ? ` · <span style="color:var(--yellow)">|</span> OKR` : '';
-  const legendAP = `${item('act', sw('var(--green)'), `Actual ${fmtMK(v.act)}`)} · ${item('proj', sw('rgba(100,231,106,.35)'), `Actual + Projection ${fmtMK(v.ap)}`)}`;
+  const legendAP = `${item('clients', sw('var(--green)'), `Actual ${fmtMK(v.act)}`)} · ${item('clients', sw('rgba(100,231,106,.35)'), `Actual + Projection ${fmtMK(v.ap)}`)}`;
   const legend = v.hasFuture
-    ? `${legendAP} · ${item('signed', sw('rgba(146,84,227,.55)', 'solid rgba(146,84,227,.9)'), `+ Signed ${fmtMK(signed)}`)} · ${item('pipe', sw('rgba(146,84,227,.18)', 'dashed rgba(186,140,245,.8)'), `+ Pipe weighted ${fmtMK(v.wpipe)}`)} · ${item('pipe', sw('rgba(186,140,245,.15)', 'dashed rgba(186,140,245,.5)'), `+ Pipe 100% ${fmtMK(v.stretch - v.base)}`)}${okrMark}`
+    ? `${legendAP} · ${item('clients', sw('rgba(146,84,227,.55)', 'solid rgba(146,84,227,.9)'), `+ Signed ${fmtMK(signed)}`)} · ${item('pipe', sw('rgba(146,84,227,.18)', 'dashed rgba(186,140,245,.8)'), `+ Pipe weighted ${fmtMK(v.wpipe)}`)} · ${item('pipe', sw('rgba(186,140,245,.15)', 'dashed rgba(186,140,245,.5)'), `+ Pipe 100% ${fmtMK(v.stretch - v.base)}`)}${okrMark}`
     : `${legendAP}${okrMark}`;
   const k = kind => click ? { click: `${click}('${kind}')` } : {};
   return `
     <div class="wk-big">${fmtMK(head)} <span>${v.hasFuture ? 'Base' : 'landing'} · ${okrTxt}</span></div>
     ${wkBar([
-      { v: v.act, c: 'var(--green)', title: `Actual ${fmtMK(v.act)}`, ...k('act') },
-      { v: v.ap - v.act, c: 'rgba(100,231,106,.35)', title: `Projection ${fmtMK(v.ap - v.act)} (Actual + Projection ${fmtMK(v.ap)})`, ...k('proj') },
-      { v: signed, c: 'rgba(146,84,227,.55)', border: '1px solid rgba(146,84,227,.9)', title: `Signed ${fmtMK(signed)}`, ...k('signed') },
+      { v: v.act, c: 'var(--green)', title: `Actual ${fmtMK(v.act)}`, ...k('clients') },
+      { v: v.ap - v.act, c: 'rgba(100,231,106,.35)', title: `Projection ${fmtMK(v.ap - v.act)} (Actual + Projection ${fmtMK(v.ap)})`, ...k('clients') },
+      { v: signed, c: 'rgba(146,84,227,.55)', border: '1px solid rgba(146,84,227,.9)', title: `Signed ${fmtMK(signed)}`, ...k('clients') },
       { v: v.wpipe, c: 'rgba(146,84,227,.18)', border: '1px dashed rgba(186,140,245,.8)', title: `Pipe weighted ${fmtMK(v.wpipe)}`, ...k('pipe') },
       { v: v.stretch - v.base, c: 'rgba(186,140,245,.15)', border: '1px dashed rgba(186,140,245,.5)', title: `Pipe 100% ${fmtMK(v.stretch - v.base)}`, ...k('pipe') }
     ], v.okr, !!click)}
@@ -3279,8 +3279,13 @@ function landingBarHtml(v, click) {
 function wkBar(parts, okr, clickable) {
   const max = Math.max(okr, parts.reduce((s, p) => s + Math.max(0, p.v), 0)) || 1;
   let left = 0;
-  const segs = parts.map(p => { const w = Math.max(0, p.v) / max * 100; if (!w) return ''; const h = `<div${p.title ? ` title="${p.title}"` : ''}${p.click ? ` onclick="${p.click}"` : ''} style="position:absolute;top:0;bottom:0;left:${left}%;width:${w}%;background:${p.c};${p.border ? `border:${p.border};box-sizing:border-box;` : p.dashed ? 'border:1px dashed rgba(186,140,245,.7);box-sizing:border-box;' : ''}"></div>`; left += w; return h; }).join('');
-  return `<div class="wk-bar${clickable ? ' wk-bar-click' : ''}">${segs}${okr ? `<div class="wk-okr" style="left:${okr / max * 100}%" title="OKR"></div>` : ''}</div>`;
+  // Couches consécutives au même clic = une seule zone cliquable (survol commun), posée par-dessus
+  const groups = [];
+  const segs = parts.map(p => { const w = Math.max(0, p.v) / max * 100; if (!w) return '';
+    if (p.click) { const g = groups[groups.length - 1]; if (g && g.click === p.click && Math.abs(g.left + g.w - left) < 1e-9) { g.w += w; g.titles.push(p.title); } else groups.push({ click: p.click, left, w, titles: [p.title] }); }
+    const h = `<div${p.title && !p.click ? ` title="${p.title}"` : ''} style="position:absolute;top:0;bottom:0;left:${left}%;width:${w}%;background:${p.c};${p.border ? `border:${p.border};box-sizing:border-box;` : p.dashed ? 'border:1px dashed rgba(186,140,245,.7);box-sizing:border-box;' : ''}"></div>`; left += w; return h; }).join('');
+  const grps = groups.map(g => `<div class="wk-grp" onclick="${g.click}" title="${g.titles.filter(Boolean).join(' · ')}" style="left:${g.left}%;width:${g.w}%"></div>`).join('');
+  return `<div class="wk-bar${clickable ? ' wk-bar-click' : ''}">${segs}${grps}${okr ? `<div class="wk-okr" style="left:${okr / max * 100}%" title="OKR"></div>` : ''}</div>`;
 }
 
 /* Month-by-month table for one quarter (+ total). OKR / LY rows fully greyed; pipe rows violet;
@@ -3613,6 +3618,7 @@ const LANDING_COLORS = {
   proj:   { text: '#8FD694' },
   signed: { text: '#A97BEF' },
   pipe:   { text: PIPE_VIOLET },
+  clients:{ text: '#8FD694' },
 };
 function amLandingClick(kind) {
   if (!GDATA) return;
@@ -3650,7 +3656,7 @@ function amLandingClick(kind) {
     total = `<span style="font-size:20px">${tile('Actual', fmtMK(A), C.act.text)}${tile('Projection', fmtMK(AP), C.proj.text)}${tile('Difference', `${D >= 0 ? '+' : '−'}${fmtMK(Math.abs(D))}`, D >= 0 ? 'var(--green)' : 'var(--red)')}${tile('Signed', fmtMK(S), C.signed.text)}</span>`;
     head = `${th('Client', 'left')}${th('Actual')}${th('Projection')}${th('Signed')}${th('Difference')}`;
     rows = list.map(r => `<tr style="border-bottom:1px solid #161616;cursor:pointer" onclick="amLandingMerchant('${r.id}', '${kind}')">
-      <td style="padding:7px 8px;font-weight:500">${merchantLabel(r.id)}${r.signedQ == null ? ' <span style="font-size:10px;color:var(--muted)">open</span>' : ''}</td>
+      <td style="padding:7px 8px;font-weight:500">${merchantLabel(r.id)}${r.signedQ == null ? ' <span style="font-size:10px;color:var(--muted)">open</span>' : ''}${hasNoLiveOffer(GDATA.merchants[r.id]) ? ` ${NO_OFFER_BADGE}` : ''}</td>
       ${colored(r.act, C.act.text)}${colored(r.ap, C.proj.text)}${r.signedQ != null ? colored(r.signedQ, C.signed.text) : dash}${r.signedQ != null ? diff(r.ap - r.signedQ) : dash}</tr>`).join('')
       + `<tr style="border-top:1px solid var(--border)"><td style="padding:8px;font-weight:700">Total</td>${colored(A, C.act.text, 1)}${colored(AP, C.proj.text, 1)}${colored(S, C.signed.text, 1)}${diff(D)}</tr>`;
   }
@@ -3691,7 +3697,7 @@ function amLandingMerchant(id, backKind) {
       ${x.state === 'to come' ? dash : colored(x.act, C.act.text, bold)}${colored(x.ap, C.proj.text, bold)}${x.signed != null ? colored(x.signed, C.signed.text, bold) : dash}${x.signed != null ? diff(x.ap - x.signed) : dash}</tr>`;
   document.getElementById('landing-modal').style.borderTopColor = C.proj.text;
   document.getElementById('landing-modal-title').innerHTML = `<a href="#" onclick="event.preventDefault();amLandingClick('${backKind}')" style="color:var(--text2);text-decoration:none;font-size:14px;font-weight:500;margin-right:8px">← Clients</a>${qKey} — ${merchantLabel(id)}`;
-  document.getElementById('landing-modal-sub').textContent = `${m.am || '—'} · ${m.is_capped ? 'Capped' : 'Open — no signed budget'} · Projection = Actual + Projection`;
+  document.getElementById('landing-modal-sub').innerHTML = `${m.am || '—'} · ${m.is_capped ? 'Capped' : 'Open — no signed budget'} · Projection = Actual + Projection${hasNoLiveOffer(m) ? ` · ${NO_OFFER_BADGE}` : ''}`;
   const totEl = document.getElementById('landing-modal-total');
   totEl.style.color = '';
   totEl.innerHTML = `<span style="font-size:20px">${tile('Actual', fmtMK(A), C.act.text)}${tile('Projection', fmtMK(AP), C.proj.text)}${S != null ? tile('Difference', sgn(AP - S), AP - S >= 0 ? 'var(--green)' : 'var(--red)') + tile('Signed', fmtMK(S), C.signed.text) : ''}</span>`;
