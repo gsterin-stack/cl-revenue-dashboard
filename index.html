@@ -3917,6 +3917,7 @@ function renderAMAlertRail(merchants, am) {
         <div class="alert-headline-sub">${PIPELINE ? (pDeals.length ? `${fmtMK(pW)} weighted · ${fmtMK(pG)} at 100%` : 'no open HubSpot deal') : 'loading HubSpot…'}</div>
       </div>
     </div>
+    <div style="text-align:right;margin:-4px 2px 6px"><a id="alert-show-all" href="#" onclick="event.preventDefault();setAlertSevFilter('all', null)" style="font-size:11px;color:var(--text2);text-decoration:underline">Show all (${lastAMAlerts.length})</a></div>
     <div id="am-alert-table-wrap"></div>
   `;
   renderAlertTable();
