@@ -1046,6 +1046,7 @@ function hasNoLiveOffer(m) {
   const curMoIdx = (GDATA.summary.ytd_months||1) - 1;
   return ((m.monthly_signed && m.monthly_signed[curMoIdx]) || 0) > 0 || m.open_budget != null;
 }
+const CHURN_BADGE = `<span style="font-size:10px;font-weight:700;color:var(--churn);border:1px solid var(--churn);border-radius:4px;padding:1px 5px;white-space:nowrap" title="No revenue last month nor this month so far">😴 CHURN</span>`;
 const NO_OFFER_BADGE = `<span style="font-size:10px;font-weight:700;color:var(--red);border:1px solid var(--red);border-radius:4px;padding:1px 5px;white-space:nowrap" title="Budget signed but no card-linked offer live — no pace to measure">⛔ NO LIVE OFFER</span>`;
 
 /* ── Full-period run-rate projection from the current in-progress month's MTD actual ── */
@@ -3657,9 +3658,14 @@ function amLandingClick(kind) {
     const tile = (l, v, c) => `<span style="margin-right:22px"><span style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.4px;color:var(--text2)">${l}</span> <span style="color:${c}">${v}</span></span>`;
     total = `<span style="font-size:20px">${tile('Actual', fmtMK(A), C.act.text)}${tile('Projection', fmtMK(AP), C.proj.text)}${tile('Signed', fmtMK(S), C.signed.text)}${tile('Difference', `${D >= 0 ? '+' : '−'}${fmtMK(Math.abs(D))}`, D >= 0 ? 'var(--green)' : 'var(--red)')}</span>`;
     head = `${th('Client', 'left')}${th('Actual')}${th('Projection')}${th('Signed')}${th('Difference')}`;
-    rows = list.map(r => `<tr${hasNoLiveOffer(GDATA.merchants[r.id]) ? ' data-gs-row' : ''} style="border-bottom:1px solid #161616;cursor:pointer" onclick="closeLandingModal();openWowModal('${r.id}')">
+    // Badge à la place d'Actual / Projection : CHURN (règle isChurnedMerchant, même avec du budget
+    // signé) prioritaire sur NO LIVE OFFER — seulement pour un client qui a déjà généré du CA en 2026
+    // (un compte qui n'a jamais démarré n'a pas churné)
+    const badgeOf = id => { const m = GDATA.merchants[id];
+      return isChurnedMerchant(m) && (m.monthly_26 || []).some(v => v > 0) ? CHURN_BADGE : hasNoLiveOffer(m) ? NO_OFFER_BADGE : null; };
+    rows = list.map(r => `<tr${badgeOf(r.id) ? ' data-gs-row' : ''} style="border-bottom:1px solid #161616;cursor:pointer" onclick="closeLandingModal();openWowModal('${r.id}')">
       <td style="padding:7px 8px;font-weight:500">${merchantLabel(r.id)}${r.signedQ == null ? ' <span style="font-size:10px;color:var(--muted)">open</span>' : ''}</td>
-      ${hasNoLiveOffer(GDATA.merchants[r.id]) ? `<td colspan="2" style="text-align:center;padding:7px 8px">${NO_OFFER_BADGE}</td>` : colored(r.act, C.act.text) + colored(r.ap, C.proj.text)}${r.signedQ != null ? colored(r.signedQ, C.signed.text) : dash}${r.signedQ != null ? diff(r.ap - r.signedQ) : dash}</tr>`).join('')
+      ${badgeOf(r.id) ? `<td colspan="2" style="text-align:center;padding:7px 8px">${badgeOf(r.id)}</td>` : colored(r.act, C.act.text) + colored(r.ap, C.proj.text)}${r.signedQ != null ? colored(r.signedQ, C.signed.text) : dash}${r.signedQ != null ? diff(r.ap - r.signedQ) : dash}</tr>`).join('')
       + `<tr style="border-top:1px solid var(--border)"><td style="padding:8px;font-weight:700">Total</td>${colored(A, C.act.text, 1)}${colored(AP, C.proj.text, 1)}${colored(S, C.signed.text, 1)}${diff(D)}</tr>`;
   }
   document.getElementById('landing-modal').style.borderTopColor = col.text;
