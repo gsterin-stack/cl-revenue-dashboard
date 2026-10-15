@@ -1413,7 +1413,7 @@ function renderMainChart(ca, am) {
    - tous les owners (les deux pipelines ne contiennent que du Card-Linked) ; filtre AM du Global tab appliqué sur l'owner. ── */
 const PIPE_RULES = {
   // Sales : pas de période dans le nom → montant pondéré ÷3, imputé sur les 3 mois qui suivent la mise à jour
-  sales: { label:'Sales', stages:{ 'Recommendation / Proposal':0.3, 'Negotiation':0.5, 'Commit':0.9 }, spreadMonthsAfterUpdate:3 },
+  sales: { label:'Sales', stages:{ 'Recommendation / Proposal':0.1, 'Negotiation':0.4, 'Commit':0.75 }, spreadMonthsAfterUpdate:3 },
   am:    { label:'AM',    stages:{ 'Meeting scheduled':0.1, 'Proposal sent':0.3, 'Negotiation ongoing':0.6 } },
 };
 const PIPE_CL_OWNERS = ['472947881','76992305','1227580661','96209869','91941033','95067911'];
