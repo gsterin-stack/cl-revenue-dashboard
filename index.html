@@ -1867,10 +1867,10 @@ function renderMonthlyTable(ca, ytdMonths, am) {
   // Mois clos + mois en cours masqués (on s'appuie sur Actual+Proj) ; le Total = atterrissage
   // annuel = A+P jusqu'au mois en cours + Expected+Pipeline sur les mois à venir.
   const pipeM      = pipelineMonthly(am).monthly;
-  const pipeFrom   = pipeFirstIdx(GDATA, PIPELINE);   // = ytdMonths, ou ytdMonths-1 jusqu'au 10 du mois
+  const pipeFrom   = Math.max(0, (GDATA.summary.ytd_months||1) - 1);   // mois en cours inclus : son pipe (jours restants) va dans Expected + Pipeline
   const expM       = (ca.EXPECTED || new Array(12).fill(0)).map((v,i) => i < pipeFrom ? null : (v || 0) + (pipeM[i] || 0));
   const pipeTotal  = pipeM.reduce((a,b)=>a+b,0);
-  const landing    = expM.reduce((a,v,i) => a + (v == null ? totRow[i] + (pipeM[i] || 0) : v), 0);   // mois en cours : A+P + pipe restant
+  const landing    = expM.reduce((a,v,i) => a + (v == null ? totRow[i] : v), 0);
   const expPipeRow = [...expM, landing];
   rows.push(`
         <tr style="border-top:1px solid var(--border)">
@@ -2065,10 +2065,10 @@ function renderQSection(q, ca, am) {
   // ── Expected + HubSpot Pipeline (weighted) — même lecture que Total A+P, cf. brique violet clair du chart ──
   // Trimestres entièrement clos/en cours masqués ; un trimestre à cheval = A+P jusqu'au mois en
   // cours + Expected+Pipeline après. Total = atterrissage annuel sur la même règle.
-  const ytdM       = pipeFirstIdx(GDATA, PIPELINE);   // mois en cours inclus côté Exp+Pipe jusqu'au 10
-  const blended    = new Array(12).fill(0).map((_,i) => (i < ytdM
+  const ytdM       = Math.max(0, (GDATA.summary.ytd_months||1) - 1);   // mois en cours côté Exp+Pipe (son pipe = jours restants)
+  const blended    = new Array(12).fill(0).map((_,i) => i < ytdM
     ? (ca.R26A[i]||0) + (ca.R26P[i]||0)
-    : (expectedArr[i]||0)) + (pipeM[i]||0));   // pipe = jours restants (0 sur les mois passés)
+    : (expectedArr[i]||0) + (pipeM[i]||0));
   const expPipeQ   = quarters.map(k => Q_MONTH_IDX[k].every(i => i < ytdM) ? null : sumIdx(blended, Q_MONTH_IDX[k]));
   const expPipeRow = [...expPipeQ, blended.reduce((a,b)=>a+b,0)];
   rows.push(`
