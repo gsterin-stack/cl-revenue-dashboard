@@ -1397,19 +1397,18 @@ function renderMainChart(ca, am) {
   });
 }
 
-/* ── HubSpot pipeline (weighted) — brique violet clair au-dessus d'Expected, mois à venir uniquement.
+/* ── HubSpot pipeline (weighted) — brique violet clair au-dessus d'Expected, mois en cours (au prorata) et à venir.
    Source : hubspot_pipeline.json (deals bruts). Règles :
    - étapes retenues et pondération (PIPE_RULES) : AM à partir de « Meeting scheduled », Sales à partir de
      « Recommendation / Proposal ». Poids = probabilité de l'étape dans HubSpot (d.probability, remontée par
      n8n) ; à défaut (anciens fichiers / snapshots), la valeur de PIPE_RULES (= HubSpot au 15/10/2026) ;
-   - montant réparti à parts égales sur les mois couverts par la période du titre
-     (Q4 2026 → /3, S2 2026 → /6, "Q4 2026-Q3 2027" → /12, "S127" = S1 2027) ;
-   - sans période lisible dans le titre → trimestre du mois prochain (PIPE_DEFAULT_NOTE) ;
-   - seuls les mois > mois en cours de l'année affichée reçoivent une part ;
-   - exclus (listés en bas de la modale) : période déjà entamée (démarre avant le trimestre du
-     mois prochain, ex. "S2 2026" vu en septembre), marchand en budget Open dans data.json
-     (déjà dans Expected → double comptage ; à passer en capped d'abord, ex. Sephora), période
-     hors horizon 2026 (ex. "S127") ;
+   - période lue dans le titre (Q/S/H, mois FR/EN, année seule : "Q4 2026", "S2 2026", "Octobre 2026",
+     "Nov Dec 2026", "2027", "S127" = S1 2027) ; sans période lisible → trimestre du mois prochain (PIPE_DEFAULT_NOTE) ;
+   - montant réparti au jour sur la période ; seuls les jours restant après la date des données comptent
+     (mois en cours au prorata — pipe ajouté à Actual + Projection —, mois passés à 0, ex. "S2 2026" vu
+     le 15/10 → 77 jours restants sur 184) ;
+   - exclus (listés en bas de la modale) : marchand en budget Open dans data.json (déjà dans Expected →
+     double comptage ; à passer en capped d'abord, ex. Sephora), période terminée, période hors 2026 ;
    - tous les owners (les deux pipelines ne contiennent que du Card-Linked) ; filtre AM du Global tab appliqué sur l'owner. ── */
 const PIPE_RULES = {
   // Sales : pas de période dans le nom → montant pondéré ÷3, imputé sur les 3 mois qui suivent la mise à jour
@@ -1492,7 +1491,11 @@ function pipelineCompute(pipe, data, am) {
   if (!pipe || !Array.isArray(pipe.deals) || !data) return { monthly, grossMonthly, deals, excluded };
   const firstFutureIdx = pipeFirstIdx(data, pipe);   // mois suivant le mois en cours (ou le mois en cours jusqu'au 10)
   const grace = firstFutureIdx < (data.summary.ytd_months || 0);
-  const horizonQStart = PIPE_YEAR*12 + Math.floor(firstFutureIdx/3)*3;   // 1er mois du trimestre du mois prochain
+  // Date des données (updated_at « JJ/MM/AAAA ») : le pipe ne compte que les jours restants après cette date
+  const dd = /^(\d{1,2})\/(\d{1,2})\/(\d{4})/.exec(data.updated_at || '') || [];
+  const ref = dd[3] ? new Date(+dd[3], +dd[2] - 1, +dd[1]) : (pipe.generated_at ? new Date(pipe.generated_at) : new Date());
+  const curAbs = ref.getFullYear()*12 + ref.getMonth(), curDay = ref.getDate();
+  const dim = abs => new Date(Math.floor(abs/12), abs % 12 + 1, 0).getDate();
   for (const d of pipe.deals) {
     const rule = PIPE_RULES[d.pipeline];
     if (!rule || rule.stages[d.stage] == null) continue;   // étape hors périmètre
@@ -1505,21 +1508,25 @@ function pipelineCompute(pipe, data, am) {
     const base = { ...d, source: rule.label, weight, weighted, period, client };
     const merchant = data.merchants[merchantSlug(client)];
     if (merchant && merchant.is_capped === false) { excluded.push({ ...base, reason:'Open budget — already in Expected, switch to capped first' }); continue; }
-    if (period.start < horizonQStart) { excluded.push({ ...base, reason:'period already started' }); continue; }
-    const perMonth = weighted / period.months, grossPerMonth = (d.amount || 0) / period.months;
+    // Montant réparti au jour sur toute la période ; seuls les jours restant après la date des données
+    // comptent (mois en cours au prorata, mois passés à 0) — un deal « Octobre » reste visible jusqu'à fin octobre.
+    let totalDays = 0, daysLeft = 0;
+    const left = abs => abs < curAbs ? 0 : abs === curAbs ? dim(abs) - curDay : dim(abs);
+    for (let abs = period.start; abs <= period.end; abs++) { totalDays += dim(abs); daysLeft += left(abs); }
+    const perDay = weighted / totalDays, grossPerDay = (d.amount || 0) / totalDays;
     const byMonth = new Array(12).fill(0), grossByMonth = new Array(12).fill(0);
     for (let abs = period.start; abs <= period.end; abs++) {
-      const y = Math.floor(abs/12), i = abs % 12;
-      if (y === PIPE_YEAR && i >= firstFutureIdx) {
-        byMonth[i] = perMonth; monthly[i] += perMonth;
-        grossByMonth[i] = grossPerMonth; grossMonthly[i] += grossPerMonth;
+      const y = Math.floor(abs/12), i = abs % 12, n = left(abs);
+      if (y === PIPE_YEAR && n > 0) {
+        byMonth[i] = perDay * n; monthly[i] += perDay * n;
+        grossByMonth[i] = grossPerDay * n; grossMonthly[i] += grossPerDay * n;
       }
     }
+    const dealInfo = { ...base, totalDays, daysLeft };
     if (!byMonth.some(v => v > 0)) {
-      const past = period.end < PIPE_YEAR*12 + firstFutureIdx;
-      excluded.push({ ...base, reason: past ? 'month already in progress — counted in Actual + Projection' : `outside ${PIPE_YEAR}` }); continue;
+      excluded.push({ ...dealInfo, reason: !d.amount ? 'no amount in HubSpot' : daysLeft ? `outside ${PIPE_YEAR}` : 'period over' }); continue;
     }
-    deals.push({ ...base, perMonth, byMonth, grossByMonth });
+    deals.push({ ...dealInfo, byMonth, grossByMonth });
   }
   return { monthly, grossMonthly, deals, excluded };
 }
@@ -1565,7 +1572,7 @@ function openPipelineModal(idxs, periodName, expectedFor) {
             <td style="padding:8px"><a href="${HUBSPOT_DEAL_URL}${d.id}" target="_blank" rel="noopener" style="color:var(--text);text-decoration:none;font-weight:500">${d.client}</a> <span class="am-pill" style="margin-left:6px">${d.owner||'—'}</span>
               <div style="font-size:10px;color:var(--muted);margin-top:2px">${d.name}</div></td>
             <td style="padding:8px;color:var(--text2)">${d.stage}</td>
-            <td style="padding:8px;color:var(--text2)">${periodLabel(d.period)} <span style="color:var(--muted)">(÷${d.period.months})</span>${d.period.rule ? `<div style="font-size:10px;color:var(--muted);margin-top:2px">${d.period.rule}</div>` : ''}${d.period.fromTitle ? '' : `<div style="font-size:10px;color:var(--yellow);margin-top:2px" title="${PIPE_DEFAULT_NOTE}">⚠ default period</div>`}</td>
+            <td style="padding:8px;color:var(--text2)">${periodLabel(d.period)} <span style="color:var(--muted)">(${d.daysLeft != null ? `${d.daysLeft}/${d.totalDays} days left` : `÷${d.period.months}`})</span>${d.period.rule ? `<div style="font-size:10px;color:var(--muted);margin-top:2px">${d.period.rule}</div>` : ''}${d.period.fromTitle ? '' : `<div style="font-size:10px;color:var(--yellow);margin-top:2px" title="${PIPE_DEFAULT_NOTE}">⚠ default period</div>`}</td>
             <td style="text-align:right;padding:8px;font-variant-numeric:tabular-nums">${fmtBudget(d.amount)}</td>
             <td style="text-align:right;padding:8px;color:var(--text2)">${Math.round(d.weight*100)}%</td>
             <td style="text-align:right;padding:8px;font-variant-numeric:tabular-nums;color:var(--text2)">${fmtK1(d.weighted)}</td>
@@ -1863,7 +1870,7 @@ function renderMonthlyTable(ca, ytdMonths, am) {
   const pipeFrom   = pipeFirstIdx(GDATA, PIPELINE);   // = ytdMonths, ou ytdMonths-1 jusqu'au 10 du mois
   const expM       = (ca.EXPECTED || new Array(12).fill(0)).map((v,i) => i < pipeFrom ? null : (v || 0) + (pipeM[i] || 0));
   const pipeTotal  = pipeM.reduce((a,b)=>a+b,0);
-  const landing    = expM.reduce((a,v,i) => a + (v == null ? totRow[i] : v), 0);
+  const landing    = expM.reduce((a,v,i) => a + (v == null ? totRow[i] + (pipeM[i] || 0) : v), 0);   // mois en cours : A+P + pipe restant
   const expPipeRow = [...expM, landing];
   rows.push(`
         <tr style="border-top:1px solid var(--border)">
@@ -2059,9 +2066,9 @@ function renderQSection(q, ca, am) {
   // Trimestres entièrement clos/en cours masqués ; un trimestre à cheval = A+P jusqu'au mois en
   // cours + Expected+Pipeline après. Total = atterrissage annuel sur la même règle.
   const ytdM       = pipeFirstIdx(GDATA, PIPELINE);   // mois en cours inclus côté Exp+Pipe jusqu'au 10
-  const blended    = new Array(12).fill(0).map((_,i) => i < ytdM
+  const blended    = new Array(12).fill(0).map((_,i) => (i < ytdM
     ? (ca.R26A[i]||0) + (ca.R26P[i]||0)
-    : (expectedArr[i]||0) + (pipeM[i]||0));
+    : (expectedArr[i]||0)) + (pipeM[i]||0));   // pipe = jours restants (0 sur les mois passés)
   const expPipeQ   = quarters.map(k => Q_MONTH_IDX[k].every(i => i < ytdM) ? null : sumIdx(blended, Q_MONTH_IDX[k]));
   const expPipeRow = [...expPipeQ, blended.reduce((a,b)=>a+b,0)];
   rows.push(`
@@ -3082,11 +3089,13 @@ function quarterViewOf(ca, pipe, pipeFrom, q) {
     const future = i >= pipeFrom;
     const exp = ca.EXPECTED[i] || 0;
     return { i, ap, act: ca.R26A[i] || 0, okr: ca.OKR[i] || 0, ly: ca.R25[i] || 0, exp, future,
-      wpipe: future ? pipe.monthly[i] : 0, gpipe: future ? pipe.grossMonthly[i] : 0,
-      base: future ? exp + pipe.monthly[i] : ap, stretch: future ? exp + pipe.grossMonthly[i] : ap };
+      // pipe = jours restants uniquement (0 sur les mois passés) : s'ajoute à Expected sur les mois à venir,
+      // à Actual + Projection sur le mois en cours
+      wpipe: pipe.monthly[i] || 0, gpipe: pipe.grossMonthly[i] || 0,
+      base: (future ? exp : ap) + (pipe.monthly[i] || 0), stretch: (future ? exp : ap) + (pipe.grossMonthly[i] || 0) };
   });
   const sum = k => months.reduce((a, m) => a + m[k], 0);
-  return { q, idxs, months, pipe, hasFuture: months.some(m => m.future),
+  return { q, idxs, months, pipe, hasFuture: months.some(m => m.future || m.gpipe > 0),
     ap: sum('ap'), act: sum('act'), okr: sum('okr'), ly: sum('ly'), exp: sum('exp'),
     base: sum('base'), stretch: sum('stretch'), wpipe: sum('wpipe'), gpipe: sum('gpipe') };
 }
