@@ -3657,7 +3657,7 @@ function amLandingClick(kind) {
     const tile = (l, v, c) => `<span style="margin-right:22px"><span style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.4px;color:var(--text2)">${l}</span> <span style="color:${c}">${v}</span></span>`;
     total = `<span style="font-size:20px">${tile('Actual', fmtMK(A), C.act.text)}${tile('Projection', fmtMK(AP), C.proj.text)}${tile('Signed', fmtMK(S), C.signed.text)}${tile('Difference', `${D >= 0 ? '+' : '−'}${fmtMK(Math.abs(D))}`, D >= 0 ? 'var(--green)' : 'var(--red)')}</span>`;
     head = `${th('Client', 'left')}${th('Actual')}${th('Projection')}${th('Signed')}${th('Difference')}`;
-    rows = list.map(r => `<tr style="border-bottom:1px solid #161616;cursor:pointer" onclick="closeLandingModal();openWowModal('${r.id}')">
+    rows = list.map(r => `<tr${hasNoLiveOffer(GDATA.merchants[r.id]) ? ' data-gs-row' : ''} style="border-bottom:1px solid #161616;cursor:pointer" onclick="closeLandingModal();openWowModal('${r.id}')">
       <td style="padding:7px 8px;font-weight:500">${merchantLabel(r.id)}${r.signedQ == null ? ' <span style="font-size:10px;color:var(--muted)">open</span>' : ''}</td>
       ${hasNoLiveOffer(GDATA.merchants[r.id]) ? `<td colspan="2" style="text-align:center;padding:7px 8px">${NO_OFFER_BADGE}</td>` : colored(r.act, C.act.text) + colored(r.ap, C.proj.text)}${r.signedQ != null ? colored(r.signedQ, C.signed.text) : dash}${r.signedQ != null ? diff(r.ap - r.signedQ) : dash}</tr>`).join('')
       + `<tr style="border-top:1px solid var(--border)"><td style="padding:8px;font-weight:700">Total</td>${colored(A, C.act.text, 1)}${colored(AP, C.proj.text, 1)}${colored(S, C.signed.text, 1)}${diff(D)}</tr>`;
@@ -5242,7 +5242,7 @@ fetch('./data.json', { cache: 'no-cache' }).then(r=>r.json()).then(renderAll).ca
    rendered on the fly in modals / drill-downs. Cycle: 1st click = largest first (numbers, dates)
    or A→Z (text), 2nd click = reversed, 3rd click = original order.
    Kept in place: "Total" / "N other …" rows and rows with merged cells (section headers) —
-   rows are only sorted between them. Empty cells ("—") always go last.
+   rows are only sorted between them; a data row with a merged cell opts back in with data-gs-row. Empty cells ("—") always go last.
    Opt out with <table data-nosort>. */
 const GS_MONTHS = ['jan','feb','mar','apr','may','jun','jul','aug','sep','oct','nov','dec'];
 function gsValue(text) {
@@ -5267,6 +5267,7 @@ function gsCellAt(row, col) {
   return null;
 }
 function gsIsFixed(row) {
+  if (row.hasAttribute('data-gs-row')) return false;   // ligne de données avec cellule fusionnée (ex. badge NO LIVE OFFER)
   if ([...row.cells].some(c => (c.colSpan || 1) > 1)) return true;
   const first = (row.cells[0] ? row.cells[0].textContent : '').trim();
   return /^(total|sub-?total|sous-total|grand total|others?\b|\d+\s+other)/i.test(first);
